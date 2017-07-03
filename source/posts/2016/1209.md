@@ -1,0 +1,26 @@
+---
+title: 博客文章和文档迁移到gitbook
+tags:
+  - git
+  - gitbook
+id: 1209
+categories:
+  - Article
+  - Blablabla
+  - Uncategorized
+date: 2016-01-15 21:42:11
+---
+
+# 博客文章和文档迁移到gitbook
+
+使用_Markdown_写blog已经很久了，近期接触并且看了下流传已久的[gitbook](gitbook.com)平台，感觉做得确实不错。、
+
+之前写blog的时候一直用得是[stackedit](stackedit.io)，是因为[stackedit](stackedit.io)的对_Markdown_做了很多扩展，功能很强大，有自动目录、流程图、时序图等等，然后可以浏览器直接开很方便。但实际上这些功能写出的东西虽然不错，但是放到比如[github](github.com)上的时候，[github](github.com)不支持。目前大多数平台对_Mardown_的扩展都只是到了和[github](github.com)差不多的地步，没有到[stackedit](stackedit.io)的程度。这也导致同样写得东西，复制到[github](github.com)或者其他的平台的时候还得过一遍样式，比较麻烦。而且这些扩展的功能也用得不太多。另外[stackedit](stackedit.io)时不时被墙然后访问很不稳定也是挺麻烦的一件事儿。
+
+再来说这个[gitbook](gitbook.com)，看中他是觉得它做了一个可持续集成的功能。就是[github](github.com) _push_完以后可以通知[gitbook](gitbook.com)然后让[gitbook](gitbook.com)自动构建文档内容。这点和比如[jenkins](https://jenkins-ci.org/)和[travis](https://travis-ci.org/)等等的CI系统很像。然后支持构建成pdf、epub（开源电子书格式）、mobi（kindle电子书格式）和在线书籍。然后版式也挺漂亮，还支持模板，引用等等，感觉确实蛮适合出版发行的。虽然目前为止_Markdown_的功能丰富程度比起Latex还差不少，但是上手难度也比Latex低不少。还是非常有潜力的，而且[gitbook](gitbook.com)支持用javascript写得插件，以后变数也可以很多。
+
+所以我决定也尝尝鲜，首先是吧blog里的文章记录转移过来，然后后面的开源项目的wiki或者文档也用这玩意构建。因为我用_Markdown_写博文的时候本来就备份了一份在[github](github.com)，所以有现成的仓库，然后把目录结构和配置调整成[gitbook](gitbook.com)所支持的就可以了。话说好像已经很多国内的文档和开源书籍用这个生成了。
+
+然后主要是之前很多文章里用到了一些[stackedit](stackedit.io)的扩展功能比如说在[stackedit](stackedit.io)里**[TOC]**表示目录树。像这些功能[gitbook](gitbook.com)里有插件提供一样的功能，但是语法不太一样。反正是博文又不是出书也不是文档，我就不更新了。实际上对阅读影响也不大，而且在我的blog里内容是正常的。
+
+尝试一段时间熟悉了以后可以在这上面再去写各种文档（其实大致看了一下很简单内容也不多）。顺便吐槽一下现在5.0beta的[gitbook](gitbook.com)的编辑器真不好用，虽然很好看，但是还没4.0好用，拼写检查不支持中文导致茫茫多红线，不识别英文和其他UTF-8导致不能双击选中英文单词。

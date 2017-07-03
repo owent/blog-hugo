@@ -1,0 +1,111 @@
+---
+title: PKU POJ 1141 Brackets Sequence 解题报告
+tags:
+  - acm
+  - pku
+  - poj
+id: 46
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-04-05 16:52:28
+---
+
+链接: http://acm.pku.edu.cn/JudgeOnline/problem?id=1141
+题目意思是输入一些括号，补充括号使之成为没有错误的括号就是只能有括号组在括号组里面，不能出现([)]或者([)]一类的情况
+方法是DP，有点绕的DP
+DP方程是 *bc[i][j] = min(bc[i][k] + bc[k][j])* 注：bc[i][j]表示字符i和字符j之间需要插入几个括弧
+然后尽量多地分割字符串
+不解释，贴代码：
+
+```cpp
+/**
+ * URL:http://acm.pku.edu.cn/JudgeOnline/problem?id=1141
+ * Author: OWenT
+ * DP问题:DP 方程bc[i][j] = min(bc[i][k] + bc[k][j])
+ */
+
+#include <iostream>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
+using namespace std;
+
+#define MAXN 105
+
+long bc[MAXN][MAXN];//记录字符串之间需要补充几个字符
+long strSplit[MAXN][MAXN];
+
+char str[MAXN];
+
+void printStr(long b, long e);
+int main()
+{
+    long len, i, j, k, tmpEd;
+    while(gets(str) != NULL)
+    {
+        len = strlen(str);
+        memset(bc, 0, sizeof(bc));
+        memset(strSplit, -1, sizeof(strSplit));
+        if(len == 0)
+        {
+            putchar('\n');
+            continue;
+        }
+        for(i = 0; i < len; i ++)
+            bc[i][i] = 1;
+
+        for(i = 1; i < len; i ++)//跃进个数
+        {
+            for(j = 0; j + i < len; j ++)//起始位置
+            {
+                tmpEd = i + j;
+                long tmpTBc, minBc = 1<< 16;
+                if((str[j] == '(' && str[tmpEd] == ')') || (str[j] == '[' && str[tmpEd] == ']'))
+                    minBc = bc[j + 1][tmpEd - 1];//如果不匹配下面必然有分割
+                for(k = j; k < tmpEd; k ++)
+                {
+                    tmpTBc = bc[j][k] + bc[k + 1][tmpEd];//跃进个数为第一层循环就是要保证这里的子域都处理过了
+                    if(tmpTBc < minBc)
+                    {
+                        minBc = tmpTBc;//最少补充个数
+                        strSplit[j][tmpEd] = k;//分割点
+                    }
+                }
+                bc[j][tmpEd] = minBc;
+            }
+        }
+
+        printStr(0, len - 1);
+        putchar('\n');
+    }
+    return 0;
+}
+
+void printStr(long b, long e)
+{
+    if(b > e)
+        return;
+    else if(b == e)
+    {
+        if(str[b] == '(' || str[b] == ')')
+            printf("()");
+        else
+            printf("[]");
+    }
+    else
+    {
+        if(strSplit[b][e] < 0)//无分割点
+        {
+            putchar(str[b]);
+            printStr( b + 1, e - 1);
+            putchar((str[b] == '(')? ')' : ']');
+        }
+        else
+        {
+            printStr(b, strSplit[b][e]);
+            printStr(strSplit[b][e] + 1, e);
+        }
+    }
+}
+```

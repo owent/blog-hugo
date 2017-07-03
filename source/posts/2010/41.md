@@ -1,0 +1,227 @@
+---
+title: PKU POJ 3757 Simple Distributed storage system 解题报告
+tags:
+  - acm
+  - pku
+  - poj
+id: 41
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-04-10 17:10:47
+---
+
+
+题目链接：http://acm.pku.edu.cn/JudgeOnline/problem?id=3757
+
+题目大意
+
+第一行输入n，k，f表示从n个服务器里选k个，传输大小为f（以Mb为单位）的文件
+
+接下来输入每个服务器的吞吐量，带宽和资源消耗（pi，bi，ci）
+
+传输数据的总时间=传输的大小(fi)/pi+fi/bi
+
+传输每Mb消耗的资源为ci
+
+要求每台服务器完成传输的时间相同
+
+求最小的资源消耗和Sum(sci)【sci=fi*ci】
+
+输出是一行：Min{Sum(sci)}
+
+ 
+输入数据
+
+n，k为整数
+
+f，pi，bi，ci为实数
+ 
+计算公式：
+
+$$ sci = fi \times ci $$(1)
+ 
+$$ time = \frac{fi}{pi} + \frac{fi}{bi} $$(2)
+ 
+$$ f1 + f2 + … fk = f $$(3)
+ 
+$$ fi = \frac{time \times pi \times bi}{pi + bi} $$ {4}
+ 
+$$ time \times (\sum_{i=1}^{k} \frac{pi \times bi}{pi + bi}) = f $$(5)
+ 
+令 $$ sPar1 = \sum_{i=1}^{k} \frac{pi \times bi}{pi + bi} $$
+ 
+=>   $$ sci = \frac{f}{sPar1} \times pi \times bi \times \frac{ci}{pi + bi} $$(6)
+ 
+令 $$ sPar2 = \sum_{i=1}^{k} \frac{pi \times bi \times ci}{pi + bi} $$
+ 
+=> $$ Sum(sci) = \frac{f \times sPar2}{sPar1} $$(7)
+ 
+以上是我做题时的思路尽头，后来看了某个大牛的代码，再看了点关于0-1分数规划的资料有了下一步整理
+ 
+关于0-1分数规划：
+
+令 $$ xi = \frac{pi \times bi}{pi + bi} $$ 现在我们知道
+
+$$ res = f \times (\sum_{i=1}^{k} xici) / \sum_{i=1}^{k} xi $$
+
+令 $$ z = \min (f \times (\sum_{i=1}^{k} xici) – res \times (\sum_{i=1}^{k} xi) ) $$
+
+即 $$ z(l) = \min ( f \times (\sum_{i=1}^{k} xici) – l \times (\sum_{i=1}^{k} xi) ) $$
+
+由于z(l)单调递减,设问题最优解为l*
+
+具体证明见：http://www.owent.net/part/Article/?id=56
+
+z(l) > 0 when l < l*
+z(l) = 0 when l = l*
+z(l) < 0 when l > l*
+ 
+然后只要二分算出l使得z(l) = 0即可。其中min的部分可以排序解决
+
+代码：
+
+```cpp
+/**
+ * URL:http://acm.pku.edu.cn/JudgeOnline/problem?id=3757
+ * Author: OWenT
+ * 0-1分数规划，特殊排序，二分
+ */
+#include <iostream>
+#include <cstdio>
+#include <cstring>
+#include <algorithm>
+using namespace std;
+
+#define MAXN 20005
+typedef struct
+{
+    double p,b,c;
+    double pb,pbc;
+}bank;
+
+bank bk[MAXN];
+double br,bl,bm;// for binary search
+double f;// file size
+
+bool cmp(bank a, bank b)
+{
+    return f * a.pbc - bm * a.pb < f * b.pbc - bm * b.pb;
+}
+
+double getZFun(const long &k);
+
+int main()
+{
+    long k,n,i;
+    double res;
+
+    scanf("%ld %ld", &n, &k);
+    scanf("%lf", &f);
+
+    for(i = 1; i <= n; i ++)
+    {
+        scanf("%lf %lf %lf", &bk[i].p, &bk[i].b, &bk[i].c);
+        bk[i].pb = bk[i].b * bk[i].p / (bk[i].b + bk[i].p);
+        bk[i].pbc = bk[i].pb * bk[i].c;
+    }
+
+    //binary search
+    br = 1e10 + 1;
+    bl = 0;
+    while(br - bl > 1e-6)
+    {
+        bm = (br + bl) / 2;
+        sort(bk + 1, bk + n + 1, cmp);
+        double tmp = getZFun(k);
+        if(tmp > 0)
+            bl = bm + 1e-6;
+        else
+            br = bm - 1e-6;
+    }
+
+    res = bl;
+    printf("%.4lf\n", res);
+    return 0;
+}
+
+double getZFun(const long &k)
+{
+    long i;
+    double sum = 0;
+    for(i = 1; i <= k; i ++)
+        sum += f * bk[i].pbc - bm * bk[i].pb;
+
+    return sum;
+}
+
+使用更快的迭代法：
+（该迭代的过程中出现了一个白痴级别的小问题，搞得我WA了无数次，不爽）
+
+
+
+/**
+* URL:http://acm.pku.edu.cn/JudgeOnline/problem?id=3757
+* Author: OWenT
+* 0-1分数规划，特殊排序，二分
+*/
+#include <iostream>
+#include <cstdio>
+#include <cstring>
+#include <algorithm>
+#include <cmath>
+using namespace std;
+
+#define MAXN 20005
+typedef struct
+{
+    double p,b,c;
+    double pb,pbc;
+    double sortPar;
+}bank;
+
+bank bk[MAXN];
+
+bool cmp(bank a, bank b)
+{
+    return a.sortPar - b.sortPar < 1e-8;
+}
+
+
+int main()
+{
+    long k,n,i;
+    double f, res, tmpRes;
+
+    scanf("%ld %ld", &n, &k);
+    scanf("%lf", &f);
+
+    for(i = 1; i <= n; i ++)
+    {
+        scanf("%lf %lf %lf", &bk[i].p, &bk[i].b, &bk[i].c);
+        bk[i].pb = bk[i].b * bk[i].p / (bk[i].b + bk[i].p);
+        bk[i].pbc = bk[i].pb * bk[i].c;
+    }
+
+    //更快的迭代
+    res = 0;
+    tmpRes = 1e10;
+    while(fabs(res - tmpRes) > 1e-6)
+    {
+        for(i = 1; i <= n; i ++)
+            bk[i].sortPar = f * bk[i].pbc - res * bk[i].pb;
+        tmpRes = res;
+        sort(bk + 1, bk + n + 1, cmp);
+        double tmpA = 0, tmpB = 0;
+        for(i = 1; i <= k; i ++)
+        {
+            tmpA += f * bk[i].pbc;
+            tmpB += bk[i].pb;
+        }
+        res = tmpA / tmpB;
+    }
+
+    printf("%.4lf\n", tmpRes);
+    return 0;
+}
+```

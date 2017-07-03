@@ -1,0 +1,54 @@
+---
+title: gitlab腾讯企业邮箱配置
+tags:
+  - git
+id: 1138
+categories:
+  - Article
+  - Collection
+  - Work
+date: 2015-01-23 12:02:44
+---
+
+介于配置gitlab邮箱测试起来补交麻烦而且看日志还不明朗，这里记录一下成功配置好的企业邮箱方案。
+
+模板如下：
+
+```
+    # mail config
+    gitlab_rails['smtp_enable'] = true
+    gitlab_rails['smtp_address'] = "smtp.exmail.qq.com"
+    gitlab_rails['smtp_port'] = 465
+    gitlab_rails['smtp_user_name'] = "完整邮件账户"
+    gitlab_rails['smtp_password'] = "密码"
+    gitlab_rails['smtp_domain'] = "邮件账户所在域"
+    gitlab_rails['smtp_authentication'] = "login"
+    gitlab_rails['smtp_enable_starttls_auto'] = true
+    gitlab_rails['smtp_tls'] = true  # 这个很重要，而且是官方文档里没提及的 
+
+    # If your SMTP server does not like the default 'From: gitlab@localhost' you
+    # # can change the 'From' with this setting.
+    gitlab_rails['gitlab_email_from'] = '完整邮件账户'
+```
+    比如我的邮箱admin@owent.net
+
+    配置如下：
+
+```
+    # mail config
+    gitlab_rails['smtp_enable'] = true
+    gitlab_rails['smtp_address'] = "smtp.exmail.qq.com"
+    gitlab_rails['smtp_port'] = 465
+    gitlab_rails['smtp_user_name'] = "admin@owent.net"
+    gitlab_rails['smtp_password'] = "admin@owent.net的密码"
+    gitlab_rails['smtp_domain'] = "owent.net"
+    gitlab_rails['smtp_authentication'] = "login"
+    gitlab_rails['smtp_enable_starttls_auto'] = true
+    gitlab_rails['smtp_tls'] = true
+
+    # If your SMTP server does not like the default 'From: gitlab@localhost' you
+    # # can change the 'From' with this setting.
+    gitlab_rails['gitlab_email_from'] = 'admin@owent.net'
+```
+
+done.

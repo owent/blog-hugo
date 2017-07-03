@@ -1,0 +1,275 @@
+---
+title: 09年8月14日 ECUST ACM 练习赛总结
+tags:
+  - acm
+id: 77
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2009-08-16 16:57:22
+---
+
+今天在湖南的OJ上做题,发现不到两小时,他服务器就挂了,但是发现他和POJ上的一些题一样而且是连号的,就到POJ上继续了，我们队出了6题。
+
+A题是[POJ的3507 Judging Olympia](http://acm.pku.edu.cn/JudgeOnline/problem?id=3507)这题是队友干掉的,我没看
+
+B题是[POJ的3508 ](http://acm.pku.edu.cn/JudgeOnline/problem?id=3508)[Hide That Number](http://acm.pku.edu.cn/JudgeOnline/problem?id=3508)同样是队友AC掉,我没看
+
+C题是[POJ的3509&nbsp;Rotating Rings](http://acm.pku.edu.cn/JudgeOnline/problem?id=3509)
+
+
+这题是我做的,题目大致意思是输入一个n*n的矩阵,就有(n+1)/2层问能不能通过旋转某几层把矩阵调整到递增矩阵(即第r行c列的值为(r-1)&times;(n) + c + 1)
+这题我的思路很简单,从外层到里层一层一层判断,先做出标准递增矩阵
+对于没一层先算出已有矩阵的起点,再枚举每个点,看能不能和标准矩阵的那一层匹配,如果有一层布匹配就输出NO否则输出YES
+这题我犯了几个错误,其一是层数为奇数时对于最里面一层我推出来的计算公式没用
+第二就是层数为奇数时对于最里面一层的特殊情况我忘记判断是否与标准矩阵相同.这点是Ultramanhu找出来的,很重要的BUG
+公式如下:
+n*n的矩阵,从外向里第k层,第l个的坐标用x,y表示则
+
+$$ l = l \mod 4 \times (n - 1 - 2k ) $$
+
+```
+x=k,y=k//设初值,就是l为0时的值
+if(l<n-2k)
+  x+=l
+else if(l<2n-4k-1)
+  x+=n-2k-1,y+=l-n+2k+1
+else if(l<3n-6k-2)
+  y+=n-2k-1,x+=3n-6k-l-3
+else
+  y += 4n-8k – 4 – l
+```
+具体代码如下:
+```cpp
+#include<iostream>
+using namespace std;
+
+#define MAXN 2000
+struct Position
+{
+    int x,y;
+};
+
+Position GetPosition(long n,long k,long l);
+
+bool check(int n,int k);
+
+long mat[MAXN][MAXN];
+long matMol[MAXN][MAXN];
+
+int main()
+{
+    int n,t = 0;
+    while(scanf("%d",&n), n)
+    {
+        for(int i = 0 ; i < n ; i ++)
+            for(int j = 0 ; j < n ; j ++)
+                scanf("%ld",&mat[i][j]) , matMol[i][j] = i * n + j + 1;
+
+        int k;
+        for( k = 0 ; k <= (n - 1) / 2 ; k ++)
+            if(!check(n,k))
+                break;
+
+        if(k <= (n - 1) / 2)
+            printf("%d. NO\n", ++ t);
+        else
+            printf("%d. YES\n", ++ t);
+    }
+    return 0;
+}
+
+
+
+Position GetPosition(long n,long k,long l)
+{
+    Position tmpPos;
+    tmpPos.x = tmpPos.y = k;
+    if(n - 1 - 2 * k)
+        l = l % (4 * (n - 1 - 2 * k));
+    else
+        return tmpPos;
+
+    if(l < n - 2 * k)
+        tmpPos.x += l;
+    else if(l < 2 * n - 4 * k - 1)
+        tmpPos.x += n - 2 * k - 1 , tmpPos.y += l - (n - 2 * k) + 1;
+    else if(l < 3 * n - 6 * k - 2)
+        tmpPos.y += n - 2 * k - 1,tmpPos.x += 3 * n - 6 * k - l - 3;
+    else
+        tmpPos.y += 4 * n - 8 * k - 4 - l;
+
+    return tmpPos;
+}
+
+bool check(int n,int k)
+{
+    long pos2 , i;
+    long numSum = 4 * (n - 1 - 2 * k);
+
+    Position tmpSource = GetPosition(n,k,0);
+
+    for(pos2 = 0 ; pos2 < numSum ; pos2 ++)
+    {
+        Position tmpPos = GetPosition(n,k,pos2);
+        if(mat[tmpPos.y][tmpPos.x] == matMol[tmpSource.y][tmpSource.x])
+            break;
+    }
+    if(pos2 >= 4 * numSum)
+        if(numSum)
+            return false;
+        else
+            return mat[tmpSource.y][tmpSource.x] == matMol[tmpSource.y][tmpSource.x];
+
+    for(i = 1 ; i < 4 * numSum ; i ++)
+    {
+        tmpSource = GetPosition(n,k,i);
+
+        Position tmpPos = GetPosition(n,k,pos2 + i);
+        if(mat[tmpPos.y][tmpPos.x] != matMol[tmpSource.y][tmpSource.x])
+            return false;
+    }
+
+    return true;
+}
+```
+
+D题是[POJ的3510&nbsp;A Tale from the Dark Side of the Moon](http://acm.pku.edu.cn/JudgeOnline/problem?id=3510)
+字符串处理,我直接交给Ultramanhu解决了,这题有个奇妙的陷阱就是字符串中间出现一个EOF就终止了,这让我们WA了几次
+
+E题是[POJ的3511&nbsp;Fermat's Christmas Theorem](http://acm.pku.edu.cn/JudgeOnline/problem?id=3511)
+这题大意是算出[l,u]区间内的素数个数及能表示为a<sup>2</sup>+b<sup>2</sup>的素数个数
+这题只要简单的DP记录一下个数就行,主要是筛质数,这个很简单就不多说了
+代码如下:
+```cpp
+//Problem E
+#include<iostream>
+#include<cstring>
+using namespace std;
+
+const long MAXP = 1000003;
+long prime[MAXP] = {0},num_prime = 0;
+int isNotPrime[MAXP] = {1, 1};
+
+int isTrue[MAXP]={0};
+
+long numPrimeLess[MAXP] = {0};
+long numPrimeNoMat[MAXP] = {0};
+
+int main()
+{
+    for(long i = 2 ; i <  MAXP ; i ++){
+        if(! isNotPrime[i])
+            prime[num_prime ++]=i;
+        for(long j = 0 ; j < num_prime && i * prime[j] <  MAXP ; j ++)
+        {
+            isNotPrime[i * prime[j]] = 1;
+            if( !(i % prime[j]))
+                break;
+        }
+    }
+
+    for(long i = 0 ; i < 1000 ; i ++)
+        for(long j = 0 ; j < 1000 && i * i + j * j <= MAXP; j ++)
+            isTrue[i * i + j * j] = 1;
+
+    for(long i = 2 ; i < MAXP ; i ++)
+    {
+        numPrimeNoMat[i] = numPrimeNoMat[i - 1] + (!isNotPrime[i]);
+        numPrimeLess[i] = numPrimeLess[i - 1] + (!isNotPrime[i] && isTrue[i]);
+    }
+
+    long l,u;
+    while(scanf("%ld %ld",&l,&u),l != -1 || u != -1)
+    {
+        long b = l>0?l:0;
+        long e = u>0?u:0;
+        printf("%ld %ld %ld %ld\n",l,u,numPrimeNoMat[e] - numPrimeNoMat[b] + !isNotPrime[b]
+        ,numPrimeLess[e] - numPrimeLess[b] + (!isNotPrime[b] && isTrue[b]));
+    }
+    return 0;
+}
+```
+
+F题是[POJ的3512&nbsp;Incidental Points.](http://acm.pku.edu.cn/JudgeOnline/problem?id=3511)
+题意是让你输入一些点的平面坐标,有一条线段能穿过最大数量的点,求最大点的数量
+因为这类型的题以前写过而且留了代码就直接改完贴了
+代码:
+```cpp
+#include<iostream>
+#include<cmath>
+using namespace std;
+char str[1000];
+#define EPS 1e-10
+struct point
+{
+    double x,y;
+};
+struct node
+{
+    double k;
+};
+int cmp(const void * a, const void * b)
+{
+    return((*(double*)a-*(double*)b>0)?1:-1);
+}
+
+node numK[1005 * 1005 / 2];
+point pt[1005];
+int main()
+{
+    int n = 0 , maxNum = 1 , tmpNum = 0,t = 0;
+    int end = 0;
+    while(gets(str))
+    {
+        if((str[0] == '-' && str[1] == '-') && end)
+            break;
+        else if(str[0] == '-' && str[1] == '-')
+        {
+            end = 1;
+
+            for(int i = 0 ; i <  n ; i ++)
+            {
+                int pos = 0;
+                for(int j = i + 1 ; j < n ; j ++)
+                    if(fabs(pt[i].x - pt[j].x) > EPS)
+                        numK[pos ++].k = (pt[j].y - pt[i].y) / (pt[j].x - pt[i].x);
+                    else
+                        numK[pos ++].k = 2000000;
+
+                qsort(numK,pos,sizeof(numK[0]),cmp);
+                int tmpNum = 2;
+                for(int j = 1 ; j < pos ; j ++)
+                {
+                    if(numK[j].k == numK[j - 1].k)
+                        tmpNum ++;
+                    else
+                    {
+                        if(tmpNum > maxNum)
+                            maxNum = tmpNum;
+                        tmpNum = 2;
+                    }
+                }
+                if(tmpNum > maxNum)
+                    maxNum = tmpNum;
+            }
+
+
+            printf("%d. %d\n",++ t,maxNum);
+            maxNum = 1;
+            n = 0;
+        }
+        else
+            sscanf(str,"%lf %lf",&pt[n].x,&pt[n].y) , n ++,end = 0;
+    }
+    return 0;
+}
+```
+
+G题是一道需要Hash的题,Hash我不熟,而且到时间结束我都没能研究出来STL库的map类.没能出
+后面的题我基本都没看,貌似后面的题难度都比较高
+
+今天感觉的状态就是出错率高了,犯了好几个低级错误导致罚时增加.像C的两次RE都是因为不小心出现了模0的情况
+其他的题目基本都是以前写过,要么就是大水.
+几天总体感觉配合得比以前好了一点,但是中期开始OJ挂了之后激情就逐渐流失了.
+关键是出错率还需提高,希望明天的状态好一点吧,再就是OJ不要再挂一次

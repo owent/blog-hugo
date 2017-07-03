@@ -1,0 +1,224 @@
+---
+title: pbc的一个陈年老BUG
+tags:
+  - lua
+  - Protobuf
+  - 消息队列
+  - 进程间通信
+id: 1273
+categories:
+  - Article
+  - Blablabla
+  - Work
+date: 2016-07-04 13:01:42
+---
+
+pbc的一个陈年老BUG
+======
+
+近期跟了一下pbc的lua-binding的一个老BUG，起源是我们客户端报了一个奇怪的问题，我们游戏里的某些功能的optional字段，服务器并没有下发数据，但是客户端竟然能读到。
+
+一开始我去issues里翻，翻到了个这个，https://github.com/cloudwu/pbc/issues/27。
+这是2014年就发现的BUG了，然而云风说考虑到性能问题不想改。大事我觉得吧，就算一些性能损失，也好过容易出BUG，并且协议打解包在游戏中的CPU占用本身就不重。所以这能自己动手，丰衣足食喽。
+
+BUG分析
+------
+这里就得提到pbc的两个feature。第一个是，如果一个optional字段的数据不存在，那么你尝试去读的时候，会返回一个默认值。这个默认值的话如果协议里不定义，整数是0，字符串是空串，而table就会生成一个新table，里面的数据全是默认值。
+第二个是，如果某个optional的字段的内容是默认值，那么打包的时候会忽略。也就是说pack的结果的二进制里什么也没有。
+
+说它是两个feature是因为，原生的protobuf是没有这回事儿的。二进制里没有，unpack的结果里去读也不会有；有数据但是是默认值，打包的二进制里也会有key-value，只是value是默认值（0或者空串），默认值一般都很小。
+
+然后既然要自己动手，就得去读代码了。对以上features的实现，特别是读取不存在的数据的实现，并且为了高效pbc采用了默认值table的方法。什么叫默认值table呢？就是每一个protubuf的message，在第一次解包的时候，pbc的lua-binding都会生成一个默认值的table。
+假设某个要读取的数据不存在，pbc的lua-binding会返回这个默认值的table。举个例子：
+
+```lua
+local msg1 = pbc.unpack('abc', buffer1)
+
+-- 假设这时候nodata这个数据不存在
+print(msg1.nodata.int_type)
+-- 假设0是默认值，这里会输出0
+
+local msg2 = pbc.unpack('abc', buffer2)
+-- 如果buffer1和buffer2里都没有nodata的数据，下面两行会输出同一个table
+print(msg1.nodata)
+print(msg2.nodata)
+```
+
+那么问题就来了，这种情况，如果对解包数据是只读还好，一旦进行了写入，假设执行了msg1.nodata.int_type = 100，那么msg2.nodata.int_type也变成了100，并且以后解包的这个message的空数据里的nodata.int_type都变成了100。这也是最开始提到的那个BUG的原因。
+
+以上在lua-binding 5.1里的代码如下：
+
+```lua
+local function default_table(typename)
+    local v = default_cache[typename]
+    if v then
+        return v
+    end
+    v = { __index = assert(decode_message(typename , "")) }
+    default_cache[typename]  = v
+    return v
+end
+```
+
+BUG验证
+------
+知道问题原因了，验证这个BUG就很容易了。并且这个BUG并不仅仅是 https://github.com/cloudwu/pbc/issues/27 里提到的repeated字段的问题，所有的默认table都有。
+很简单地改动一下，给test/addressbook.proto加一个optional的message
+```protobuf
+**message Profile** {
+  optional string nick_name = 1;
+  optional string icon = 2;
+}
+
+message Person {
+  required string name = 1;
+  required int32 id = 2;        // Unique ID number for this person.
+  optional string email = 3;
+
+  enum PhoneType {
+    MOBILE = 0;
+    HOME = 1;
+    WORK = 2;
+  }
+
+  message PhoneNumber {
+    required string number = 1;
+    optional PhoneType type = 2 [default = HOME];
+  }
+
+  repeated PhoneNumber phone = 4;
+  repeated int32 test = 5 [packed=true];
+
+  **optional Profile profile = 6;**
+
+  extensions 10 to max;
+}
+```
+
+我标记了新增的协议部分，完整内容见: https://github.com/owent-contrib/pbc/blob/master/test/addressbook.proto 。然后 binding/lua/testparser.lua 里多加一个对比数据
+
+```lua
+local addressbook1 = {
+	name = "Alice",
+	id = 12345,
+	phone = {
+		{ number = "1301234567" },
+		{ number = "87654321", type = "WORK" },
+		{ number = "13912345678", type = "MOBILE" },
+	},
+	email = "username@domain.com"
+}
+
+local addressbook2 = {
+	name = "Bob",
+	id = 12346,
+	phone = {
+		{ number = "1301234568" },
+		{ number = "98765432", type = "HOME" },
+		{ number = "13998765432", type = "MOBILE" },
+	}
+}
+
+
+code1 = protobuf.encode("tutorial.Person", addressbook1)
+code2 = protobuf.encode("tutorial.Person", addressbook2)
+
+decode1 = protobuf.decode("tutorial.Person" , code1)
+
+-- BUG [ISSUE#27](https://github.com/cloudwu/pbc/issues/27)
+decode1.profile.nick_name = "AHA"
+decode1.profile.icon = "id:1"
+
+decode2 = protobuf.decode("tutorial.Person" , code2)
+
+function print_addr(decoded)
+	print(string.format('ID: %d, Name: %s, Email: %s', decoded.id, decoded.name, tostring(decoded.email)))
+	if decoded.profile then
+		print(string.format('\tNickname: %s, Icon: %s', tostring(decoded.profile.nick_name), tostring(decoded.profile.icon)))
+	end
+	for k, v in ipairs(decoded.phone) do
+		print(string.format("\tPhone NO.%s: %16s %s", k, v.number, tostring(v.type)))
+	end
+end
+
+print_addr(decode1)
+print_addr(decode2)
+```
+
+完整内容见: https://github.com/owent-contrib/pbc/blob/master/binding/lua/testparser.lua
+
+输出的内容如下
+```
+$ lua5.1 testparser.lua
+ID: 12345, Name: Alice, Email: username@domain.com
+        Nickname: AHA, Icon: id:1
+        Phone NO.1:       1301234567 HOME
+        Phone NO.2:         87654321 WORK
+        Phone NO.3:      13912345678 MOBILE
+ID: 12346, Name: Bob, Email:
+        Nickname: AHA, Icon: id:1
+        Phone NO.1:       1301234568 HOME
+        Phone NO.2:         98765432 HOME
+        Phone NO.3:      13998765432 MOBILE
+```
+
+第二个地址簿的Profile字段不应该有内容
+
+Fix it
+------
+接下来就是修这个BUG了，前面已经说了是改掉了默认table。首先因为要向前兼容，之前提到的两个feature不能破坏掉，其次还要尽可能减少只读情况下的消耗。那么有一个简单的实现方式，那就是和我之前写得一个小函数类似。
+https://github.com/owent-utils/lua/blob/master/src/utils/class.lua 里的**class.protect**
+
+这个功能大致是新建一个table，然后把metatable的__index指向原来的table。那么访问的时候如果没有改变过数据，会访问原来的table，然后如果有修改，也不会修改原table里的数据。代码改动如下:
+
+```lua
+local function default_table(typename)
+    local v = default_cache[typename]
+    if v then
+        return v
+    end
+    local default_inst = assert(decode_message(typename , ""))
+    v = {
+        __index = function(tb, key)
+            local ret = default_inst[key]
+            if 'table' ~= type(ret) then
+                return ret
+            end
+            ret = setmetatable({}, { __index = ret })
+            rawset(tb, key, ret)
+            return ret
+        end
+    }
+    default_cache[typename]  = v
+    return v
+end
+```
+这里新建了两个table，其中一个作为metatable。之所以不走“只建立一个table并把__index设为自己”这种方式。是因为在我们的代码中很多情况是解包的数据改一改然后直接又扔给pbc作打包了。那么这时候就不想新增这个莫名其妙的__index字段。
+
+改完以后上面的test输出如下:
+```
+$ lua5.1 testparser.lua
+ID: 12345, Name: Alice, Email: username@domain.com
+        Nickname: AHA, Icon: id:1
+        Phone NO.1:       1301234567 HOME
+        Phone NO.2:         87654321 WORK
+        Phone NO.3:      13912345678 MOBILE
+ID: 12346, Name: Bob, Email:
+        Nickname: , Icon:
+        Phone NO.1:       1301234568 HOME
+        Phone NO.2:         98765432 HOME
+        Phone NO.3:      13998765432 MOBILE
+Alice   123
+Phone:      18612345678 HOME
+```
+
+这样的话，仅仅在尝试解包不存在的数据时会又一次RTTI的开销和两个table的开销。而如果数据存在的话，开销和之前没有变化，我觉得还是可以接受的。
+另外 https://github.com/cloudwu/pbc/issues/27 里提到的BUG也就没有了。
+
+后记
+------
+这个fix已经推送给云风 https://github.com/cloudwu/pbc/pull/80 ，然而他说不想做得更复杂和建议做深拷贝，而不是这种方式，所以没有merge。
+但是做深拷贝确实开销会比较大，感觉得不偿失。同时
+这个BUG很容带来使用者的误解而且容易遗漏。因为一个不正确的数据往往不会立即引发问题，而是绕了好几轮以后才发现。所以目前我们的client的pbc还是使用这个打了patch的分支。
+
+分支地址是： https://github.com/owent-contrib/pbc/

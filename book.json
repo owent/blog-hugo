@@ -1,0 +1,21 @@
+{
+    "title": "OWenT's Blog Articles",
+    "description": "Most of articles in my blog are also posted here.",
+    "plugins": [
+        "mathjax",
+        "etoc-plus"
+    ],
+    "pluginsConfig": {
+        "etoc-plus": {
+            "mindepth": 1,
+            "maxdepth": 4,
+            "notoc": false,
+            "header": 1,
+            "translit": false
+        },
+        "mathjax": {
+            "forceSVG": true
+        }
+    },
+    "language": "zh-hans"
+}

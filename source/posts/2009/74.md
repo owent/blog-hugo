@@ -1,0 +1,80 @@
+---
+title: 最长单调子序列 复杂度nlog(n)
+tags:
+  - acm
+  - template
+id: 74
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2009-09-16 04:44:59
+---
+
+```cpp
+//最长单调子序列 复杂度nlog(n)
+//参数(原序列,序列长度,生成的序列),传入序列长度必须大于0
+//返回值中lengthRecord中前k项表示长度为k的最小字序列
+//LIScmp为关系函数,原函数表明lengthRecord为递增(不含等于)
+typedef double LISTYPE;
+#define LISMAXN 10000
+int LIScmp(LISTYPE a,LISTYPE b)
+{
+    return a < b;
+}
+long LISLength(LISTYPE list[],long n,LISTYPE lengthRecord[])
+{
+    long length = 1,lth;
+    LISTYPE lR[LISMAXN];
+    lR[0] = list[0];
+
+    for(int i = 1 ; i < n ; i ++)
+    {
+        //二分查找,复杂度 log(n)
+        int b,e,m;
+        b = 0;
+        e = length - 1;
+        while(b <= e && e >= 0)
+        {
+            m = (b + e) / 2;
+            if(LIScmp(lR[m],list[i]))
+                b = m + 1;
+            else
+                e = m - 1;
+        }
+        lR[b] = list[i];
+        if(b >= length)
+            length ++;
+    }
+    /*
+    *计算序列部分
+    *复杂度nlog(n)
+    */
+    lth = 1;
+    for(int i = 1 ; i < n ; i ++)
+    {
+        //二分查找,复杂度 log(n)
+        int b,e,m;
+        b = 0;
+        e = lth - 1;
+        while(b <= e && e >= 0)
+        {
+            m = (b + e) / 2;
+            if(LIScmp(lR[m],list[i]))
+                b = m + 1;
+            else
+                e = m - 1;
+        }
+        lR[b] = list[i];
+        if(b >= lth)
+            lth ++;
+        if(lth == length)
+        {
+            for(b = 0 ; b < length ; b ++)
+                lengthRecord[b] = lR[b];
+            break;
+        }
+    }
+    //计算序列部分代码与之前的类似,可以直接Copy然后修改
+    return length;
+}
+```

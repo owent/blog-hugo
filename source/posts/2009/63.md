@@ -1,0 +1,105 @@
+---
+title: POJ PKU 1990 MooFest 解题报告
+tags:
+  - acm
+  - pku
+  - poj
+id: 63
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2009-12-23 14:12:52
+---
+
+为什么我用线段数这么不灵活呢？
+
+大概思路是线段数记录某牛之前的坐标小于这个牛的牛的坐标和和牛的个数
+
+然后其他部分线性数组记录
+
+OK，贴代码
+
+```cpp
+#include <iostream>
+#include <cstdio>
+#include <cstring>
+#include <algorithm>
+using namespace std;
+
+#define MAXN 20005
+class cow
+{
+public:
+    int v;
+    int pos;
+    cow(){};
+    ~cow(){};
+};
+
+bool cmp(cow a,cow b)
+{
+    return a.v < b.v;
+}
+cow cw[MAXN];
+long long belowXNT[MAXN];//树状数组，保存小于等于某坐标的牛的个数,计算时使用
+long long belowXN[MAXN];//一般数组，保存小于等于某坐标和索引的牛的个数
+long long velowXRT[MAXN];//树状数组，保存索引小于等于某的牛且坐标也小于它的牛的坐标之和,计算时使用
+long long velowXR[MAXN];//一般数组，保存索引小于等于某的牛且坐标也小于它的牛的坐标之和
+long long velowXRA[MAXN];//一般数组，保存小于等于某牛的坐标之和
+
+int lowbit(int t)
+{
+    return t&(t^(t-1));
+}
+void setVal(int pos, int num, long long treeG[], int maxn)
+{
+    while (pos <= maxn)
+    {
+        treeG[pos] += num;
+        pos += lowbit(pos);
+    }
+}
+long long getSum(int pos, long long treeG[])
+{
+    long long sum = 0;
+    while (pos > 0)
+    {
+        sum += treeG[pos];
+        pos -= lowbit(pos);
+    }
+    return sum;
+}
+
+
+
+int main()
+{
+    int i,n;
+    long long output = 0;
+    memset(belowXN, 0, sizeof(belowXN));
+    memset(belowXNT, 0, sizeof(belowXN));
+    memset(velowXR, 0, sizeof(velowXR));
+    memset(velowXRA, 0, sizeof(velowXRA));
+    memset(velowXRT, 0, sizeof(velowXRT));
+    scanf("%d",&n);
+    for(i = 0 ; i < n ; i ++)
+        scanf("%d %d", &cw[i].v, &cw[i].pos);
+
+    sort(cw, cw + n, cmp);
+    for(i = 0 ; i < n ; i ++)
+    {
+        velowXRA[i] = velowXRA[i - 1] + cw[i].pos;
+        setVal(cw[i].pos, 1, belowXNT, MAXN);
+        setVal(cw[i].pos, cw[i].pos, velowXRT, MAXN);
+        velowXR[i] = getSum(cw[i].pos, velowXRT);
+        belowXN[i] = getSum(cw[i].pos, belowXNT);
+    }
+
+    for(i = 1 ; i < n ; i ++)
+        //output += cw[i].v * ((belowXN[i] - 1) * cw[i].pos - velowXR[i] + cw[i].pos + velowXRA[i] - velowXR[i] - (i - belowXN[i] + 1) * cw[i].pos);
+        output += cw[i].v * ((belowXN[i] - i + belowXN[i] - 1 ) * cw[i].pos - 2 * velowXR[i] + velowXRA[i]);//这里是上面式子的简化版
+
+    printf("%lld\n",output);
+    return 0;
+}
+```

@@ -1,0 +1,126 @@
+---
+title: POJ PKU 2155 Matrix 解题报告
+tags:
+  - acm
+  - pku
+  - poj
+id: 47
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-04-05 11:01:59
+---
+
+这道题是我专门为了了解和学习树状数组而写的
+
+这题用树状数组记录翻转次数,然后mod一个2,也可以不断地取反
+
+还要用到二维的树状数组.于是我专门写了个模板用
+
+题目链接:[http://acm.pku.edu.cn/JudgeOnline/problem?id=2155](http://acm.pku.edu.cn/JudgeOnline/problem?id=2155)
+
+题意大致是输入语句,Q表示要求输出A(x,y)是1还是0.C表示把(x1,y1)-&gt;(x2,y2)间的矩形中所有元素的1变成0,0变成1
+
+开始我试过一维树状数组+线性.结果TLE.无奈写了个二维的400+ms
+
+贴代码:
+
+```cpp
+#include<iostream>
+using namespace std;
+
+
+//树状数组模块
+//基于0,Based 0
+typedef long DG_Ran;
+typedef long DG_Num;
+const DG_Num DG_MAXN = 1005;
+
+//2^n
+DG_Num LowBit(DG_Num n)
+{
+    return n & (-n);
+}
+//获取父节点索引
+DG_Num DGFather(DG_Num n)
+{
+    return n + LowBit(n + 1);
+}
+//获取小的兄弟节点索引
+DG_Num DGBrother(DG_Num n)
+{
+    return n - LowBit(n + 1);
+}
+void DGDown2(DG_Ran g[][DG_MAXN],DG_Num x ,DG_Num y,DG_Ran av);
+DG_Ran DGCUp2(DG_Ran g[][DG_MAXN],DG_Num x ,DG_Num y , DG_Num n);
+
+DG_Ran teg[DG_MAXN][DG_MAXN];
+int main()
+{
+    int x;
+    long n,t,x1,y1,x2,y2,i,j;
+    char cmd;
+    scanf("%d",&x);
+    while(x --)
+    {
+        scanf("%ld %ld",&n,&t);
+        for(i = 0 ; i < n ; i ++)
+            for(j = 0 ; j < n ; j ++)
+                teg[i][j] = 0;
+        while(t --)
+        {
+            getchar();
+            scanf("%c",&cmd);
+            if(cmd == 'Q')
+            {
+                scanf("%ld %ld",&x1,&y1);
+                printf("%ld\n",DGCUp2(teg,x1 - 1,y1 - 1,n) % 2);
+            }
+            else
+            {
+                scanf("%ld %ld %ld %ld",&x1,&y1,&x2,&y2);
+                DGDown2(teg,x2 - 1,y2 - 1,1);
+                DGDown2(teg,x1 - 2,y2 - 1,-1);
+                DGDown2(teg,x2 - 1,y1 - 2,-1);
+                DGDown2(teg,x1 - 2,y1 - 2,1);
+            }
+        }
+        if(x)
+            putchar('\n');
+    }
+    return 0;
+}
+
+//树状数组的翻转
+//二维  复杂度(log(n))^2
+//小于等于指定位置的元素操作(0,0)->(x,y)
+void DGDown2(DG_Ran g[][DG_MAXN],DG_Num x ,DG_Num y,DG_Ran av)
+{
+    while(x >= 0)
+    {
+        DG_Num tmp = y;
+        while (tmp >= 0)
+        {
+            g[x][tmp] += av;
+            tmp = DGBrother(tmp);
+        }
+        x = DGBrother(x);
+    }
+}
+//获取大于等于pos位置的元素翻转次数的和
+DG_Ran DGCUp2(DG_Ran g[][DG_MAXN],DG_Num x ,DG_Num y , DG_Num n)
+{
+    DG_Ran t = 0;
+    while(x < n)
+    {
+        DG_Num tmp = y;
+        while (tmp < n)
+        {
+            t += g[x][tmp];
+            tmp = DGFather(tmp);
+        }
+        x = DGFather(x);
+    }
+    return t;
+}
+```

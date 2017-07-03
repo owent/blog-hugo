@@ -1,0 +1,125 @@
+---
+title: C++ 新特性学习（六） — 新的字符串编码和伪随机数
+tags:
+  - c++0x/11
+  - c++11
+  - 伪随机数
+  - 统计学
+  - 编码
+  - 随机数
+id: 560
+categories:
+  - Article
+  - Blablabla
+date: 2012-02-27 05:37:59
+---
+
+其实这个部分是我觉得最没用的部分
+
+## 新的字符编码
+
+**注：这部分仅测过GCC，VS暂不支持**
+
+在旧的标准C++中支持两种字符编码。
+
+直接使用””将产生const char。
+
+使用L””将产生const wchar。
+
+新标准中增加了三种，即UTF-8、UTF-16和UTF-32。
+
+使用u8″”为能至少储存UTF-8的8位元编码。
+
+使用u””为能至少储存UTF-16的16位元编码,对应’\u’表示16位元的字符。
+
+使用U””为能至少储存UTF-32的32位元编码,对应’\U’表示16位元的字符。
+
+```cpp
+printf("%d\n", sizeof(  "This is a UTF-8 string. ")); // 类别是const char[]
+printf("%d\n", sizeof(u8"This is a UTF-8 string. ")); // 类别是const char[]
+printf("%d\n", sizeof( u"This is a UTF-16 string.")); // 类别是const char16_t[]
+printf("%d\n", sizeof( U"This is a UTF-32 string.")); // 类别是const char32_t[]
+```
+
+另外，未加工字符串面值没看懂有什么用,申明方法是R”标识符(字符串)标识符”，并且这里的字符串的”和\是不需要转义的。同时可以和上面的合用。如：
+
++ u8R”XXX(I’m a “raw UTF-8″ string.)XXX”
++ uR”OWenT(This is a “raw UTF-16″ string.)OWenT”
++ UR”(This is a “raw UTF-32″ string.)”
+
+```cpp
+// 这两行代码输出一样,都是 I'm OWenT \ "OWenT" is a ID.
+puts(R"I'm OWenT \ "OWenT" is a ID.)");
+puts(R"OWenT(I'm OWenT \ "OWenT" is a ID.)OWenT");
+```
+
+这个东西总感觉没什么用，只是限定了字符的长度。而目前输入和输出都不能直接操作这些编码。也就是关键的部分还得自己来。
+ 
+## 伪随机数
+这个库主要是提供了多钟生成符合统计学里各种分布的随机数和随机数生成引擎，这部分我觉得不怎么用得上所以只是大略看了一下，下面是我看的时候做的记录。
+
+C++11 的随机数功能分为两部分： 第一，一个乱数生成引擎，其中包含该生成引擎的状态，用来产生乱数。第二，一个分布，这可以用来决定产生乱数的范围，也可以决定以何种分布方式产生乱数。乱数生成对象即是由乱数生成引擎和分布所构成。
+
+C++11 将会提供三种随机数算法，每一种算法都有其强项和弱项:
+
+ 模板类 | 整数/浮点数 | 品质 | 速度 | 状态数 |
+-------|-----------|------|-----|-------|
+linear_congruential | 整数 | 低 | 中等 | 1 |
+subtract_with_carry | 两者皆可 | 中等 | 快 | 25 |
+mersenne_twister | 整数 | 佳 | 快 | 624 |
+
+### 随机数引擎预设类
+
+  类名 | 定义 |
+------|------|
+minstd_rand0 | std::linear_congruential_engine<uint_fast32_t, 16807, 0, 2147483647> |
+minstd_rand | std::linear_congruential_engine<uint_fast32_t, 48271, 0, 2147483647> |
+mt19937 | std::mersenne_twister_engine<uint_fast32_t, 32, 624, 397, 31, 0x9908b0df, 11, 0xffffffff, 7, 0x9d2c5680, 15, 0xefc60000, 18, 1812433253> |
+mt19937_64 | std::mersenne_twister_engine<uint_fast64_t, 64, 312, 156, 31, 0xb5026f5aa96619e9, 29,0x5555555555555555, 17, 0x71d67fffeda60000, 37, 0xfff7eee000000000, 43, 6364136223846793005> |
+ranlux24_base | std::subtract_with_carry_engine<uint_fast32_t, 24, 10, 24> |
+ranlux48_base | std::subtract_with_carry_engine<uint_fast64_t, 48, 5, 12> |
+ranlux24 | std::discard_block_engine<ranlux24_base, 223, 23> |
+ranlux48 | std::discard_block_engine<ranlux48_base, 389, 11> |
+knuth_b | std::shuffle_order_engine<minstd_rand0, 256> |
+default_random_engine | implementation-defined |
+
+### 分布类
+
+####  Uniform distributions (离散型均匀分布)
++ uniform_int_distribution
++ uniform_real_distribution
++ generate_canonical
+
+#### Bernoulli distributions (伯努利分布)
++ bernoulli_distribution
++ binomial_distribution
++ negative_binomial_distribution
++ geometric_distribution
+
+#### Poisson distributions (卜瓦​松分布)
++ poisson_distribution
++ exponential_distribution
++ gamma_distribution
++ weibull_distribution
++ extreme_value_distribution
+
+#### Normal distributions (正态分布)
++ normal_distribution
++ lognormal_distribution
++ chi_squared_distribution
++ cauchy_distribution
++ fisher_f_distribution
++ student_t_distribution
+
+#### Sampling distributions (抽样​分布)
++ discrete_distribution
++ piecewise_constant_distribution
++ piecewise_linear_distribution
+
+至于调用方法嘛，类似下面这样
+
+```cpp
+std::uniform_int_distribution<int> distribution(0, 99); // [0, 99)的离散均匀分布
+std::mt19937 engine; // 随机数引擎
+int random = distribution (engine);  // 产生随机数
+```

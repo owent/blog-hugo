@@ -1,0 +1,49 @@
+---
+title: C++ 标准过渡期
+tags:
+  - BOOST
+  - c++0x/11
+  - c++11
+  - STL
+  - tr1
+id: 643
+categories:
+  - Article
+  - Work
+date: 2012-08-23 06:05:20
+---
+
+C++11的新标准已经出台，各个编译器已经开始陆续支持。
+主流编译器支持程度见(VC++, gcc, clang, intel c++等)：[http://en.cppreference.com/w/cpp/compiler_support](http://en.cppreference.com/w/cpp/compiler_support)
+
+但是要让C++11应用与生产环境还需时日，所以就在这里记录一下在过渡时期可能用到的一些重要功能
+
+## smart_ptr.h
+
+https://github.com/atframework/atframe_utils/blob/master/include/std/smart_ptr.h
+
+## functional.h
+
+https://github.com/atframework/atframe_utils/blob/master/include/std/functional.h
+
+## tuple.h
+
+https://github.com/atframework/atframe_utils/blob/master/include/std/tuple.h
+
+## array.h
+
+https://github.com/atframework/atframe_utils/blob/master/include/std/array.h
+
+## utility.h
+
+https://github.com/atframework/atframe_utils/blob/master/include/std/utility.h
+
+## foreach.hpp
+
+https://github.com/atframework/atframe_utils/blob/master/include/std/foreach.h
+
+foreach的实现参考了BOOST_FOREACH，肯定没它的在不同编译器上的兼容性好
+如果项目使用了Boost还是建议定义 **FOREACH_WITH_BOOST_HPP **宏来转向Boost里的foreach函数
+如果有任何Bug欢迎 mailto: [owt5008137@live.com](mailto:owt5008137@live.com?subject=C%2B%2B%20%E6%A0%87%E5%87%86%E8%BF%87%E6%B8%A1%E5%A4%B4%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98%E5%8F%8D%E9%A6%88&amp;body=%E8%AF%B7%E5%A1%AB%E5%85%A5%E9%97%AE%E9%A2%98%E6%88%96%E5%8F%8D%E9%A6%88%E7%9A%84%E5%86%85%E5%AE%B9)
+
+Licensed under the [MIT](http://www.owent.net/license/MIT-LICENSE.txt) or [GPL Version 3](http://www.owent.net/license/GPL-LICENSE.txt) licenses.

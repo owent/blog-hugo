@@ -1,0 +1,83 @@
+---
+title: POJ 3267 The Cow Lexicon 解题报告
+tags:
+  - acm
+  - pku
+  - poj
+id: 90
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2009-07-15 15:51:39
+---
+
+[POJ 3267 The Cow Lexicon](http://acm.pku.edu.cn/JudgeOnline/problem?id=3267)
+
+  这题是一道DP问题,我的想法如下:
+
+  1.可以令
+  deleteNum[pos]为输入字符串在pos处需要删除的最少字符数量;
+
+  2.如果输入字符串长度为len,则初始化deleteNum[len] = 0;(字符串由0开始计数)
+
+  3.对deleteNum[pos]初始化后,可以对每个单词计算;
+
+  4.如果单词长度为lenWord且从当前位置(pos处)开始能够和单词匹配则:
+
+  deleteNum[pos]=min{deleteNum[pos],deleteNum[pos + 1] +1,deleteNum[pos + lenWord] + N}
+
+  其中第一个为原始值,第二个为未匹配时的值,第三个为匹配单词后的删除字符数,N为从pos匹配这个单词需要删除的字符数
+
+  5.如果不能匹配单词
+  deleteNum[pos]=min{deleteNum[pos],deleteNum[pos + 1] +1}解释如上;
+
+  6.deleteNum[0]则是要输出的数量
+
+这是小弟个人意见,还望指正批评
+
+代码如下:
+
+```cpp
+#include<iostream>
+#include<cstring>
+using namespace std;
+char words[601][30];
+char str[301];
+int deleteNum[301];
+int minOfThree(int a,int b,int c);
+int main()
+{
+    int w,l;
+    cin>>w>>l;
+    cin>>str;
+    for(int i = 0 ; i < w ; i ++)
+        scanf("%s",words[i]);
+    int len = strlen(str);
+    deleteNum[len] = 0;
+    for(int i = len - 1 ; i >= 0 ; i --)
+    {
+        deleteNum[i] = 301;
+        for(int j = 0 ; j < w ; j ++)
+        {
+            int isMatch = 0;
+            int posWord = 0,posStr = i;
+            while(words[j][posWord] && posStr < len)
+            {
+                if(words[j][posWord] == str[posStr])
+                    posWord ++;
+                posStr ++;
+            }
+            if(!words[j][posWord])
+                deleteNum[i] = minOfThree(deleteNum[i],deleteNum[i + 1] + 1,deleteNum[posStr] + posStr - i - posWord);
+            else
+                deleteNum[i] = (deleteNum[i] < deleteNum[i + 1] + 1)?deleteNum[i]:deleteNum[i + 1] + 1;
+        }
+    }
+    cout<<deleteNum[0];
+    return 0;
+}
+int minOfThree(int a,int b,int c)
+{
+    return (a < b && a < c)?a:(b < c)?b:c;
+}
+```

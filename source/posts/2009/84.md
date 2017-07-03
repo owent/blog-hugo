@@ -1,0 +1,316 @@
+---
+title: 'ECUST 09年 校赛个人赛第三场部分解题报告(A,D,F,I)'
+tags:
+  - acm
+  - ecust
+  - eoj
+id: 84
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2009-07-30 09:58:51
+---
+
+校赛个人赛第三场部分解题报告（A,D,F,I）
+
+这次我完成了四道题分别是A,D,F,I
+
+一大半时间我都花在了A上，我犯了很究级的错误
+
+首先是VC6.0的algorithm里没有min函数，而我用min做变量名导致CE4次，找了半天才找出来
+
+其次是我的最短路算法中错误和初始化错误交替出现导致的6次WA
+
+## A. The K-th City
+
+A题的大意是给出几个城市之间的距离，要求算出第k远的城市因为数据量较小，可以用floyd或dijkstra算法
+
+floyd版： 
+
+```cpp
+#include<iostream>
+#include<algorithm>
+using namespace std;
+struct Pos
+{
+    long pos;
+    long dis;
+};
+bool cmpFun(Pos a,Pos b)
+{
+    if(a.dis == b.dis)
+        return a.pos < b.pos;
+    else
+        return a.dis < b.dis;
+}
+Pos pos[201];
+long mini[201][201];
+int main()
+{
+    long n,m;
+    while(cin>>n,n)
+    {
+        cin>>m;
+    int i,j,k;
+    for(i = 0 ; i < n ; i ++)
+    {
+        mini[i][i] = 0;
+    for(j = i + 1 ; j < n ; j ++)
+        mini[i][j] = mini[j][i] = 100000000;
+    }
+    while(m --)
+    {
+        scanf("%d %d %d",&i,&j,&k);
+        if(mini[i][j] > k)
+        mini[i][j] = mini[j][i] = k;
+    }
+    for (k=0;k<n;k++)
+        for (i=0;i<n;i++)
+            for (j=0;j<n;j++)
+                if (mini[i][k]+mini[k][j]<mini[i][j])
+                    mini[i][j] = mini[j][i] =mini[i][k]+mini[k][j];
+    for(i = 1 ; i < n ; i ++)
+    {
+        pos[i - 1].pos = i;
+        pos[i - 1].dis = mini[0][i];
+    }
+    sort(pos,pos + n - 1 ,cmpFun);
+    cin>>i;
+    cout<<pos[i - 1].pos<<" "<<pos[i - 1].dis<<endl;
+    }
+    return 0;
+}
+```
+
+dijkstra版:
+
+```cpp
+#include<iostream>
+#include<algorithm>
+using namespace std;
+#define MAXN 201
+#define inf 1000000000
+typedef long elem_t;
+void dijkstra(int n,elem_t mat[][MAXN],int s,elem_t* minNum,int* pre){
+    int v[MAXN],i,j,k;
+    for (i=0;i<n;i++)
+        minNum[i]=inf,v[i]=0,pre[i]=-1;
+    for (minNum[s]=0,j=0;j<n;j++){
+        for (k=-1,i=0;i<n;i++)
+            if (!v[i]&&(k==-1||minNum[i]<minNum[k]))
+                k=i;
+        for (v[k]=1,i=0;i<n;i++)
+            if (!v[i]&&minNum[k]+mat[k][i]<minNum[i])
+                minNum[i]=minNum[k]+mat[pre[i]=k][i];
+    }
+}
+struct Pos
+{
+    long pos;
+    long dis;
+};
+bool cmpFun(Pos a,Pos b)
+{
+    if(a.dis == b.dis)
+        return a.pos < b.pos;
+    else
+        return a.dis < b.dis;
+}
+Pos pos[MAXN];
+long matNum[MAXN][MAXN];
+long mini[MAXN];
+int preNode[MAXN];
+int main()
+{
+    long n,m;
+    while(cin>>n,n)
+    {
+        cin>>m;
+        int i,j,k;
+
+        for(i = 0 ; i < n ; i ++)
+            for(j = 0 ; j < n ; j ++)
+                matNum[i][j] = inf;
+        while(m --)
+        {
+            scanf("%d %d %d",&i,&j,&k);
+            matNum[i][j] = matNum[j][i] = k;
+        }
+        dijkstra(n,matNum,0,mini,preNode);
+        for(i = 1 ; i < n ; i ++)
+        {
+            pos[i - 1].pos = i;
+            pos[i - 1].dis = mini[i];
+        }
+        sort(pos,pos + n - 1 ,cmpFun);
+        cin>>i;
+        cout<<pos[i - 1].pos<<endl;
+    }
+    return 0;
+}
+```
+
+## D. City Mapping
+
+D题是按输入的方向走，输出走过的路径和路径的模式（横向街道，纵向街道，十字路口）
+
+这题只要纯模拟就能过
+
+代码：
+
+```cpp
+#include<iostream>
+#include<cstring>
+using namespace std;
+int strees[201][201][2];
+int main()
+{
+    long m,n,i,j,k;
+    long posX,posY;
+    long t = 1,tmpInt;
+    char cmd[10];
+    while(cin>>m>>n>>i,m || n || i)
+    {
+        memset(strees,0,sizeof(strees));
+        posX = posY = 0;
+        printf("Scenario #%ld:\n" , t ++);
+        while(i --)
+        {
+            scanf("%s %d",cmd,&tmpInt);
+            if(!strcmp(cmd,"South"))
+            {
+                for( j = posY ; j <= posY + tmpInt ; j ++)
+                    strees[posX][j][1] = 1;
+                posY = j - 1;
+            }
+            else if(!strcmp(cmd,"North"))
+            {
+                for( j = posY ; j >= posY - tmpInt ; j --)
+                    strees[posX][j][1] = 1;
+                posY = j + 1;
+            }
+            else if(!strcmp(cmd,"West"))
+            {
+                for( j = posX ; j >= posX - tmpInt ; j --)
+                    strees[j][posY][0] = 1;
+                posX = j + 1;
+            }
+            else if(!strcmp(cmd,"East"))
+            {
+                for( j = posX ; j <= posX + tmpInt ; j ++)
+                    strees[j][posY][0] = 1;
+                posX = j - 1;
+            }
+        }
+        for(j = 0 ; j < m ; j ++)
+        {
+            for(k = 0 ; k < n ; k ++)
+                if(strees[k][j][0] && strees[k][j][1])
+                    printf("+");
+                else if(strees[k][j][0])
+                    printf("-");
+                else if(strees[k][j][1])
+                    printf("|");
+                else
+                    printf(".");
+            printf("\n");
+        }
+    }
+    return 0;
+}
+```
+
+## F. Tetris
+
+F是简单的俄罗斯方块：
+
+要求按顺序输入方块的其始位置和终点位置，算出最高点
+
+这题可以列一个转移方程，
+
+令第i个方块的最高点为a[i]
+
+=> a[i] = max{a[k] + h[i]}其中h[i]为第i个方块的高度，k<i,且k满足s[i] <= e[k] && e[i] >= s[k]
+
+或 s[i] <= s[k] && e[i] >= e[k]
+
+代码如下：
+
+```cpp
+#include<iostream>
+using namespace std;
+long s[1001],e[1001],h[1001];
+long posH[1001];
+int main()
+{
+    long n,w;
+    while(cin>>n>>w , n || w)
+    {
+        int i,j;
+        for(i = 0 ; i < n ; i ++)
+            scanf("%ld %ld %ld",&s[i],&e[i],&h[i]);
+        memset(posH,0,sizeof(posH));
+        long maxInt = 0,tmpInt;
+        for(i = 0 ; i < n ; i ++)
+        {
+            tmpInt = h[i];
+            for(j = 0 ; j < i ; j ++)
+            {
+                if((s[i] <= e[j] && e[i] >= s[j]
+                  || s[i] <= s[j] && e[i] >= e[j])
+                  && tmpInt < posH[j] + h[i])
+                    tmpInt = posH[j] + h[i];
+            }
+            posH[i] = tmpInt;
+        }
+        for(i = 0 ; i < n ; i ++)
+            if(maxInt < posH[i])
+                maxInt = posH[i];
+        cout<<maxInt<<endl;
+    }
+    return 0;
+}
+```
+
+
+## I. Girl Friend
+
+I题比较有意思，是帮一个倒霉孩子找女朋友，要求概率*好感度（暂且这么翻译吧）
+
+这是DP问题，令每个女孩的好感度为s[i],成为女朋友的概率为pl[i],第一个见面的美女的最大好感度为a[i]
+
+=>a[i] = max{a[i + 1] * (1 – pl[i]) + s[i] * pl[i] , a[i + 1]}复杂度O(n)
+
+具体代码如下：
+
+```cpp
+#include<iostream>
+using namespace std;
+double a[100001],pl[100001];
+double s[100001];
+int main()
+{
+    int n;
+    while(cin>>n,n)
+    {
+        long i;
+        for(i = 0 ; i < n ; i ++)
+        {
+            scanf("%lf %lf",&pl[i],&s[i]);
+            pl[i] /= 100;
+        }
+        a[n - 1] = s[n - 1] * pl[n - 1];
+        for(i = n - 2 ; i >=0 ; i --)
+            if(a[i + 1] * (1.0 - pl[i]) + pl[i] * s[i] > a[i + 1])
+                a[i] = a[i + 1] * (1 - pl[i]) + pl[i] * s[i];
+            else
+                a[i] = a[i + 1];
+        double output = 0;
+        for(i = 0 ; i < n ; i ++)
+            if(output < a[i])
+                output = a[i];
+        printf("%.2lf\n",output);
+    }
+    return 0;
+}
+```

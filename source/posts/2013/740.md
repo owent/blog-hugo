@@ -1,0 +1,57 @@
+---
+title: Lnmp yum 安装脚本 (for CentOS)
+tags:
+  - centos
+  - epel
+  - install
+  - linux
+  - lnmp
+  - mysql
+  - nginx
+  - PHP
+  - php-fpm
+  - remi
+  - rpm
+  - rpmforge
+  - rpmfusion
+  - software source
+  - yum
+  - 安装
+  - 软件源
+id: 740
+categories:
+  - Article
+  - Collection
+date: 2013-04-15 09:50:29
+---
+
+心情大好，给VPS升级了一下系统，然后自己配了LNMP安装脚本，用yum源安装的话更新比较方便点哈
+​​这个过程挺麻烦啊，所以果断要记下来，以防以后要用到
+如果是其他系统的话，几个配置路径和软件源地址还有yum指令替换掉，应该就可以了
+
+脚本托管在： [https://github.com/owent-utils/bash-shell/tree/master/LNMP](https://github.com/owent-utils/bash-shell/tree/master/LNMP)
+如果有什么更新的话也会在这里。
+
+# 源码如下
+
+<div>[gist id="9658751"]</div>
+
+# 顺带记一下几个软件源
+
+1.  <span style="color: #800000;">**EPEL源**</span>, 由 Fedora 社区创建维护，为 RHEL 及衍生发行版如 CentOS、Scientific Linux 等提供高质量软件包的项目. [http://mirrors.fedoraproject.org/publiclist/EPEL/](http://mirrors.fedoraproject.org/publiclist/EPEL/)
+2.  <span style="color: #800000;">**Remi源**</span>, 里面是茫茫多最新稳定版的软件包，不过有时候太新了可能软件不支持(比如PHP 5.4刚出的时候Wordpress就不支持). [http://rpms.famillecollet.com/](http://rpms.famillecollet.com/)
+3.  <span style="color: #800000;">**RPMForge源**</span>, 据说是最稳定的软件源，这个安装脚本里用得也是这个. [http://repoforge.org/](http://repoforge.org/)
+4.  <span style="color: #800000;">**RPMFusion源**</span>, 据CentOS官方说没RPMForge稳定. [http://rpmfusion.org/](http://rpmfusion.org/)
+5.  <span style="color: #800000;">**ELRepo源**</span>, 用于CentOS/Redhat的硬件和底层相关的源，比如显卡驱动啊什么的。 [http://elrepo.org/](http://elrepo.org/)
+
+```sh
+# 同步软件源命令
+rsync -avrt rsync://支持同步的软件源地址 [其他选项]
+# 如，同步CentOS 6.3的非debug，非系统镜像，且不包含i386的软件源
+rsync -avrt rsync://mirrors.tuna.tsinghua.edu.cn/centos/6.3/ --exclude=debug/ --exclude=isos/ --exclude=*/i386/ 
+
+# 创建软件仓库命令 
+createrepo [PATH]
+如:
+createrepo /data/htdocs/repo
+```

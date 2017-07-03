@@ -1,0 +1,90 @@
+---
+title: Gitlab环境搭建小计
+tags:
+  - git
+  - gitlab
+  - 仓库
+  - 版本控制
+id: 1110
+categories:
+  - Article
+  - Blablabla
+  - Work
+date: 2014-10-20 11:13:43
+---
+
+最近给公司搭建Gitlab作源代码管理工具
+满满都是坑呐。
+
+Gitlab 开源仓库软件包官方地址: [https://about.gitlab.com/](https://about.gitlab.com/)
+
+[https://about.gitlab.com/downloads/](https://about.gitlab.com/downloads/) 这里有各个Linux分支的安装包，下面的说明笔记齐全，直接使用比较简单。
+
+我的安装环境是 **CentOS 7.0 x86_64**
+目测Gitlab包会把自己安装在 /opt/gitlab 下，然后/usr/bin/gitlab-*的几个文件软链接到/opt/gitlab/bin/gitlab-*，释放初始配置到/etc/gitlab目录
+执行 gitlab-ctl reconfigure之后，在/var/opt/gitlab 下保存配置和数据
+
+gitlab实际上里面包含了很多东西，rails、redis、nginx、ruby等，如果有自己的相应服务的话，得记得**端口冲突**问题。比如我一开始就有端口和unicorn的默认端口（8080）冲突
+
+接下来要改默认配置，然后坑就来了：
+
+1.  首先是生成的/var/opt/gitlab里面的路径不能是**软链接**，我把git仓库保存路径软链接后发现push的时候报错， ! [remote rejected] master -&gt; master (pre-receive hook declined)
+2.  其次，我替换自己的nginx服务器的时候，nginx官方提供的包并不带gitlab要求的**passenger模块**，所以不能直接用官方提供的方法。我是用gitlab-ctl reconfigure生成了nginx的配置以后复制到自己的nginx里去的。生成的配置在 /var/opt/gitlab/nginx/conf/gitlab-http.conf
+3.  还是nginx，我的nginx的启动账户不是gitlab的（默认是gitlab-www），所以会出现502错误。日志里内容是访问fastcgi权限不足。所以还要chmod 755 /var/opt/gitlab/gitlab-rails/sockets
+4.  上面的权限每次gitlab-ctl reconfigure后都会被重置所以每次改配置都得设置下
+5.  要改内置nginx的默认端口号的话，直接external_url配置后面加就行了，不过后果就是web页面里的http/https地址的端口号就也变了
+6.  [追加建议] - 最好把各个系统的超时时间设长一点，不然项目比较大的时候创建Merge Request比较慢，比较容易超时
+不能软链接这回事非常头大，开来只能用mount了，不过我没试过。我这里仅仅是把git仓库的地址用配置改掉了，其他的就暂时还放在/var/opt/gitlab里，以后有需要再改吧。
+
+记一下我这里的配置:
+
+```
+# @see https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/README.md
+#
+# Change the external_url to the address your users will type in their browser
+external_url 'https://git.muyo.co'
+
+gitlab_rails['time_zone'] = 'Asia/Shanghai'
+
+# nginx的配置最好还是参照官方文档，现在新的配置方式出来了，更简单点。
+# 我这里这么配是当初没有文档，扒代码配得nginx代理
+nginx['enable'] = false
+# nginx['redirect_http_to_https'] = true
+web_server['external_users'] = ['nginx']
+
+unicorn['port'] = 8081
+
+git_data_dir "/home/repo/git/gitlib/git-data"
+
+gitlab_rails['backup_path'] = '/home/repo/git/gitlib/backups'
+gitlab_rails['backup_keep_time'] = 1296000 # 15天
+
+# mail config
+gitlab_rails['smtp_enable'] = true
+gitlab_rails['smtp_address'] = "smtp.exmail.qq.com"
+gitlab_rails['smtp_port'] = 465
+gitlab_rails['smtp_user_name'] = "腾讯企业邮箱地址"
+gitlab_rails['smtp_password'] = "企业邮箱密码"
+gitlab_rails['smtp_domain'] = "域名（就是邮箱后缀）"
+gitlab_rails['smtp_authentication'] = "login"
+gitlab_rails['smtp_enable_starttls_auto'] = true
+gitlab_rails['smtp_tls'] = true
+
+# If your SMTP server does not like the default 'From: gitlab@localhost' you
+# # can change the 'From' with this setting.
+gitlab_rails['gitlab_email_from'] = '企业邮箱地址，和上面一样'
+
+# open platform 
+gitlab_rails['omniauth_enabled'] = true
+gitlab_rails['omniauth_allow_single_sign_on'] = false
+gitlab_rails['block_auto_created_users'] = true
+gitlab_rails['db_encoding'] = 'utf8'
+
+# 增加超时时间
+gitlab_rails['git_timeout'] = 600
+gitlab_rails['satellites_timeout'] = 600
+ci_unicorn['worker_timeout'] = 600
+ci_nginx['keepalive_timeout'] = 600
+mattermost_nginx['keepalive_timeout'] = 600
+
+```

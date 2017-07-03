@@ -1,0 +1,106 @@
+---
+title: POJ PKU 1065 Wooden Sticks 3636 Nested Dolls 解题报告
+tags:
+  - acm
+  - pku
+  - poj
+id: 57
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-02-24 15:43:54
+---
+
+3636 Nested Dolls
+
+题目链接：[http://acm.pku.edu.cn/JudgeOnline/problem?id=3636
+
+](http://acm.pku.edu.cn/JudgeOnline/problem?id=3636)好吧，这题我看了解题报告。而且解题报告有错误的。只考虑w递增，没考虑w值相等的情况。
+
+我自己这里加进去了判断。主要是看解题报告后才知道数据这么弱，就按他的写了
+
+大意是给出N个玩具，要求放k组，其中每组都是大玩偶套小玩偶。在w（宽）和h（高）都大于
+
+另一个玩偶的时候才能套进去问最小的k，就是组数。
+
+先按w升序再按h降序排序，然后一个一个往里插就行了，要稍微注意下判断相等的情况
+
+代码：
+
+```cpp
+#include <iostream>
+#include <functional>
+#include <cstdio>
+#include <algorithm>
+using namespace std;
+#define MAXN 20002
+ 
+struct doll
+{
+    int w,h;
+};
+doll dolls[MAXN];
+doll list[20002];
+ 
+bool cmp(doll a, doll b)
+{
+    if(a.w != b.w)
+        return a.w < b.w;
+    return a.h > b.h;
+}
+int main()
+{
+    int t, m, i, num, l, r, mid;
+    scanf("%d", &t);
+    while(t --)
+    {
+        scanf("%d", &m);
+        for(i = 0; i < m; i ++)
+            scanf("%d %d", &dolls[i].w, &dolls[i].h);
+ 
+        sort(dolls, dolls + m, cmp);
+ 
+        memset(list, 0, sizeof(list));
+ 
+        num = 0;
+ 
+        for(i = 0; i < m; i ++)
+        {
+            l = 0;
+            r = num;
+            while(l < r)
+            {
+                mid = (l + r) / 2;
+                if((list[mid].w >= dolls[i].w) || list[mid].h >= dolls[i].h)
+                    l = mid + 1;
+                else
+                    r = mid;
+            }
+ 
+            if(num == l)
+                num ++;
+            list[l].w = dolls[i].w;
+            list[l].h = dolls[i].h;
+        }
+ 
+        printf("%d\n", num);
+    }
+    return 0;
+}
+```
+
+至于 1065 Wooden Sticks 题
+
+都是一样的，去掉了相等的条件（这样简单多了，直接俩个都升序排列就好了）
+
+代码就是改了
+
+return a.h > b.h; 改为 return a.h < b.h;
+
+和
+
+if((list[mid].w >= dolls[i].w) || list[mid].h >= dolls[i].h)
+
+改为if((list[mid].w > dolls[i].w) || list[mid].h > dolls[i].h)
+
+其他的都不变，这里就不重贴了

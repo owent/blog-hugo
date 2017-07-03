@@ -1,0 +1,45 @@
+---
+title: Jenkins(hudson)插件记录
+tags:
+  - jenkins
+id: 1157
+categories:
+  - Article
+  - Blablabla
+  - Work
+date: 2015-04-21 11:22:59
+---
+
+<!-- toc -->
+
+## 前言
+
+搭建自动化构建（jenkins）的过程中碰到了挺多问题，需要装各种插件解决。为了方便下次部署，这里先记录一下用到的插件及用途
+
+## Jenkins插件
+
+1.  [Ant Plugin](http://wiki.jenkins-ci.org/display/JENKINS/Ant+Plugin) java打包工具
+2.  [Authorize Project](https://wiki.jenkins-ci.org/display/JENKINS/Authorize+Project+plugin) 项目权限管理
+3.  [Clang Scan-Build Plugin](http://wiki.jenkins-ci.org/display/JENKINS/Clang+Scan-Build+Plugin) clang静态分析（尚未使用）
+4.  [Cppcheck Plug-in](http://wiki.jenkins-ci.org/display/JENKINS/Cppcheck+Plugin) cppcheck静态代码分析
+5.  [Credentials Plugin](http://wiki.jenkins-ci.org/display/JENKINS/Credentials+Plugin) 登入凭据管理
+6.  [Dashboard View](http://wiki.jenkins-ci.org/display/JENKINS/Dashboard+View) 总览
+7.  [disk-usage plugin](http://wiki.jenkins-ci.org/display/JENKINS/Disk+Usage+Plugin) 磁盘使用量统计
+8.  [Doxygen Plug-in](http://wiki.jenkins-ci.org/display/JENKINS/Doxygen+Plugin) doxygen插件（没使用成功，我还是自己命令行生成的）
+9.  [Email Extension Plugin](http://wiki.jenkins-ci.org/display/JENKINS/Email-ext+plugin) 定制化邮件
+10.  [embeddable-build-status](https://wiki.jenkins-ci.org/display/JENKINS/Embeddable+Build+Status+Plugin) 提供接口嵌入构建状态到外部系统
+11.  [Environment Injector Plugin](https://wiki.jenkins-ci.org/display/JENKINS/EnvInject+Plugin) 把参数化构建的参数导入到环境变量
+12.  [GIT client plugin](http://wiki.jenkins-ci.org/display/JENKINS/Git+Client+Plugin) 和[GIT plugin](http://wiki.jenkins-ci.org/display/JENKINS/Git+Plugin)
+13.  Github和Gitlab集成插件
+14.  Gravatar插件
+15.  [Matrix Authorization Strategy Plugin](http://wiki.jenkins-ci.org/display/JENKINS/Matrix+Authorization+Strategy+Plugin)和[Matrix Project Plugin](https://wiki.jenkins-ci.org/display/JENKINS/Matrix+Project+Plugin) 项目矩阵授权策略
+16.  [Maven Integration plugin](http://wiki.jenkins-ci.org/display/JENKINS/Maven+Project+Plugin) 更高级的java构建工具
+17.  openid和OpenID4Java API
+18.  Publish Over SSH
+19.  Release Plugin
+20.  [Slave SetupPlugin](http://wiki.jenkins-ci.org/display/JENKINS/Slave+Setup+Plugin) 、[slave-status](http://wiki.jenkins-ci.org/display/JENKINS/slave-status)、[SSH Slaves plugin](http://wiki.jenkins-ci.org/display/JENKINS/SSH+Slaves+plugin)、[Windows Slaves Plugin](http://wiki.jenkins-ci.org/display/JENKINS/Windows+Slaves+Plugin)
+21.  [SSH Agent Plugin](http://wiki.jenkins-ci.org/display/JENKINS/SSH+Agent+Plugin)、[SSH Credentials Plugin](http://wiki.jenkins-ci.org/display/JENKINS/SSH+Credentials+Plugin)
+22.  [Static Analysis Utilities](http://wiki.jenkins-ci.org/x/CwDgAQ)
+23.  [Xcode integration](https://wiki.jenkins-ci.org/display/JENKINS/Xcode+Plugin) 用于集成xcode工程文件
+上面没有链接的插件属于我没有主动去使用（自动开启或者装了没用过的）的。没写注解的是反正一看就知道什么意思。
+> Written with [StackEdit](https://stackedit.io/).

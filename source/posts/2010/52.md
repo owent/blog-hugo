@@ -1,0 +1,232 @@
+---
+title: POJ PKU Let's Go to the Movies 解题报告
+tags:
+  - acm
+  - pku
+  - poj
+id: 52
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-03-31 16:04:21
+---
+
+题目链接：[http://acm.pku.edu.cn/JudgeOnline/problem?id=3513](http://acm.pku.edu.cn/JudgeOnline/problem?id=3513)
+
+题目大意是输入树状的家庭关系，问怎么买票（买家庭票还是个人票）最省钱并且票的数量最少
+
+这道题是一道Hash+树状DP问题。编码长度相当可观，需要较好的编码能力
+
+我这题编码就犯了几个低级错误，然后算法错误一次，导致了无数的WA
+
+先给几组测试数据
+
+```
+2 3
+a b
+b c
+c d
+2 3
+a b c
+b d e
+c f g
+d h i
+e j k
+f l m
+g n o
+1 3
+a b c d e
+f g h i j a n k l
+n m o p q
+0 0
+```
+
+答案是：
+
+```
+1. 0 2 6
+
+2. 0 5 15
+
+3. 0 3 9
+```
+
+贴代码(注意下代码是C++的。由于使用了 cin和cout，G++有输入优化会降低cin和cout的时间，如果用G++要把cin和cout改成scanf和printf，然后少用string，否则会TLE)：
+
+```cpp
+/**
+* Author: OWenT
+* POJ PKU 3513 Let's Go to the Movies
+* http://acm.pku.edu.cn/JudgeOnline/problem?id=3513
+* 树形DP + Hash
+* WA了好多次
+*/
+
+#include <iostream>
+#include <map>
+#include <vector>
+#include <string>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
+using namespace std;
+
+#define MAXN 100005
+typedef struct
+{
+    vector<long>chirldren;
+    bool isPF;
+    long m_t,m_s,m_f;
+    char tt;
+}node;
+node glo[MAXN];
+map<string, long>hash;
+long nodeNum;
+
+void check(long pos, long &ns, long &nf, long &t, long &s, long &f);
+void checkChirld(long pos, long &ns, long &nf, long &t, long &s, long &f);
+void initNode(long &pos);
+int main()
+{
+    //freopen("d:\\movies.in.txt","r",stdin);
+    //freopen("d:\\movies.out.txt","w",stdout);
+    long s,f, k = 0;
+    long ns,nf,t;
+    long tmpPos1,tmpPos2, i;
+    string str;
+    while(cin>> str)
+    {
+        if(str[0] <= '9' && str[0] >= '0')
+        {
+            //处理数据
+            if(k)
+            {
+                for(i = 0; i < nodeNum; i ++)
+                    if(glo[i].isPF)
+                        check(i, ns, nf, t, s, f);
+                //输出
+                printf("%ld. %ld %ld %ld\n", k, ns, nf, t);
+            }
+
+            //下一组数据
+            k ++;
+            ns = nf = t = nodeNum = 0;
+            cin>> f;
+            s = atol(str.c_str());
+            if(!s && !f)
+                break;
+            hash.clear();
+        }
+        else
+        {
+            //父节点映射
+            if(hash.find(str) == hash.end())
+            {
+                initNode(nodeNum);
+                hash[str] = nodeNum;
+                tmpPos1 = nodeNum ++;
+            }
+            else
+                tmpPos1 = hash[str];
+            //子节点映射
+            while(getchar() != '\n')
+            {
+                cin>> str;
+                if(hash.find(str) == hash.end())
+                {
+                    initNode(nodeNum);
+                    hash[str] = nodeNum;
+                    tmpPos2 = nodeNum ++;
+                }
+                else
+                    tmpPos2 = hash[str];
+                glo[tmpPos1].chirldren.push_back(tmpPos2);
+                glo[tmpPos2].isPF = false;
+            }
+        }
+    }
+    return 0;
+}
+
+void check(long pos, long &ns, long &nf, long &t, long &s, long &f)
+{
+    //0为当前个人票数据，1为当前家庭票数据
+    long tns[2] = {1, 0},
+        tnf[2] = {0, 1},
+        tt[2] = {s, f};
+    long i, n = 0;
+    if(glo[pos].m_t >= 0)
+    {
+        ns += glo[pos].m_s;
+        nf += glo[pos].m_f;
+        t += glo[pos].m_t;
+        return;
+    }
+    for(i = 0; i < glo[pos].chirldren.size(); i ++)
+        check(glo[pos].chirldren[i], tns[0], tnf[0], tt[0], s, f);//当前个人票的结果
+    checkChirld(pos, tns[1], tnf[1], tt[1], s, f);//当前家庭票的结果
+    if(tt[0] < tt[1] || (tt[0] == tt[1] && tns[0] + tnf[0] <= tns[1] + tnf[1]))
+    {
+        t += tt[0];
+        ns += tns[0];
+        nf += tnf[0];
+        glo[pos].m_f = tnf[0];
+        glo[pos].m_s = tns[0];
+        glo[pos].m_t = tt[0];
+        glo[pos].tt = 's';
+    }
+    else
+    {
+        t += tt[1];
+        ns += tns[1];
+        nf += tnf[1];
+        glo[pos].m_f = tnf[1];
+        glo[pos].m_s = tns[1];
+        glo[pos].m_t = tt[1];
+        glo[pos].tt = 'f';
+    }
+    //printf("ID:%ld: f:%ld s:%ld t:%ld TicketType: %c\n", pos, glo[pos].m_f, glo[pos].m_s, glo[pos].m_t, glo[pos].tt);
+}
+void initNode(long &pos)
+{
+    glo[pos].isPF = true;
+    glo[pos].chirldren.clear();
+    glo[pos].m_f = glo[pos].m_s = glo[pos].m_t = -1;
+}
+
+void checkChirld(long pos, long &ns, long &nf, long &t, long &s, long &f)
+{
+    long i, j, k, l;
+    long len1, len2;
+    long tns[2],tnf[2],tt[2];
+    len1 = glo[pos].chirldren.size();
+    for(i = 0; i < len1; i ++)
+    {
+        k = glo[pos].chirldren[i];
+        tns[0] = glo[ k ].m_s;
+        tnf[0] = glo[ k ].m_f;
+        tt[0] = glo[ k ].m_t;
+        tns[1] = 0;
+        tnf[1] = 0;
+        tt[1] = 0;
+        len2 = glo[ k ].chirldren.size();
+        for(j = 0; j < len2; j ++)
+        {
+            l = glo[k].chirldren[j];
+            check(l, tns[1], tnf[1], tt[1], s, f);
+        }
+        if(tt[0] < tt[1] || (tt[0] == tt[1] && tns[0] + tnf[0] <= tns[1] + tnf[1]))
+        {
+            t += tt[0];
+            ns += tns[0];
+            nf += tnf[0];
+        }
+        else
+        {
+            t += tt[1];
+            ns += tns[1];
+            nf += tnf[1];
+        }
+    }
+}
+```

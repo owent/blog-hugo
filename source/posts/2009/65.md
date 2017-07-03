@@ -1,0 +1,150 @@
+---
+title: POJ PKU 2528 Mayor's posters 解题报告
+tags:
+  - acm
+  - pku
+  - poj
+id: 65
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2009-11-18 17:49:55
+---
+
+
+题目链接:&nbsp;[http://acm.pku.edu.cn/JudgeOnline/bbs?problem_id=2528](http://acm.pku.edu.cn/JudgeOnline/bbs?problem_id=2528)
+
+这题又是线段树+离散化
+
+慢慢的对离散化有点感觉了,但是这题我还是错了3次
+
+题目大意是一层一层地叠板子,问最后能看到几块
+
+输入是板子的开始和结束位置
+
+由于输入的是闭区间线段开始我就构造闭区间线段的线段树,但是后来发现很多问题,
+
+比如构造线段树的时候有区间1-4--&gt;1-2+3-4.如果1映射到位置1,2映射到4,3映射到8,4映射到12,那么5,6,7三个点就丢失了
+
+所以后来改成了半开半闭区间,结果还是出了点问题,最后开成完全开区间才AC
+
+也就是线段树表示两个端点,,比如位置1两端的端点是0和1,那么测试数据就有
+
+(0 4)
+
+(1 6)
+
+(7 10)
+
+(2 4)
+
+(6 10)
+
+五个开区间
+
+然后在旧时一般的离散化+线段树了
+
+贴代码:
+
+```cpp
+#include<iostream>
+#include<cstdio>
+#include<algorithm>
+using namespace std;
+#define MAXN 10005
+struct node
+{
+    long l,r,h;
+};
+long buildTree(long l,long r,long pos);
+void addHeight(long l,long r,long pos,long h);
+void dealData(long &n,long pos);
+node old[MAXN],newT[MAXN * 10];
+bool isShowed[MAXN];
+long tn,num,index[MAXN * 2];
+int main()
+{
+    int t,n;
+    scanf("%d",&t);
+    while(t --)
+    {
+        memset(old,0,sizeof(old));
+        memset(newT,0,sizeof(newT));
+        memset(index,0,sizeof(index));
+        memset(isShowed,false,sizeof(isShowed));
+        int i,j;
+        num = tn = 0;
+        scanf("%d",&n);
+        for(i = 0 ; i < n ; i ++)
+            scanf("%ld %ld",&old[i].l , &old[i].r) ,old[i].h = i + 1
+            , index[num ++] = old[i].l - 1 , index[num ++] = old[i].r;
+        sort(index , index + num);
+        j = 1;
+        for(i = 1 ; i < num ; i ++)
+            if(index[i] != index[j - 1])
+                index[j ++] = index[i];
+        index[j] = index[j - 1] + 1;
+        num = j;
+        buildTree(0,num - 1, 1);
+        for(i = 0 ; i < n ; i ++)
+            addHeight(old[i].l - 1 , old[i].r ,1, old[i].h);
+        dealData(tn , 1);
+        j = 0;
+        for(i = 0 ; i < MAXN ; i ++)
+            j += isShowed[i]?1:0;
+        printf("%d\n",j);
+    }
+    return 0;
+}
+
+long buildTree(long l,long r,long pos)
+{
+    newT[pos].l = l;
+    newT[pos].r = r;
+    newT[pos].h = 0;
+    long mid = (l + r) >> 1;
+    tn = (pos > tn)? pos : tn;
+    if(r > l + 1)
+        return 1 + buildTree(l , mid, 2 * pos) + buildTree(mid , r, 2 * pos + 1);
+    else
+        return 1;
+}
+void addHeight(long l,long r,long pos,long h)
+{
+    if(l == index[newT[pos].l] && r == index[newT[pos].r])
+    {
+        newT[pos].h = h;
+        return;
+    }
+    if(newT[pos].l >= newT[pos].r)
+        return;
+    long mid = (newT[pos].l + newT[pos].r) >> 1;
+    if(newT[pos].h)
+    {
+        newT[2 * pos].h = newT[pos].h;
+        newT[2 * pos + 1].h = newT[pos].h;
+        newT[pos].h = 0;
+    }
+    if(index[mid] >= r)
+        addHeight(l,r,2 * pos, h);
+    else if(index[mid] <= l)
+        addHeight(l,r,2 * pos + 1, h);
+    else
+    {
+        addHeight(l,index[mid],2 * pos, h);
+        addHeight(index[mid],r,2 * pos + 1, h);
+    }
+}
+void dealData(long &n,long pos)
+{
+    if(newT[pos].h)
+    {
+        isShowed[newT[pos].h] = true;
+        return;
+    }
+    if(2 * pos <= tn)
+        dealData(n,2 * pos);
+    if(2 * pos + 1 <= tn)
+        dealData(n,2 * pos + 1);
+}
+```

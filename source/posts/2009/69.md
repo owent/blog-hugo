@@ -1,0 +1,137 @@
+---
+title: POJ PKU 2549 Sumsets 解题报告
+tags:
+  - acm
+  - pku
+  - poj
+id: 69
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2009-10-04 15:54:36
+---
+
+
+[题目链接http://acm.pku.edu.cn/JudgeOnline/problem?id=2549](http://acm.pku.edu.cn/JudgeOnline/problem?id=2549)
+
+这道题伤了我很久脑筋
+
+因为是a+b+c=d,数据量是1000,很自然地想到a+b=d-c
+
+这样转化为n^2的算法.
+
+但是我开始枚举d-c的集合二分查找a+b的几何不知道为什么WA掉了
+
+后面就想其他的办法,参考了一下别人的做法,我觉得差不多和我一样,然后重写.我也和他一样无耻的用STL库函数了
+
+STL函数:lower_bound,查找出第一个符合或超过条件的迭代器
+
+顺便 upper_bound,查找出第一个超过条件的迭代器
+
+
+
+
+首先.把所有可能的a+b记录.
+
+然后,把a+b的集合排序,S排序
+
+再从大到小的枚举d.找到符合条件的
+
+注:(a,b,c,d不能相同)
+
+贴贴贴代码:
+
+```cpp
+#include<cstdio>
+#include<set>
+#include<algorithm>
+using namespace std;
+#define N 1005
+#define inf 1000000000
+struct ads
+{
+    long a,b,data;
+};
+bool cmp(ads a,ads b)
+{
+    if (a.data == b.data)
+    {
+        return a.a < b.a;
+    }
+    return a.data < b.data;
+}
+long S[N];
+ads ade[N*N];
+long adsN;
+bool check(long a,long b,long data);
+long find(long n);
+
+int main()
+{
+    long n,i,j;
+    while (scanf("%ld",&n) , n)
+    {
+        for (i = 0 ; i < n ; i ++)
+        {
+            scanf("%ld",&S[i]);
+        }
+
+        adsN=0;
+        for (i = 0 ; i < n ; i ++)
+        {
+            for (j = 0 ; j < n ; j ++)
+            {
+                if (i == j)
+                    continue;
+                ade[adsN].a = S[i];
+                ade[adsN].b = S[j];
+                ade[adsN++].data = S[i] + S[j];
+            }
+        }
+
+        sort(ade, ade + adsN, cmp);
+        sort(S, S + n, greater<long>() );
+
+        long out = find(n);
+        if (out == inf)
+        {
+            printf("no solution\n");
+        }
+        else
+            printf("%d\n",out);
+    }
+    return 0;
+}
+bool check(long a,long b,long data)
+{
+    ads t = {a, b, data};
+    ads *p = lower_bound(ade, ade + adsN, t, cmp);
+    if (p < ade + adsN && p >= ade && p->data == t.data)
+    {
+        if(p->a != a)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+long find(long n)
+{
+    long i,j;
+    for (i = 0 ; i < n ; i ++)
+    {
+        for (j = 0 ; j < n; j ++)
+        {
+            if (i == j)
+                continue;
+            long d = S[i];
+            long c = S[j];
+            if (check(-c,d,d - c) && check(c,d,d - c))
+            {
+                return d;
+            }
+        }
+    }
+    return inf;
+}
+```

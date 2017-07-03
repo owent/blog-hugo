@@ -1,0 +1,638 @@
+---
+title: 2011 Google Code Jam 小记
+tags:
+  - c
+  - GCJ
+  - Google Code Jam
+id: 416
+categories:
+  - Article
+  - Blablabla
+  - My ACM-ICPC Career
+date: 2011-05-22 07:46:12
+---
+
+好久没写这种类型的代码，感觉真是退步了很多。
+这是我第一次参加Google Code Jam，以前有过报名可是没有做过。
+我发现Google Code Jam的题目使用经典算法的几乎没有，都是模拟或者数学题（起码我目前做过的几题是这样）
+
+首先是**Qualification Round**
+四道水题，前两道模拟，后两道数学推公式。
+第三道是位运算的，第四道由于那天没空了就没做，反正分数够了，听人说也是推公式的水题。
+题目链接：http://code.google.com/codejam/contest/dashboard?c=975485
+
+```cpp
+// Qualification Round -- A
+#include <iostream>
+#include <cstdio>
+#include <queue>
+#include <cmath>
+
+namespace gcj {
+    using namespace std;
+
+    struct rebot {
+        int passTime;
+        int position;
+    };
+
+    queue<bool> all;
+    queue<int> qo, qb;
+
+    void solve () {
+        int t, n, pos, time, tt;
+        char rot;
+        scanf("%d", &t);
+        rebot o, b;
+
+        for (int  i = 0; i < t; i ++) {
+            while(qo.empty() == false)
+                qo.pop();
+            while(qb.empty() == false)
+                qb.pop();
+
+            o.passTime = b.passTime = 0;
+            o.position = b.position = 1;
+            time = 0;
+
+            scanf("%d", &n);
+            while (n --) {
+                scanf(" %c %d", &rot, &pos);
+                bool isO = (rot == 'O');
+                all.push(isO);
+                if (isO)
+                    qo.push(pos);
+                else
+                    qb.push(pos);
+            }
+
+            while (all.size() > 0) {
+                bool isO = all.front();
+                all.pop();
+
+                if(isO) {
+                    tt = max(0, abs(qo.front() - o.position) - o.passTime) + 1;
+                    time += tt;
+                    b.passTime += tt;
+                    o.position = qo.front();
+                    o.passTime = 0;
+                    qo.pop();
+                } else {
+                    tt = max(0, abs(qb.front() - b.position) - b.passTime) + 1;
+                    time += tt;
+                    o.passTime += tt;
+                    b.position = qb.front();
+                    b.passTime = 0;
+                    qb.pop();
+                }
+            }
+
+            printf("Case #%d: %d\n", i + 1, time);
+        }
+    }
+}
+
+int main () {
+
+    freopen("d:/A-large.in", "r", stdin);
+    freopen("d:/A-large.out", "w", stdout);
+
+    gcj::solve();
+    return 0;
+}
+```
+
+```cpp
+// Qualification Round -- B
+#include <iostream>
+#include <cstdio>
+#include <map>
+#include <string>
+#include <set>
+#include <cmath>
+
+namespace gcj {
+    using namespace std;
+    string ls;
+    map<char, char> combine[256];
+    map<char, char>::iterator comItr;
+    set<char> opposed[256];
+    //set<char>::iterator oppItr;
+    //int charNumber[256];
+
+    void init() {
+        ls.clear();
+        for (int  i = 0; i < 256; i ++) {
+            combine[i].clear();
+            opposed[i].clear();
+        }
+        //memset(charNumber, 0, sizeof(charNumber));
+    }
+
+    void solve() {
+        int t, c, d, n;
+        char comStr[5], oppStr[5];
+        char input[105];
+        scanf(" %d", &t);
+        for (int i = 0; i < t; i ++) {
+            init();
+
+            scanf(" %d", &c);
+            for(int j = 0; j < c; j ++) {
+                scanf(" %s", comStr);
+                combine[comStr[0]][comStr[1]] = combine[comStr[1]][comStr[0]] = comStr[2];
+            }
+
+            scanf(" %d", &d);
+            for(int j = 0; j < d; j ++) {
+                scanf(" %s", oppStr);
+                opposed[oppStr[0]].insert(oppStr[1]);
+                opposed[oppStr[1]].insert(oppStr[0]);
+            }
+
+            scanf(" %d", &n);
+            scanf(" %s", input);
+            for(int j = 0; j < n; j ++) {
+                char key = input[j];
+                bool run = true;
+                //oppItr = opposed[key].begin();
+
+                if (ls.size() > 0) {
+                    if ((comItr = combine[key].find(ls.back())) != combine[key].end()) {
+                        //charNumber[ls.back()] --;
+                        ls.pop_back();
+                        ls.push_back(comItr->second);
+                        //charNumber[comItr->second] ++;
+                        run = false;
+                    }
+
+                    if (run) {
+                        for (int k = 0; k < ls.size(); k ++) {
+                            if (opposed[key].find(ls[k]) != opposed[key].end()) {
+                                //ls = ls.substr(0, k);
+                                ls.clear();
+                                run = false;
+                            }
+                        }
+                    }
+                    //while (run && oppItr != opposed[key].end()) {
+                    //	if (charNumber[*oppItr] > 0) {
+                    //		while(ls.back() != *oppItr) {
+                    //			charNumber[ls.back()] --;
+                    //			ls.pop_back();
+                    //		}
+                    //		charNumber[ls.back()] --;
+                    //		ls.pop_back();
+                    //		run = false;
+                    //	}
+                    //	oppItr ++;
+                    //}
+                }
+
+                if (run) {
+                    ls.push_back(key);
+                    //charNumber[key] ++;
+                }
+            }
+
+            printf("Case #%d: [", i + 1);
+            for (int j = 0; j < ls.size(); j ++) {
+                if (j > 0) {
+                    putchar(',');
+                    putchar(' ');
+                }
+                putchar(ls[j]);
+            }
+            puts("]");
+        }
+
+    }
+}
+
+int main () {
+
+    //freopen("d:/GCJ/B-large.in", "r", stdin);
+    //freopen("d:/GCJ/B-large.out", "w", stdout);
+
+    gcj::solve();
+    return 0;
+}
+```
+
+```cpp
+// Qualification Round -- C
+#include <iostream>
+#include <cstdio>
+#include <cmath>
+#include <algorithm>
+
+namespace gcj {
+    using namespace std;
+
+    void solve() {
+        int t, n, min_val, sum_val, number, sum_xor;
+
+        scanf("%d", &t);
+        for (int i = 0; i < t; i ++) {
+            min_val = 1<< 20;
+            sum_val = sum_xor = 0;
+            scanf(" %d", &n);
+            for (int j = 0; j < n; j ++) {
+                scanf(" %d", &number);
+                sum_xor ^= number;
+                sum_val += number;
+                min_val = min(min_val, number);
+            }
+
+            if (sum_xor)
+                printf("Case #%d: NO\n", i + 1);
+            else
+                printf("Case #%d: %d\n", i + 1, sum_val - min_val);
+        }
+
+    }
+}
+
+int main () {
+
+    //freopen("d:/GCJ/C-large.in", "r", stdin);
+    //freopen("d:/GCJ/C-large.out", "w", stdout);
+
+    gcj::solve();
+    return 0;
+}
+```
+
+然后是**Round 1A 2011**
+状态不好，能力有限，我只看了第一和第二题
+题目链接：http://code.google.com/codejam/contest/dashboard?c=1145485
+第一题是告诉你一个今天最大比赛数量、今天胜率、总胜率，问数据是否可能达到.
+我的想法是正确的，只有在计算符合今日胜率的最小局数和考虑总胜率为100和为0的情况即可，其他经过我简单的证明都是可行的，但是在获取最小的满足“今天胜率”的今日比赛数量的时候少打了一组括号，并且每注意到大数据范围到10^15，直接导致小数据PASS，大数据挂掉.
+后来看了大牛的代码发现他用了最大公约数来解这个值，非常好。
+贴小数据代码，大数据只要换到64位整数即可
+
+```cpp
+#include <cstdio>
+#include <algorithm>
+
+namespace gcj {
+    void print(int t, char* str) {
+        printf("Case #%d: %s\n", t, str);
+    }
+
+    int gcd(int a, int b) {
+        return b ? gcd(b, a % b) : a;
+    }
+
+    void solve() {
+        int t, n, pd, pg, d, g, l, r;
+        scanf("%d", &t);
+        for (int i = 0; i < t; i++) {
+            scanf("%d %d %d", &n, &pd, &pg);
+            d = gcd(pd, 100);
+            if ((pd < 100 && pg == 100)
+                || (pd > 0 && pg == 0)
+                || n < 100 / d)
+                print(i + 1, "Broken");
+            else
+                print(i + 1, "Possible");
+        }
+    }
+}
+
+int main () {
+
+    freopen("d:/GCJ/Round1/A-small-practice.in", "r", stdin);
+    freopen("d:/GCJ/Round1/A-small-practice.out", "w", stdout);
+
+    gcj::solve();
+    return 0;
+}
+```
+
+第二题是猜字游戏
+看了大牛的代码，用了DFS，两次精妙的索引排序解决了。太强大了，我还有差距呵。
+
+然后是**Round 1B 2011**
+题目链接：http://code.google.com/codejam/contest/dashboard?c=1150485
+这个发挥得比较好，拿到了晋级名额。
+我也只写了两道题，但是方法都对，而且都是1A，最后一道题我发现只剩下25分钟了，而且很晚了，反正写不完就懒得写了
+第一题是模拟，按题目说的做就好了，这题在大数据的时候freopen的路径写错了，结果我一直在想为什么会TLE，还好在提交限时的两分钟前看到了，马上改掉就ok了。
+
+```cpp
+#include <cstdio>
+#include <cstring>
+
+namespace gcj {
+    using namespace std;
+
+    const int maxn = 105;
+    char mat[maxn][maxn];
+    double WP[maxn];
+    double WP_par[maxn][2];
+    double OWP[maxn];
+    double OOWP[maxn];
+
+    void solve() {
+        int t, n, c = 0;
+        scanf("%d", &t);
+        while (t --) {
+            c ++;
+            scanf("%d", &n);
+            for (int i = 0; i < n; i ++)
+                scanf("%s", mat[i]);
+
+            // WP
+            for (int i = 0; i < n; i ++) {
+                double sum = 0.0, win = 0.0;
+                WP_par[i][0] = WP_par[i][1] = 0.0;
+                for (int j = 0; j < n; j ++) {
+                    if (mat[i][j] == '.')
+                        continue;
+                    sum += 1.0;
+                    if (mat[i][j] == '1')
+                        win += 1.0;
+                }
+                WP_par[i][0] = win;
+                WP_par[i][1] = sum;
+                WP[i] = win / sum;
+            }
+
+            // OWP
+            for (int i = 0; i < n; i ++) {
+                double sum = 0.0, win = 0.0;
+                for (int j = 0; j < n; j ++) {
+                    if (mat[i][j] == '.')
+                        continue;
+                    sum += 1.0;
+                    if (mat[i][j] == '1')
+                        win += (WP_par[j][0]) / (WP_par[j][1] - 1.0);
+                    else
+                        win += (WP_par[j][0] - 1.0) / (WP_par[j][1] - 1.0);
+                }
+                OWP[i] = win / sum;
+            }
+
+            // OOWP
+            for (int i = 0; i < n; i ++) {
+                double sum = 0.0, win = 0.0;
+                for (int j = 0; j < n; j ++) {
+                    if (mat[i][j] == '.')
+                        continue;
+                    sum += 1.0;
+                    win += OWP[j];
+                }
+                OOWP[i] = win / sum;
+            }
+
+            // Output
+            printf("Case #%d:\n", c);
+            for (int i = 0; i < n; i ++) {
+                printf("%.12lg\n", 0.25 * WP[i] + 0.50 * OWP[i] + 0.25 * OOWP[i]);
+            }
+        }
+    }
+
+}
+
+int main() {
+    freopen("A-large.in", "r", stdin);
+    freopen("A-large.out", "w", stdout);
+    gcj::solve();
+    return 0;
+}
+```
+
+第二题是一个数学题，又是数学题，问最少多久能让任意两个热狗店距离不小于d，计算的时候只要考虑往一个方向走，然后最后答案除以2即可，因为运动是对称的。中途需要考虑的是两个相邻组的距离问题，然后对分散时间进行合并取大值，并考虑交叉的情况加上分开交叉情况的时间即可。又是64位整形，不过这次我注意到了。不过那个maxn貌似我忘记改成大数据的数字了，为什么过了，神奇的。
+
+```cpp
+#include <cstdio>
+#include <cstring>
+#include <algorithm>
+
+namespace gcj {
+    using namespace std;
+
+    const int maxn = 206;
+    typedef long long lld;
+
+    struct node{
+        lld p;
+        lld v;
+    };
+    bool cmp(const node& l, const node& r) {
+        return l.p < r.p;
+    }
+
+    node venders[maxn];
+
+    void solve() {
+        int t, n, _case = 0;
+        scanf("%d", &t);
+        while (t --) {
+            _case ++;
+            int d, c;
+            scanf("%d %d", &c, &d);
+            for (int i = 0; i < c; i ++)
+                scanf("%lld %lld", &venders[i].p, &venders[i].v);
+
+            sort(venders, venders + c, cmp);
+            lld tmp, tl, last;
+            lld sum = (venders[0].v - 1) * d;
+            for (int i = 1; i < c; i ++) {
+                tmp = (venders[i].v - 1) * d;
+                tl = venders[i].p - venders[i].v * d;
+                if (tmp > sum) {
+                    last = venders[i - 1].p - (tmp - sum);
+                    if(tl >= last)
+                        sum = tmp;
+                    else
+                        sum = tmp + last - tl;
+                } else {
+                    last = venders[i - 1].p;
+                    if (tl >= last) {
+                        lld _m = min(tl - last, sum - tmp);
+                        venders[i].p -= _m;
+                    } else {
+                        sum += last - tl;
+                    }
+                }
+            }
+
+            printf("Case #%d: %.1lf\n", _case, sum / 2.0);
+        }
+    }
+
+}
+
+int main() {
+    freopen("D:/GCJ/Round2/B-large.in", "r", stdin);
+    freopen("D:/GCJ/Round2/B-large.out", "w", stdout);
+
+    gcj::solve();
+    return 0;
+}
+```
+
+Round2期间正碰上期末考试，但是我还是来做了一下，很失望的没拿到衣服。感觉我的编码能力还差得远呐，因为AC两题应该就能拿到衣服了，可是遗憾在第二题。
+A很简单，大意是一个人在一条路上走，可以跑t秒，告诉走路和跑步的速度，再有的是路上有n个不重叠的walkway，在walkway上的速度等于walkway的速度+当前速度，问最少几秒钟到终点。思路非常简单，就是要在walkway上加速尽量多的时间。有两种情况，一种是在没有walkway的路上跑步跑完了t秒，这种情况时间很好算。另一种是walkway之外的路上t秒没用完，这时后要尽量在速度快的walkway上加速，所以对walkway的速度排序就可以了。需要注意的情况就是从头跑到尾的情况。
+A题代码：
+
+```cpp
+#include <cstdio>
+#include <algorithm>
+#include <cstring>
+
+namespace gcj{
+    using namespace std;
+
+    const int MAXN = 1005;
+    struct walkway{
+        int b, e, w;
+        friend bool operator< (const walkway& l, const walkway& r) {
+            return l.w < r.w;
+        }
+    };
+
+    walkway cors[MAXN];
+
+    void solve(int T) {
+        int x, s, r, t, n;
+        int wwlen = 0, rlen;
+        double res = 0.0, rt;
+
+        scanf("%d %d %d %d %d", &x, &s, &r, &t, &n);
+        for (int  i = 0; i < n; i ++)
+            scanf("%d %d %d", &cors[i].b, &cors[i].e, &cors[i].w), wwlen += cors[i].e - cors[i].b;
+        rlen = x - wwlen;
+        rt = t;
+        sort(cors, cors + n);
+
+        if(rlen >= t * r)
+            res = 1.0 * (rlen - t * r) / s + t, rt = 0.0;
+        else
+            res = 1.0 * rlen / r, rt -= res;
+
+        for (int  i = 0; i < n; i ++) {
+            if (rt <= 0.0) {
+                res += 1.0 * (cors[i].e - cors[i].b) / (s + cors[i].w);
+                continue;
+            }
+            if (1.0 * (cors[i].e - cors[i].b) / (r + cors[i].w) <= rt) {
+                res += 1.0 * (cors[i].e - cors[i].b) / (r + cors[i].w);
+                rt -= 1.0 * (cors[i].e - cors[i].b) / (r + cors[i].w);
+            } else {
+                res += 1.0 * (cors[i].e - cors[i].b - (r + cors[i].w) * rt) / (s + cors[i].w) + rt;
+                rt = 0.0;
+            }
+        }
+
+        printf("Case #%d: %.9lf\n", T + 1, res);
+    }
+
+    void solve() {
+        int t;
+        scanf("%d", &t);
+        for (int i = 0; i < t; i ++)
+            solve(i);
+    }
+}
+
+int main() {
+    freopen("E:/OWenT/GCJ/R2/A-large.in", "r", stdin);
+    freopen("E:/OWenT/GCJ/R2/A-large.out", "w", stdout);
+
+    gcj::solve();
+    return 0;
+}
+```
+
+B题是我的痛啊，如果是难题，我不会，那我无话可说，关键是简单的计算几何+简单的DP，方法对，思路对，写代码的时候犯了N个白痴错误，各种变量名写错，各种复制代码忘了改。以后要注意写代码宁愿慢一点结构严谨，也不要贪图方便Copy代码。
+比赛的时候这题我首先理解题目花了40多分钟，花了10分钟推导，50多分钟编码竟然都没写出来，Sample都没过，赛后我完全重写了一下，写出来到过小数据和大数据花了大概40分钟不到。真是不甘心。
+
+B题大意是给一个矩形钢板，要求先裁出一块正方形，边长大于等于3，再去掉四个角，要求最终的东西重心在形状上的中心。问是否存在如果存在给出最大的第一次裁出的正方形边长。题目难理解的地方在于开始输入的有r c d，而给的每个grid的重量是d+wij，这个地方我一直没理解然后用sample测理解。方法就是DP，对R和C进行DP，对K枚举就好。需要注意的地方是k可以为偶数。
+B题代码：
+
+```cpp
+#include <cstdio>
+#include <cstring>
+#include <algorithm>
+#include <cmath>
+
+namespace gcj {
+    using namespace std;
+
+    const int maxn = 505;
+    typedef long long lld;
+
+    char inputStr[maxn];
+    struct grid{
+        lld r, c, w;
+        grid(): r(0), c(0), w(0){}
+        grid(lld a, lld b, lld c): r(a), c(b), w(c){}
+
+        friend grid operator+(const grid& l, const grid& r) {
+            return grid(l.r + r.r, l.c + r.c, l.w + r.w);
+        }
+
+        friend grid operator-(const grid& l, const grid& r) {
+            return grid(l.r - r.r, l.c - r.c, l.w - r.w);
+        }
+    };
+
+    grid grids[maxn][maxn];
+    grid sum[maxn][maxn];
+
+    void solve() {
+        int t, r, c, d, res;
+        scanf("%d", &t);
+
+        for (int tc = 0; tc < t; tc ++) {
+            scanf("%d %d %d", &r, &c, &d);
+            res = 0;
+
+            for (int i = 1; i <= r; i ++) {
+                scanf(" %s", inputStr);
+                for (int j = 1; j <= c; j ++) {
+                    grids[i][j].w = d + inputStr[j - 1] - '0';
+                    grids[i][j].r = i * grids[i][j].w;
+                    grids[i][j].c = j * grids[i][j].w;
+
+                    sum[i][j] = sum[i - 1][j] + sum[i][j - 1] - sum[i - 1][j - 1] + grids[i][j];
+                }
+            }
+
+            for (int i = 1; i <= r; i ++) {
+                for (int j = 1; j <= c; j ++) {
+                    for (int k = max(3, res + 1); k + i - 1 <=r && k + j - 1 <= c; k ++) {
+                        int ti = k + i - 1, tj = k + j - 1;
+                        //if ((i + ti) % 2 || (j + tj) % 2)
+                        //	continue;
+                        grid gd = sum[i - 1][j - 1] + sum[ti][tj] - sum[i - 1][tj] - sum[ti][j - 1]
+                            - grids[i][j] - grids[i][tj] - grids[ti][j] - grids[ti][tj];
+                            if (((i + ti) % 2 + 1) * gd.r % gd.w != 0 || ((j + tj) % 2 + 1) * gd.c % gd.w != 0)
+                                continue;
+                            if (2 * gd.r / gd.w != i + ti || 2 * gd.c / gd.w != j + tj )
+                                continue;
+                            res = max(res, k);
+                    }
+                }
+            }
+
+            if(res)
+                printf("Case #%d: %d\n", tc + 1, res);
+            else
+                printf("Case #%d: IMPOSSIBLE\n", tc + 1);
+        }
+    }
+}
+
+int main() {
+    freopen("D:/GCJ/R2/B-large-practice.in", "r", stdin);
+    freopen("D:/GCJ/R2/B-large-practice.out", "w", stdout);
+
+    gcj::solve();
+}
+```
+
+唉，真心还需要学习提高水平啊。

@@ -1,0 +1,32 @@
+---
+title: atframework基本框架已经完成
+tags:
+  - atframework
+  - c++0x/11
+  - c++11
+  - cpp
+  - g++
+  - gcc
+  - 消息队列
+  - 进程间通信
+id: 1301
+categories:
+  - Article
+  - Blablabla
+  - Work
+date: 2016-09-22 17:10:11
+---
+
+好久没写blog了。最近空闲时间都在加紧完成[atframework](https://atframe.work)框架。总算是搞完了，并且搭建了一个静态介绍页。以后有空慢慢加文档进去。
+
+主页: [https://atframe.work/](https://atframe.work/)
+Github: [https://github.com/atframework/](https://github.com/atframework/)
+
+目前这个项目已经是一个小型游戏服务器的完整框架，包括服务器间实例的管理、客户端和服务器的内部协议和通信机制。并且实现了纯C的port。
+然后[https://github.com/atframework/atsf4g-co/tree/master/sample/atgw_cli_inner_hello](https://github.com/atframework/atsf4g-co/tree/master/sample/atgw_cli_inner_hello)里提供了c++的客户度端的代码示例，[https://github.com/atframework/AtgwInnerCli-CSharp](https://github.com/atframework/AtgwInnerCli-CSharp)里提供了C#的客户端代码示例。
+使用的都是同一个纯C的协议porting。这样无论cocos还是unity框架接入都不困难了。其他的框架也可以直接用这个纯C的porting来接入。
+
+然后接下来我会用协程的设计模型整理出一个完整项目的小demo结构，以便以后用起来方便。最近也没时间写完整的技术总结。不过本来要给新公司的大家讲解服务器的设计和新框架的设计要点，我就把PPT分享出来吧。
+
+PPT托管在Office365上，看不着的话可能得自备梯子。
+[iframe src="https://onedrive.live.com/embed?cid=9E9045AB22B1A22D&amp;resid=9E9045AB22B1A22D%2176769&amp;authkey=AFmVYMcY1mwYeuY&amp;em=2" width="804" height="654"]

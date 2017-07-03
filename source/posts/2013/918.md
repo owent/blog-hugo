@@ -1,0 +1,48 @@
+---
+title: Lua 挺好用的样子
+tags:
+  - c
+  - Javascript
+  - lua
+id: 918
+categories:
+  - Article
+  - Blablabla
+date: 2013-10-24 20:59:44
+---
+
+项目里面引入了Lua，就特别学习了一下。
+
+其实对于理解Javascipt的人来说，Lua也很容易理解，因为他们太多的地方相像了。
+
+初步看来，Lua的设计模式和思想很像Javascript，也是原型模型（Javascript里叫**prototype**，Lua里是**metatable**）
+
+为了便于理解并且更快上手，特意整理出**Lua和Javascript的一些异同**
+
+# 核心和规范:
+
+1.  **Lua里有个Table**类型，类似**Javascript的Object**，里面可以放各种动态类型
+2.  都支持**词法定界**，所以都支持构造**闭包**。Lua的词法定界使用了upvalue引用的方式，垃圾回收**主要是标记删除法**
+3.  Javascript在数据溢出是会自动扩充到64位整型，**Lua貌似是不支持64位整数**。不过Javascript的64位整数的位操作也有点问题。
+4.  Javascript的最外层对象是window(浏览器)和global（Node.js），Lua是_G
+5.  Lua获取执行环境用得的**debug模块的功能据官方文档说比较耗性能**，Javascript可以直接通过arguments对象来拿到
+6.  Lua和Javascript一样只提供常规操作。Lua可以操作文件、字符串、数学运算、IO和很基础的系统API。复杂的功能如正则表达式啊什么的，需要通过外部接口导入来使用
+
+# 语法和设计模式:
+
+1.  Lua神奇的地方是所有的东西都是多元组，并且用逗号隔开。比如 for key, value in pairs(...) do end； a, b = b, a和 a,b,c = c,a,b等等。这里 key,value和a,b和a,b,c都是多元组
+2.  和Javascript一样，都支持语句尾部的分号自动补全。但是区别是，Javascript只能在换行符的地方补全；Lua没这种限制可以在任意处补全。但是Lua的限制是**不能有空语句块**，所以**;;**是不合法的
+3.  **Lua支持操作符和一些内部操作函数的重载**，方式是定义加两个下划线__加名字的函数，比如加法操作符 __add。（详见: [http://www.lua.org/manual/5.1/manual.html#2.8](http://www.lua.org/manual/5.1/manual.html#2.8)）
+4.  虽然都是原型模型，但是**Javascript默认的查找符号的行为就是向上查原型链，而lua默认是只查找本层**。不过可以简单得重设__index接口来实现这一特性
+5.  利用Javascript实现携程比较容易，可以通过各种匿名回调函数，Lua更简单，直接提供了携程模块。
+6.  Lua为Table声明函数可以**Name.FuncName或者Name:FuncName**，后一个和前一个的区别是**后一个默认多加了一个self参数**。可以以此和前面的metatable来模拟多态特性
+
+# 工具和外部支持:
+
+1.  **Lua嵌入其他语言**比较简单。因为Lua的调用是栈式的，不过代码写起来不怎么美观。有很多工具提供了Lua和其他语言的交互接口抽象代码生成工具，如**swig、tolua、tolua++**等等。Javascript的稍微麻烦点，但是Javascript的交互代码看起来比较漂亮，特别是Node.js内用V8引擎然后写C++插件(详见：[http://nodejs.org/api/addons.html](http://nodejs.org/api/addons.html))。也十分简单。
+2.  Lua有jit可以编译后执行，Javascript就比较惨一点。所以很多本地代码里嵌入Lua而不是Javascript来方便变更同时又保证高效。不过据说Mozilla的Asm.js提取出了Javascript的子集，然后用AOT编译+运行时优化技术，可以和本地应用匹敌的性能，这个没研究过不敢乱说
+3.  Javascript的调试工具很成熟也很上流啊，各类浏览器，用Node.js的话还可以远程调试。Lua的就悲剧了...
+
+这里有别人对Lua和Javascript做出的一些些个比较分析，可以参考一下：[http://blog.artyyouth.com/?p=120](http://blog.artyyouth.com/?p=120)
+
+暂时也就总结出这么多了，以后用得过程中如果有新的发现再往这里放吧	 

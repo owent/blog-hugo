@@ -1,0 +1,127 @@
+---
+title: POJ PKU 2446 Chessboard 解题报告
+tags:
+  - acm
+  - pku
+  - poj
+id: 23
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-07-16 04:51:23
+---
+
+题目链接：[http://acm.pku.edu.cn/JudgeOnline/problem?id=2446](http://acm.pku.edu.cn/JudgeOnline/problem?id=2446)
+
+这是一道匹配题，把行数（r）和列数（c）按（r+c）%2分成两组，然后连边，做一次二分图匹配，可以直接用匈牙利算法
+
+匹配数等于两组的元素个数则为YES，否则NO
+
+代码如下：
+
+```cpp
+#include <iostream>
+#include <cstdio>
+#include <cstring>
+#include <set>
+#include <vector>
+using namespace std;
+
+int py[4][2] = { {1, 0}, {-1, 0}, {0, 1}, {0, -1} };
+/**
+ * 最大二分图匹配
+ * 最大二分图匹配 = 最小点覆盖
+ * Base 1
+ */
+#define MAXM 1024 //行
+#define MAXN 1024 //列
+bool mat[MAXM][MAXN] = {false};
+bool isMatchedR[MAXN] = {false};
+int matchedR[MAXN];//调用前初始化: memset(matchedR, 0, sizeof(matchedR));
+
+bool getLeftPath(bool matin[MAXM][MAXN], int pos, const int &n)
+{
+    int i;
+    for(i = 1 ; i <= n ; i ++)
+    {
+        if(matin[pos][i] && !isMatchedR[i])
+        {
+            isMatchedR[i] = true;
+            if(!matchedR[i] || getLeftPath(matin, matchedR[i], n))
+            {
+                matchedR[i] = pos;
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+long GetMaxMacthNumber(bool matin[MAXM][MAXN], const int &m, const int &n)
+{
+    int i,ans = 0;
+    for(i = 1 ; i <= m ; i ++)
+    {
+        memset(isMatchedR, false, sizeof(isMatchedR));
+        if(getLeftPath(matin, i, n))
+            ans++;
+    }
+    return ans;
+}
+
+bool mapbs[35][35];
+int index[35][35];
+int main()
+{
+    int m, n, k, i, j, r, c, tx, ty;
+    scanf("%d %d %d", &n, &m, &k);
+    memset(matchedR, 0, sizeof(matchedR));
+    memset(mapbs, true, sizeof(mapbs));
+    for(i = 0; i < k; i ++)
+    {
+        scanf("%d %d", &c, &r);
+        mapbs[r][c] = false;
+    }
+    for(i = 0; i < 35; i ++)
+        mapbs[0][i] = mapbs[i][0] = mapbs[n + 1][i] = mapbs[i][m + 1] = false;
+
+    r = c = 0;
+    for(i = 1; i <= n; i ++)
+    {
+        for(j = 1; j <= m; j ++)
+        {
+            if(mapbs[i][j])
+            {
+                if((i + j) % 2 == 0)
+                    index[i][j] = ++ r;
+                else
+                    index[i][j] = ++ c;
+            }
+        }
+    }
+    for(i = 1; i <= n; i ++)
+    {
+        for(j = 1; j <= m; j ++)
+        {
+            if(mapbs[i][j] && (i + j) % 2 == 0)
+            {
+                for(k = 0; k < 4; k ++)
+                {
+                    tx = i + py[k][0];
+                    ty = j + py[k][1];
+                    if(mapbs[tx][ty])
+                    {
+                        mat[index[i][j]][index[tx][ty]] = true;
+                    }
+                }
+            }
+        }
+    }
+
+    if(r != c || GetMaxMacthNumber(mat, r, c) != r)
+        printf("NO\n");
+    else
+        printf("YES\n");
+    return 0;
+}
+```

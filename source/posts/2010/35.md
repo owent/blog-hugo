@@ -1,0 +1,138 @@
+---
+title: GCD Determinant 解题报告
+tags:
+  - acm
+  - pku
+  - poj
+id: 35
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-04-26 14:33:11
+---
+
+[http://www.cn210.com/onlinejudge/problemshow.php?pro_id=98](http://www.cn210.com/onlinejudge/problemshow.php?pro_id=98)
+
+我们的OJ
+
+## Description
+
+<div>
+	We say that a set&nbsp;S&nbsp;= {x1,&nbsp;x2, ...,&nbsp;xn} is factor closed if for any&nbsp;xi&nbsp;&isin;&nbsp;S&nbsp;and any divisor&nbsp;d&nbsp;of&nbsp;xi&nbsp;we have&nbsp;d&nbsp;&isin;&nbsp;S. Let&#39;s build a GCD matrix (S) = (sij), wheresij&nbsp;= GCD(xi,&nbsp;xj) - the greatest common divisor of&nbsp;xi&nbsp;and&nbsp;xj. Given the factor closed set&nbsp;S, find the value of the determinant:&nbsp;
+	<center>
+		![](http://www.owent.net/ckfinder/userfiles/images/%E6%96%87%E7%AB%A0%E9%99%84%E5%9B%BE/%E8%A7%A3%E9%A2%98%E6%8A%A5%E5%91%8A/GCD_Determinant_q1.jpg)
+
+		&nbsp;</center>
+</div>
+
+## Input
+
+<div>
+	The input contains several test cases. Each test case starts with an integer&nbsp;n&nbsp;(0 &lt;&nbsp;n&nbsp;&lt; 1000), that stands for the cardinality of&nbsp;S.&nbsp;
+
+	The next line contains the numbers of&nbsp;S:&nbsp;x1,&nbsp;x2, ...,&nbsp;xn.&nbsp;
+
+	It is known that each&nbsp;xi&nbsp;is an integer, 0 &le;&nbsp;xi&nbsp;&le; 2*109.&nbsp;
+
+	The input data set is correct and ends with an end of file.&nbsp;</div>
+
+## Output
+
+<div>
+	For each test case find and print the value&nbsp;Dn&nbsp;mod 1000000007.
+
+		&nbsp;
+
+</div>
+
+## Sample Input
+
+```
+2
+1 2
+3
+1 3 9
+4
+1 2 3 6
+```
+
+## Sample Output
+
+```
+1
+12
+4
+```
+首先由于行列式交换行和列后值不变，我们可以把输入的X进行排序，然后列出的矩阵行列式值等于原行列式
+
+然后，由于题目告诉我们输入的元素是封闭的（即如果a在S中，a的所有因子都在S中）
+
+我们对行列式进行三角阵的化简可以得出对于对角线上的元素xi=gcd（xi，xi）化简结果dp[i]有
+
+dp[i] = x[i] - sum{x[i]的因子对应的dp值(即:gcd(xj,xi) == xj)? dp[j]: 0;}
+
+这里我们可以看出它和欧拉函数很像,现在证明它就是欧拉函数
+
+欧拉函数表示的是小于等于本身且最大公约数=1的数字的个数.
+
+显然对于x,诺y&lt;=x且gcd(x,y) &gt; 1
+
+y可以化简为y = xp * yp,其中xp 为小于y的最大的x的因子,且yp是x的某个因子的最大公约数为1的数字中最大的数字.
+
+对于每个因子的每个yp必然存在一个xp使y的值不同
+
+也就是说每个y都对应了一个因子的一个yp
+
+所以x的欧拉函数等于x -（y的个数）就等于x - 每个因子的欧拉函数
+
+所以我们要求的dp[i]就是xi的欧拉函数
+
+所以原体就被我们转换成了欧拉函数值的积,接下来就很好处理了
+
+代码如下:
+
+```cpp
+#include <iostream>
+#include <string>
+#include <cstdio>
+#include <algorithm>
+using namespace std;
+
+const long mod = 1000000007;
+long x[1005];
+
+long eular(long n)
+{
+    long res = 1, i;
+    for(i = 2; i * i <= n; i ++)
+    {
+        if(n % i == 0)
+        {
+            n /= i;
+            res *= (i - 1);
+            while(n % i == 0)
+                n /= i, res *= i;
+        }
+    }
+    if(n > 1)
+        res *= n - 1;
+    return res;
+}
+
+int main()
+{
+    int n, i;
+    long res;
+    while(scanf("%d", &n) != EOF)
+    {
+        res = 1;
+        for(i = 0; i < n; i ++)
+            scanf("%ld", &x[i]);
+        sort(x, x + n);
+        for(i = 0; i < n; i ++)
+            res = ((long long)res * (long long)eular(x[i])) % mod;
+        printf("%ld\n", res);
+    }
+    return 0;
+}
+```

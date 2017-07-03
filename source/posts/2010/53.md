@@ -1,0 +1,270 @@
+---
+title: ZOJ 3309 Search New Posts 解题报告
+tags:
+  - acm
+  - zju
+  - zoj
+id: 53
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-03-15 14:49:52
+---
+
+题目链接：[http://acm.zju.edu.cn/onlinejudge/showProblem.do?problemCode=3309](http://acm.zju.edu.cn/onlinejudge/showProblem.do?problemCode=3309)
+
+一道典型的Hash题
+
+题目很好理解。这里不复述
+
+由于输入语句最大数量200000，不用Hash铁定TLE。然后数据量不超过10000，所以必然有很多search和reply的操作。
+
+对于这个稍微做下优化就OK了
+
+贴代码：
+
+```cpp
+#include <iostream>
+#include <cstring>
+#include <vector>
+using namespace std;
+
+const long hashsize = 51071; //Hash表大小
+unsigned long ELFHash(char* strIn)
+{
+    unsigned long hashInt = 0 ;
+    unsigned long x = 0 ;
+    long i;
+    for (i = 0; i <= strlen(strIn) - 1; i++)
+    {
+        hashInt = (hashInt << 4) + strIn[i];
+        if ((x = hashInt & 0xF0000000L) != 0)
+        {
+            hashInt ^= ( x >> 24 ) ;
+            hashInt &= ~x ;
+        }
+    }
+    return (hashInt & 0x7FFFFFFF) % hashsize;
+}
+template<typename _T>
+class _My_Hash_ToInt_Data
+{
+public:
+    _My_Hash_ToInt_Data()
+    {
+        times = 0;
+        next = -1;
+    }
+    _T data;
+    long times;
+    long next;
+};
+template<long _SZ,class _T, unsigned long pFun(_T& _Off)>
+class _My_Hash_ToInt
+{
+public:
+    _My_Hash_ToInt()
+    {
+        memset(hash, -1, sizeof(hash));
+        length = 0;
+    };
+    ~_My_Hash_ToInt(){};
+    long find(_T _Off)
+    {
+        long pos = hash[pFun(_Off)];
+        while(pos >= 0)
+        {
+            if(data[pos].data == _Off)
+                return pos;
+            else
+                pos = data[pos].next;
+        }
+        return -1;
+    }
+    long insert(_T _Off)
+    {
+        long oldPos = pFun(_Off);
+        long pos = hash[oldPos];
+        while(pos >= 0)
+        {
+            if(data[pos].data == _Off)
+            {
+                data[pos].times ++;
+                return pos;
+            }
+            else
+                pos = data[pos].next;
+        }
+        data[length].data = _Off;
+        data[length].times = 1;
+        data[length].next = hash[oldPos];
+        hash[oldPos] = length ;
+        return length ++;
+    }
+    void clear()
+    {
+        length = 0;
+        memset(hash, -1, sizeof(hash));
+        memset(data, -1, sizeof(data));
+    }
+    //Member
+    long length;
+    _My_Hash_ToInt_Data<_T> data[_SZ];
+    long hash[hashsize];
+};
+class node
+{
+public:
+    char str[60];
+    bool operator == (node &strin)
+    {
+        return !strcmp(str, strin.str);
+    }
+    node& operator = (node &strin)
+    {
+        strcpy(str, strin.str);
+        return (*this);
+    }
+};
+unsigned long ELFHashEx(node &strIn)
+{
+    return ELFHash(strIn.str);
+}
+_My_Hash_ToInt<10005, node, ELFHashEx>hash;
+long usedR[10005] = {0};
+vector<long>list;
+char cmd[10];
+int main()
+{
+    long n,round = 0, i;
+    long hashlen = 0;
+    node str;
+    while(scanf("%ld", &n) != EOF)
+    {
+        round ++;
+        hash.clear();
+        list.clear();
+        while(n --)
+        {
+            scanf("%s", cmd);
+            if(!strcmp("new", cmd))
+            {
+                scanf("%s", str.str);
+                hashlen = hash.insert(str);
+                usedR[hashlen] = round;
+                list.push_back(hashlen);
+                hashlen ++;
+            }
+            else if(!strcmp("reply", cmd))
+            {
+                scanf("%s", str.str);
+                long pos = hash.find(str);
+                usedR[pos] = round;
+                list.push_back(pos);
+            }
+            else if(!strcmp("tag", cmd))
+            {
+                scanf("%s", str.str);
+                long pos = hash.find(str);
+                usedR[pos] = 0;
+            }
+            else if(!strcmp("search", cmd))
+            {
+                long outN = 100;
+                for(i = list.size() - 1; i >= 0 && outN; i --)
+                {
+                    if(usedR[list[i]] && usedR[list[i]] <= round)
+                    {
+                        printf("%s\n", hash.data[ list[i] ].data.str );
+                        usedR[list[i]] = round + 1;
+                        outN --;
+                    }
+                }
+
+                printf("###\n");
+                round ++;
+            }
+
+        }
+
+        putchar('\n');
+    }
+   return 0;
+}
+```
+
+使用STL又过了一遍。内存消耗减少了近300kb，时间大概是原来的3倍。370Ms
+
+```cpp
+#include <iostream>
+#include <cstring>
+#include <vector>
+#include <string>
+#include <map>
+using namespace std;
+
+map<string, long>hash;
+long usedR[10005] = {0};
+vector<long>list;
+char cmd[10];
+string strO[10005];
+int main()
+{
+    long n,round = 0, i;
+    long hashlen = 0;
+    string str;
+    while(scanf("%ld", &n) != EOF)
+    {
+        round ++;
+        hashlen = 0;
+        hash.clear();
+        list.clear();
+        while(n --)
+        {
+            scanf("%s", cmd);
+            if(!strcmp("new", cmd))
+            {
+                cin>> str;
+                hash[ str ] = hashlen;
+                usedR[hashlen] = round;
+                list.push_back(hashlen);
+                strO[hashlen] = str;
+                hashlen ++;
+            }
+            else if(!strcmp("reply", cmd))
+            {
+                cin>> str;
+                long pos = hash[str];
+                usedR[pos] = round;
+                list.push_back(pos);
+            }
+            else if(!strcmp("tag", cmd))
+            {
+                cin>> str;
+                long pos = hash[str];
+                usedR[pos] = 0;
+            }
+            else if(!strcmp("search", cmd))
+            {
+                long outN = 100;
+                for(i = list.size() - 1; i >= 0 && outN; i --)
+                {
+                    if(usedR[list[i]] && usedR[list[i]] <= round)
+                    {
+                        cout<< strO[ list[i] ]<< endl;
+                        usedR[list[i]] = round + 1;
+                        outN --;
+                    }
+                }
+
+                printf("###\n");
+                round ++;
+            }
+
+        }
+
+        putchar('\n');
+    }
+   return 0;
+}
+```

@@ -1,0 +1,53 @@
+---
+title: Android NDK undefined reference to ___tls_get_addr 错误
+tags:
+  - android
+  - c
+  - c++0x/11
+  - c++11
+  - cpp
+  - g++
+  - gcc
+id: 1140
+categories:
+  - Article
+  - Blablabla
+  - Work
+date: 2015-02-06 20:27:16
+---
+
+本来看到Android的ndk都开始用gcc4.8和gcc4.9了，而且gcc4.8.1开始支持全部的c++11的特性，我就很happy地用上了。结果出现这么个错误。
+
+网上查到说是Android的run time竟然不支持[ thread local storage（TLS）](http://en.cppreference.com/w/cpp/language/storage_duration)，更准确地说，是它没实现。
+
+而我这里需要用TLS来做内存通道无锁队列的数据统计（还好去掉以后只是统计不准）
+
+再查文档下来，原来是android的run time没有用gnu的glibc，而是用得Google自己实现的[Bionic](http://en.wikipedia.org/wiki/Bionic_%28software%29#cite_note-Gentry-6)，这货很多功能没有实现，留了空接口。
+
+根据维基百科上的说法，Boinic没实现的还不止这个。比glibc而言还不支持的功能还有：
+
+*   不支持异常处理
+*   无标准模板（这个可以用gnustl或者stlport代替）
+*   不支持宽字符（貌似用处不大，现在主流UTF-8了）
+*   据说它比glibc速度快（也不知道快多少）
+真是留下了茫茫多坑呐，而且还不知道是不是有其他什么不支持的功能。
+
+目前的解决方案比较暴力不完美，就是在TLS的地方排除Android平台
+
+```cpp
+#if defined(__ANDROID__)
+// android 不支持tls
+#define THREAD_TLS
+#elif defined(__clang__)
+#define THREAD_TLS __thread
+#elif defined(__cplusplus) &amp;&amp; __cplusplus &gt;= 201103L
+#define THREAD_TLS thread_local
+// VC 2003
+#elif defined(_MSC_VER) &amp;&amp; (_MSC_VER &gt;= 1300)
+#define THREAD_TLS __declspec( thread )
+#else
+#define THREAD_TLS __thread
+#endif
+```
+
+具体见: [https://github.com/owent-utils/c-cpp/blob/master/include/std/thread.h](https://github.com/owent-utils/c-cpp/blob/master/include/std/thread.h)

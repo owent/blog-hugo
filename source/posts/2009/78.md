@@ -1,0 +1,265 @@
+---
+title: ECUST 09年 校赛个人赛第八场（最后一场）总结
+tags:
+  - acm
+id: 78
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2009-08-14 11:41:45
+---
+
+懒惰了，暂时休息一下
+
+这次我只AC了一题（在结束的那一刻，另一题在题目来源地网站上AC了，我们的OJ上仍然WA，我们OJ的Special Judge真是—_—!）
+
+H题是用木棒拼数字，给出木棒数量，要求算出拼出的最大和最小数字
+
+最大数字部分很明显7要用3根棒，1用2根棒，所以如果是奇数就是7+K个1，k=（n-1）/2 -1偶数直接n/2个1
+
+最小数字部分比较麻烦，因为分几种情况，我是DP解决的，也可以找规律，DP的话要注意0和6都是用6根棒，而0不能作为第一个数字
+
+代码如下： 
+
+```cpp
+#include<iostream>
+using namespace std;
+class cal
+{
+public:
+    int num[10];
+    int length;
+    void Equal(cal a);
+    bool sThan(cal a);
+    cal AandB(cal a);
+};
+cal Num[101];
+int main()
+{
+    freopen("h.in","r",stdin);
+    freopen("h.out","w",stdout);
+    int i,j;
+
+    for(i = 0 ; i < 101 ; i ++)
+        for(j = 0 ; j < 10 ; j ++)
+            Num[i].num[j] = 0;
+
+    Num[2].num[1] = 1;Num[2].length = 1;
+    Num[3].num[7] = 1;Num[3].length = 1;
+    Num[4].num[4] = 1;Num[4].length = 1;
+    Num[5].num[2] = 1;Num[5].length = 1;
+    Num[6].num[0] = 1;Num[6].length = 1;
+    Num[7].num[8] = 1;Num[7].length = 1;
+
+
+    for(i = 8 ; i < 101 ; i ++)
+    {
+        Num[i].Equal(Num[2].AandB(Num[i - 2]));
+        for(j = 3 ; j < 8 && i - j >= 2 ; j ++)
+        {
+            if(Num[j].AandB(Num[i - j]).sThan(Num[i]))
+                Num[i].Equal(Num[j].AandB(Num[i - j]));
+        }
+    }
+
+
+    int t;
+    scanf("%d",&t);
+    while(t --)
+    {
+        int n;
+        scanf("%d",&n);
+        if(n == 6)
+            printf("6 111\n");
+        else
+        {
+            for(i = 1 ; i < 10 ; i ++)
+                if(Num[n].num[i])
+                    break;
+            int b1 = i;
+            printf("%d",b1);
+            for(i = 0 ; i < 10 ; i ++)
+                for(j = 0 ; (j < Num[n].num[i] && i != b1)
+                    || (j < Num[n].num[i] - 1 && i == b1); j ++)
+                    printf("%d",i);
+            putchar(' ');
+
+            if(n % 2)
+                printf("7");
+            else
+                printf("1");
+            n = n / 2 - 1;
+            while(n --)
+                putchar('1');
+            putchar('\n');
+        }
+
+    }
+    return 0;
+}
+
+cal cal::AandB(cal a)
+{
+    cal tmpCal;
+    tmpCal.length = length + a.length;
+    for(int i = 0 ; i < 10 ; i ++)
+        tmpCal.num[i] = num[i] + a.num[i];
+
+    tmpCal.num[0] += tmpCal.num[6];
+    tmpCal.num[6] = 0;
+
+    int j;
+    for( j = 1 ; j < 10 ; j ++)
+        if(tmpCal.num[j])
+            break;
+    int b1 = j;
+
+    if(tmpCal.num[0] && b1 > 6)
+        tmpCal.num[0] --,tmpCal.num[6] ++;
+
+    return tmpCal;
+};
+
+bool cal::sThan(cal a)
+{
+    if(length < a.length)
+        return true;
+    else if(a.length > length)
+        return false;
+    else
+    {
+        int i;
+        for(i = 1 ; i < 10 ; i ++)
+            if(num[i])
+                break;
+        int b1 = i;
+        for(i = 1 ; i < 10 ; i ++)
+            if(a.num[i])
+                break;
+        int b2 = i;
+
+        if(b1 < b2)
+            return true;
+        else if(b1 > b2)
+            return false;
+        else
+            for(i = 0 ; i < 10 ; i ++)
+                if(a.num[i] != num[i])
+                    return num[i] > a.num[i];
+    }
+
+    return false;
+};
+
+void cal::Equal(cal a)
+{
+    for(int i = 0 ; i < 10 ; i ++)
+        num[i] = a.num[i];
+
+    length = a.length;
+
+
+    num[0] += num[6];
+    num[6] = 0;
+
+    int j;
+    for( j = 1 ; j < 10 ; j ++)
+        if(num[j])
+            break;
+    int b1 = j;
+
+    if(num[0] && b1 > 6)
+        num[0] --,num[6] ++;
+
+}
+```
+
+## 然后是I题
+
+其实I题很水，就是前两天写的点到线段距离的改版，只不过这是线段到线段间的最短距离
+
+题目按顺时针或逆时针输入，数据量只有100，所以任然暴搜解决
+
+代码如下： 
+
+```cpp
+#include<stdio.h>
+#include<math.h>
+double GetLineDistance(double x1,double y1,double x2,double y2,double x3,double y3,double x4,double y4);
+double disBetweenPointAndLine(double x0,double y0,double x1,double y1,double x2,double y2);
+
+double X1[100],Y1[100],X2[100],Y2[100];
+int main()
+{
+    int t;
+    scanf("%d",&t);
+    while(t --)
+    {
+        int n,m,i,j;
+        double out = 100000000;
+        scanf("%d",&n);
+        for(i = 0 ; i < n ; i ++)
+            scanf("%lf %lf",&X1[i],&Y1[i]);
+
+        scanf("%d",&m);
+        for(i = 0 ; i < m ; i ++)
+            scanf("%lf %lf",&X2[i],&Y2[i]);
+
+        for(i = 0 ; i < n ; i ++)
+            for(j = 0 ; j < m ; j ++)
+            {
+                double tmpDou = GetLineDistance(X1[i],Y1[i],X1[(i + 1) % n],Y1[(i + 1) % n]
+                    ,X2[j],Y2[j],X2[(j + 1) % m],Y2[(j + 1) % m]);
+                if(out > tmpDou)
+                    out = tmpDou;
+            };
+
+        printf("%.8lg\n",out / 2);
+    }
+    return 0;
+}
+
+
+
+//{(x1,y1),(x2,y2)}{(x3,y3),(x4,y4)}
+//导入点到直线或线段的距离模板
+
+double GetLineDistance(double x1,double y1,double x2,double y2,double x3,double y3,double x4,double y4)
+{
+    double tmpDouble = disBetweenPointAndLine(x1,y1,x3,y3,x4,y4);
+    if(tmpDouble > disBetweenPointAndLine(x2,y2,x3,y3,x4,y4))
+        tmpDouble = disBetweenPointAndLine(x2,y2,x3,y3,x4,y4);
+    if(tmpDouble > disBetweenPointAndLine(x3,y3,x1,y1,x2,y2))
+        tmpDouble = disBetweenPointAndLine(x3,y3,x1,y1,x2,y2);
+    if(tmpDouble > disBetweenPointAndLine(x4,y4,x1,y1,x2,y2))
+        tmpDouble = disBetweenPointAndLine(x4,y4,x1,y1,x2,y2);
+
+    return tmpDouble;
+}
+
+double disBetweenPointAndLine(double x0,double y0,double x1,double y1,double x2,double y2)
+{
+    //化为ax+by+c=0的形式
+    double a = y1-y2;
+    double b = x2-x1;
+    double c = x1*y2-x2*y1;
+    double d = (a*x0+b*y0+c)/sqrt(a*a+b*b);
+    /*
+    如果是线段判断垂足
+    */
+    double xp = (b*b*x0-a*b*y0-a*c)/(a*a+b*b);
+    double yp = (-a*b*x0+a*a*y0-b*c)/(a*a+b*b);
+    double xb = (x1>x2)?x1:x2;
+    double yb = (y1>y2)?y1:y2;
+    double xs = x1+x2-xb;
+    double ys = y1+y2-yb;
+    if(xp > xb || xp < xs || yp > yb || yp < ys)
+    {
+        d = sqrt((x0 - x1) * (x0 - x1) + (y0 - y1) * (y0 - y1));
+        if(d > sqrt((x0 - x2) * (x0 - x2) + (y0 - y2) * (y0 - y2)))
+            d = sqrt((x0 - x2) * (x0 - x2) + (y0 - y2) * (y0 - y2));
+    }
+
+    return fabs(d);
+}
+```

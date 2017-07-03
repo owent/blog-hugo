@@ -1,0 +1,118 @@
+---
+title: GCC 7和LLVM+Clang+libc++abi 4.0的构建脚本
+tags:
+  - c
+  - c++0x/11
+  - c++11
+  - c++14
+  - c++17
+  - clang
+  - cpp
+  - g++
+  - gcc
+  - linux
+  - lld
+  - lldb
+  - llvm
+  - STL
+id: 1431
+categories:
+  - Article
+  - Blablabla
+date: 2017-05-09 11:17:55
+---
+
+之前的版本发完，有空来更新一下之前的gcc和llvm+clang工具链的编译脚本了。其实GCC 7是才release没多久但是llvm 4.0发布其实有一段时间了。
+
+## GCC
+
+这回是GCC的脚本有一些改动。因为我现在开发机的环境很多组件并没有装，所以顺带发现了之前的构建脚本的一些问题。
+
+第一是multilib的问题。之前的编译有时候是使用--disable-multilib来编译的。但是其实如果依赖库可以编译multilib就会自动开启，然后就有一些依赖库要自己编译multilib版本。
+
+另外GCC 7之后不再默认包含 [bdw-gc](https://github.com/ivmai/bdwgc)了，所以如果加了--enable-objc-gc参数以后，编译会报错。所以现在编译的依赖包里又加入了[bdw-gc](https://github.com/ivmai/bdwgc)。同时由于[bdw-gc](https://github.com/ivmai/bdwgc)依赖[libatomic_ops](https://github.com/ivmai/libatomic_ops)，所以也增加了[libatomic_ops](https://github.com/ivmai/libatomic_ops)的下载脚本。不过由于这两个库都要区分multilib，所以并没有放在原始的安装目录下，而是放到了multilib子目录里，并且仅生成静态库（这样就不需要加入到动态库查找目录）。大概就是下面这样:
+
+```bash
+    # install libatomic_ops
+    if [ -z "$BUILD_TARGET_COMPOMENTS" ] || [ "0" == $(is_in_list libatomic_ops $BUILD_TARGET_COMPOMENTS) ]; then
+        LIBATOMIC_OPS_PKG=$(check_and_download "libatomic_ops-7.4.4" "libatomic_ops-*.tar.gz" "https://github.com/ivmai/libatomic_ops/archive/libatomic_ops-7_4_4.tar.gz" "libatomic_ops-7_4_4.tar.gz" );
+        if [ $? -ne 0 ]; then
+            echo -e "$LIBATOMIC_OPS_PKG";
+            exit -1;
+        fi
+        tar -zxvf $LIBATOMIC_OPS_PKG;
+        LIBATOMIC_OPS_DIR=$(ls -d libatomic_ops-* | grep -v \.tar\.gz);
+        # cd $LIBATOMIC_OPS_DIR;
+        # bash ./autogen.sh ;
+        # ./configure --prefix=$PREFIX_DIR ;
+        # make $BUILD_THREAD_OPT &amp;&amp; make install;
+        if [ $? -ne 0 ]; then
+            echo -e "\\033[31;1mError: build libatomic_ops failed.\\033[39;49;0m";
+            exit -1;
+        fi
+        cd "$WORKING_DIR";
+    fi
+
+    # install bdw-gc
+    if [ -z "$BUILD_TARGET_COMPOMENTS" ] || [ "0" == $(is_in_list bdw-gc $BUILD_TARGET_COMPOMENTS) ]; then
+        BDWGC_PKG=$(check_and_download "bdw-gc-7.6.0" "gc7_6_0.tar.gz" "https://github.com/ivmai/bdwgc/archive/gc7_6_0.tar.gz" "gc7_6_0.tar.gz" );
+        if [ $? -ne 0 ]; then
+            echo -e "$BDWGC_PKG";
+            exit -1;
+        fi
+        tar -zxvf $BDWGC_PKG;
+        BDWGC_DIR=$(ls -d bdwgc-gc* | grep -v \.tar\.gz);
+        cd $BDWGC_DIR;
+        bash ./autogen.sh ;
+        if [ ! -z "$LIBATOMIC_OPS_DIR" ]; then
+            if [ -e libatomic_ops ]; then
+                rm -rf libatomic_ops;
+            fi
+            mv -f ../$LIBATOMIC_OPS_DIR libatomic_ops;
+            $(cd libatomic_ops &amp;&amp; bash ./autogen.sh );
+            BDWGC_LIBATOMIC_OPS=no ;
+        else
+            BDWGC_LIBATOMIC_OPS=check ;
+        fi
+        ./configure --prefix=$PREFIX_DIR/multilib/$SYS_LONG_BIT --enable-cplusplus --with-pic=yes --enable-shared=no --enable-static=yes --with-libatomic-ops=$BDWGC_LIBATOMIC_OPS ;
+        make $BUILD_THREAD_OPT &amp;&amp; make install;
+        if [ $? -ne 0 ]; then
+            echo -e "\\033[31;1mError: build bdw-gc failed.\\033[39;49;0m";
+            exit -1;
+        fi
+
+        if [ $SYS_LONG_BIT == "64" ] &amp;&amp; [ "$GCC_OPT_DISABLE_MULTILIB" == "--enable-multilib" ] ; then
+            make distclean;
+            env CFLAGS=-m32 CPPFLAGS=-m32 ./configure --prefix=$PREFIX_DIR/multilib/32 --enable-cplusplus --with-pic=yes --enable-shared=no --enable-static=yes --with-libatomic-ops=$BDWGC_LIBATOMIC_OPS ;
+
+            make $BUILD_THREAD_OPT &amp;&amp; make install;
+            if [ $? -ne 0 ]; then
+                echo -e "\\033[31;1mError: build bdw-gc with -m32 failed.\\033[39;49;0m";
+                exit -1;
+            fi
+            BDWGC_PREBIUILT="--with-target-bdw-gc=$PREFIX_DIR/multilib/$SYS_LONG_BIT,32=$PREFIX_DIR/multilib/32";
+        else
+            BDWGC_PREBIUILT="--with-target-bdw-gc=$PREFIX_DIR/multilib/$SYS_LONG_BIT";
+        fi
+        cd "$WORKING_DIR";
+    fi
+```
+
+再就是，以前看到gcc的用于gdb的python脚本已经支持Python 3了，我就把默认Python换成了Python 3。但是之前一直是使用我的开发机的内置Python 2的，所以编译没有问题。但是实际上gdb的编译脚本里并没有检测Python 2的，所以使用Python 2实际上编译不出来。所以这次又换回了 Python 2。
+
+
+GCC 7更新的东西还是蛮多的，具体可见 [https://github.com/owent-utils/bash-shell/tree/master/GCC%20Installer/gcc-7](https://github.com/owent-utils/bash-shell/tree/master/GCC%20Installer/gcc-7)
+
+当然编译脚本也是这里
+
+## LLVM+Clang+libc++abi
+
+得益于之前重构的LLVM系列的编译脚本，这次这个也就更新了一下版本号。编译过程很顺利，不过我测试的时候没有编lldb，应该为题不大，反正是拿来玩的。
+
+更新列表见：
+
+*   llvm : [http://llvm.org/releases/4.0.0/docs/ReleaseNotes.html](http://llvm.org/releases/4.0.0/docs/ReleaseNotes.html)
+*   clang : [http://llvm.org/releases/4.0.0/tools/clang/docs/ReleaseNotes.html](http://llvm.org/releases/4.0.0/tools/clang/docs/ReleaseNotes.html)
+*   clang Extra : [http://llvm.org/releases/4.0.0/tools/clang/tools/extra/docs/ReleaseNotes.html](http://llvm.org/releases/4.0.0/tools/clang/tools/extra/docs/ReleaseNotes.html)
+*   lld: [http://llvm.org/releases/4.0.0/tools/lld/docs/ReleaseNotes.html](http://llvm.org/releases/4.0.0/tools/lld/docs/ReleaseNotes.html)
+编译脚本见： [https://github.com/owent-utils/bash-shell/tree/master/LLVM%26Clang%20Installer/4.0](https://github.com/owent-utils/bash-shell/tree/master/LLVM%2526Clang%20Installer/4.0)

@@ -1,0 +1,156 @@
+---
+title: POJ PKU 1986 Distance Queries 解题报告
+tags:
+  - acm
+  - pku
+  - poj
+id: 22
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-07-16 04:57:10
+---
+
+题目链接：[http://acm.pku.edu.cn/JudgeOnline/problem?id=1986](http://acm.pku.edu.cn/JudgeOnline/problem?id=1986)
+
+这是一道并查集+树的题，采用Tarjan离线算法
+
+首先BS一下出题的人，也太懒了吧，还要我们看1984题才知道输入
+
+题目的意思是告诉一个节点数为40000的树，问我们两个节点间的距离。实际上就是找出公共父节点，Tarjan算法写挫了很容易TLE，我开始用Vector就写搓了，结果TLE，后来重写，自己写邻接表然后AC了。
+
+所谓离线算法就是把问题先全部读入，在处理树的对应节点的时候解决对应节点的问题
+
+这里有个简单的优化，就是Tarjan算法要求对DNF（元素访问的顺序编号）做并查集，并且并入到父节点（就是编号小的那个节点），而这里可以对并查集做个小处理，使它一定是子节点并入父节点，这样可以省去DNF的计算（我的第一次TLE就没做这个优化），直接用节点的编号
+
+关于Tarjan算法：[http://www.nocow.cn/index.php/Tarjan%E7%AE%97%E6%B3%95](http://www.nocow.cn/index.php/Tarjan%E7%AE%97%E6%B3%95)
+
+这道题里LCA函数可以加入记录当前节点到根节点的距离，再记录所有节点到根节点的距离，这样可以通过计算获得两节点的距离，省去不断访问父节点知道访问到公共父节点，避免浪费时间
+
+PS：那个输入的方向C完全没用，仅仅是为了和1984题保持输入格式一致
+
+代码如下：（C++）
+
+```cpp
+#include <iostream>
+#include <cstdio>
+#include <algorithm>
+#include <cstring>
+using namespace std;
+
+struct node
+{
+    node(){first = -1;}
+    long dis;
+    long first;
+};
+
+struct road
+{
+    long next, to, dis;
+};
+
+//并查集个人模板
+long DSet[50005];
+void init(long n)
+{
+    for( long i = 0 ; i <= n ; i ++)
+        DSet[i] = i;
+}
+long findP( long id)
+{
+    if(DSet[id] != id)
+        DSet[id] = findP(DSet[id]);
+    return DSet[id];
+}
+//联合元素，这里修改为把b的父节点设为a，但是要在下面使用的时候注意不能搞反顺序
+long UnionEle( long a, long b)
+{
+    a = findP(a);
+    b = findP(b);
+    DSet[b] = a;
+    return a;
+}
+
+void lca(long pos, long dis);
+
+bool ischeck[50005] = {false};
+long res[20005] = {0};
+long que[50005];
+node point[50005];
+road rd[50005 * 2];
+road question[50005 * 2];
+
+void insertR(long from, long to, long len, long &n)
+{
+    rd[n].to = to;
+    rd[n].dis = len;
+    rd[n].next = point[from].first;
+    point[from].first = n;
+    n ++;
+}
+void insertQ(long from, long to, long index, long &n)
+{
+    question[n].to = to;
+    question[n].dis = index;
+    question[n].next = que[from];
+    que[from] = n;
+    n ++;
+}
+int main()
+{
+    long n, m, i, j, k, from, to, len, rdl = 0, quel = 0;
+    char c;
+    scanf("%ld %ld", &n, &m);
+
+    //Input roads
+    for(i = 0; i < m; i ++)
+    {
+
+        scanf("%ld %ld %ld %c", &from, &to, &len, &c);
+        insertR(from, to, len, rdl);
+        insertR(to, from, len, rdl);
+    }
+
+    memset(que, -1, sizeof(que));
+    scanf("%ld", &k);
+    //Input question
+    for(i = 0; i < k; i ++)
+    {
+        scanf("%ld %ld", &from, &to);
+        insertQ(from, to, i, quel);
+        insertQ(to, from, i, quel);
+    }
+
+    init(n);
+    ischeck[1] = true;
+    lca(1, 0);
+    for(i = 0; i < k; i ++)
+        printf("%ld\n", res[i]);
+    return 0;
+}
+
+void lca(long pos, long dis)
+{
+    point[pos].dis = dis;
+    long i, p;
+    ischeck[pos] = true;
+    for(i = point[pos].first; i != -1; i = rd[i].next)
+    {
+        if(ischeck[rd[i].to] == false)
+        {
+            lca(rd[i].to, dis + rd[i].dis);
+            UnionEle(pos, rd[i].to);
+        }
+    }
+
+    for(i = que[pos]; i != -1; i = question[i].next)
+    {
+        if(ischeck[question[i].to])
+        {
+            p = findP(question[i].to);
+            res[question[i].dis] = dis + point[question[i].to].dis  - 2 * point[p].dis;
+        }
+    }
+}
+```

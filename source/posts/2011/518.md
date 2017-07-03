@@ -1,0 +1,123 @@
+---
+title: C++ 新特性学习（二） -- Array、Tuple和Hash库
+tags:
+  - array
+  - BOOST
+  - c
+  - c++0x/11
+  - c++11
+  - HASH
+  - STL
+  - tr1
+  - tuple
+id: 518
+categories:
+  - Article
+  - Blablabla
+date: 2011-10-14 12:17:17
+---
+
+这回的两个库没怎么用过，这里的记录就用VC++写了，使用G++和BOOST的时候和智能指针类似。
+
+首先是**Tuple**库
+
+要注意的是这里G++，VC++和BOOST库的函数不太一样，所以使用的时候要注意没有使用到编译器和编译器相关的函数（特别是IDE的弹窗的方法要注意）。
+
+比如VC++和G++里的tuple对象没有get方法，而boost里有，所以获取数据智能用get(tuple&)语句。
+
+这是个多元数组，最多有10个元素，用于方便定义复杂逻辑结构。例如std::pair就是一个2元tuple 使用tuple要求指定的类型支持默认构造方法
+
+```cpp
+#include <cstdio>
+#include <string>
+#include <tuple>
+#include <iostream>
+
+struct foo {
+    int m;
+    friend bool operator< (const foo& l, const foo& r) {
+        return l.m < r.m;
+    }
+    friend bool operator==(const foo& l, const foo& r) {
+        return l.m == r.m;
+    }
+};
+
+int main() {
+    std::tuple<int, std::string, double, foo> tup0,
+        tup1 = std::tuple<int, std::string, double, foo>(2, "2", 1.0, foo());
+    tup0 = std::make_tuple(1, "2", 3.0, foo());
+
+    // 比较操作符是从左向右比较的，但是要求所有元素支持比较操作
+    std::cout<< (tup0 < tup1)<< std::endl;
+    // 对其中元素的操作比较特别
+    std::get<3>(tup1).m = std::get<3>(tup0).m = 1;
+    std::get<0>(tup1) = 1;
+    std::get<2>(tup1) = 3.0;
+    // 相等比较符也一样
+    std::cout<< (tup0 == tup1)<< std::endl;
+
+    return 0;
+}
+```
+
+功能是比较强大，但是为什么我觉得用处不大呢？
+
+另一个库是**Array**库
+
+这个东西就如其名，就是一个数组。普通数组不支持STL，而当std::vector效率不满足需求的时候array的力量就出来了，使用不是一般的简单。
+
+```cpp
+std::array<int> arr = {0, 1, 2, 3, 4, 5, 6};
+
+for(std::array<int>::size_type i = 0; i < arr.size(); i ++)
+    std::cout<< arr[i]<< " = " << arr.at(i)<< std::endl;
+```
+
+最后一个啦，**hash**库
+
+主要是用来计算hash值的，采用FNV哈希算法，还可以用于管理数据结构（如tr1里的std::unordered_set）。默认支持的计算散列值的对象是整型、小数、指针和字符串，其他的结构需要自己定制HASH函数，按照boost的文档指定hash函数的方法很简单，就是重写std::size_t hash_value(T const&)方法或函数，我使用boost库正常，但是VC++下用tr1编译错误，错误在自定义hash函数上，但没看懂报错的原因，也没有详细的例子或文档。另外貌似重载==操作符也是必须的
+
+```cpp
+#include <cstdio>
+#include <string>
+#include <functional>
+#include <unordered_set>
+#include <array>
+#include <iostream>
+#include <assert.h>
+#include <boost/functional/hash.hpp>
+using namespace std;
+
+struct foo {
+    int id;
+    int m;
+    foo(int _id): id(_id){}
+    void print(void*) {
+        printf("%d\n", m);
+    }
+    friend bool operator == (const foo& l, const foo& r) {
+        return l.id == r.id;
+    }
+};
+
+std::size_t hash_value(const foo& f) {
+    return boost::hash<int>()(f.id);
+}
+
+int main() {
+    std::hash<std::string> str_hash;
+    std::hash<int> int_hash;
+    std::cout<< str_hash("OWenT")<< std::endl;
+    std::cout<< int_hash(3)<< std::endl; // 输出不是3哦
+
+
+    std::unordered_set<foo, boost::hash<foo> > s;
+    foo f(3);
+    s.insert(f);
+    assert(s.find(foo(3)) != s.end());
+
+    return 0;
+}
+```
+这个以后等需要用的时候再继续研究吧

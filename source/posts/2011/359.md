@@ -1,0 +1,206 @@
+---
+title: C++总是很神奇
+tags:
+  - c
+  - 应用
+id: 359
+categories:
+  - Article
+  - Blablabla
+date: 2011-04-26 07:08:13
+---
+
+很多时候看到C/C++的一些奇妙的应用，每次都是惊奇一点时间就随风飘过了
+现在我还是决定记录一下这些有意思的东西。
+
+## 2010/04
+a ^= b ^= a ^=b;
+这是一个交换值得有意思的方式
+
+```cpp
+// 统计1的个数的有意思的方式
+int count_bin_one(int x) {
+    return x? 1 +  count_bin_one(x & (x - 1)): 0;
+}
+```
+
+## 2011/04
+同学去爱立信参加笔试+面试碰到的问题 – 1
+```cpp
+#include <cstdio>
+
+int main () {
+
+    int i = 0;
+    int k = 100;
+
+    int a[2] = {1, 2};
+
+    int j = 3;
+
+    a[2] = 4;
+
+    a[3] = 5;
+
+    a[4] = 6;
+
+    printf("i = > %d\nj => %d\nk => %d\n", i, j, k);
+
+    printf("a[0] = > %d\na[1] => %d\n", a[0], a[1]);
+
+    printf("i:%u\nj:%u\nk:%u\na:%u\na[1]:%u\n\n", &i, &j, &k, a, &a[1]);
+
+    printf("a[2]:%u\na[3]:%u\na[4]:%u\n", &a[2], &a[3], &a[4]);
+
+    return 0;
+
+}
+```
+
+这段看起来错误的代码，事实上在VC++运行下是报错的，然而在G++之下正确，而不同系统和编译器下结果可能不一样，这和内存分配有关，以下为我在Fedora 15下G++ 4.6.0的结果
+
+```
+i = > 5
+j => 3
+k => 4
+a[0] = > 1
+a[1] => 2
+i:3219340844
+j:3219340828
+k:3219340840
+a:3219340832
+a[1]:3219340836
+
+a[2]:3219340840
+a[3]:3219340844
+a[4]:3219340848
+```
+~~这就很明显了，至少在Fedora + G++4.6.0下内存分配是地址递减的，顺便这段代码在Win7 下 G++ 4.5.2结果是一样的。~~
+
+> 整理的时候又看到这个，忍不住鄙视一下这种拿UB当面试题的。他想考内存布局？然而不排除有的栈是向上增长的，并且不同编译器或者不同版本甚至不同编译选项对局部变量都有不同的优化。像是内存对齐啊，加入调试信息什么的。比如VC的Debug编译就会插调试信息，你能知道越界后的内容是啥？
+
+## 2011/04
+同学去爱立信参加笔试+面试碰到的问题 – 2
+```cpp
+#include <cstdio>
+#include <cstdlib>
+
+class a {
+public:
+    void foo() {
+        puts("Hello world!");
+    }
+};
+
+int main () {
+    a *p = new a();
+    p->foo();
+    p = NULL;
+    p->foo();
+
+    return 0;
+}
+```
+
+没错，这段代码输出了两次Hello world!看来我之前记错了或者那个教科书是错的，普通成员函数的也是直接查类的函数表的，而不是用变量记函数指针。
+
+## 2011/04
+同学去爱立信参加笔试+面试碰到的问题 – 3
+
+```cpp
+#include <cstdio>
+#include <cstring>
+
+int main () {
+
+    const char* p1 = "abcdefg";
+    char* const p2 = "abcdefg";
+
+    // p1[2] = '2'; // 编译错误
+    p1 = "zxmn";
+    // p2 = "zxmn"; // 编译错误
+    p2[2] = '2';    // 运行错误
+
+    char* p3 = const_cast<char>(p1);
+    char*& p4 = const_cast<char>(p2);  //G++ 编译错误
+
+    p3[2] = '2';   // 运行错误
+    p4 = "test";   // G++编译错误，VC正常
+
+    puts(p1);
+    puts(p2);
+
+    return 0;
+}
+```
+
+这个不用解释了。
+
+## 2010/05
+这个是写OSG的时候想到的一个忘记的关于C++类继承的自动调用构造和析构函数问题
+测试代码如下：
+
+```cpp
+#include <iostream>
+#include <cstdio>
+#include <cmath>
+#include <algorithm>
+
+namespace test {
+    using namespace std;
+
+    class a {
+    public:
+        int d;
+        a(){
+            d = 0;
+            puts("a");
+        }
+        a(int s){
+            puts("sa");
+            d = s;
+        }
+        ~a(){
+            printf("%d~a\n", d);
+        }
+    };
+
+    class b : public a{
+    public:
+        b(){
+            puts("b");
+        }
+        b(int s){
+            puts("sb");
+            d = s;
+        }
+        ~b(){
+            printf("%d~b\n", d);
+        }
+    };
+
+    void solve() {
+        b bb1 = b(1), bb2 = b();
+    }
+}
+
+int main () {
+
+    test::solve();
+    return 0;
+}
+```
+
+输出结果是：
+```
+a
+sb
+a
+b
+0~b
+0~a
+1~b
+1~a
+```
+纯属娱乐
+ 

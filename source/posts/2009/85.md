@@ -1,0 +1,287 @@
+---
+title: ECUST 09年 校赛个人赛第六，七场总结
+tags:
+  - acm
+  - ecust
+  - eoj
+id: 85
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2009-07-30 09:58:00
+---
+
+校赛个人赛第六，七场总结
+
+这两场比赛体现了英文水平的重要性
+
+第六场的题目超长，用词还诡异，话了很长时间才看懂
+
+这两场题目都比较有难度，第六场我只出了2题
+
+## A Grey Area
+
+A题是很诡异的统计，是一道纯模拟就能过的题，其他的不多说了
+
+代码：
+
+```cpp
+#include<iostream>
+using namespace std;
+int pe[20];
+int main()
+{
+    int n,w;
+    while(cin>>n>>w, n || w)
+    {
+        int value;
+        int peNum = 0;
+        int Max = 0;
+        int valueMax = 0;
+        memset(pe,0,sizeof(pe));
+        while(n --)
+        {
+            scanf("%d",&value);
+            while(value >= Max)
+            {
+                peNum ++;
+                Max = peNum * w;
+            }
+            pe[value / w] ++;
+            if(pe[value / w] > valueMax)
+                valueMax = pe[value / w];
+        }
+
+        double output = 0.01;
+        for(int i = 0 ; i < peNum ; i ++)
+            output += ((double)pe[i] / (double)valueMax)
+                * ((double)(peNum - i - 1) / (double)(peNum - 1));
+
+        printf("%lf\n",output);
+    }
+    return 0;
+}
+```
+
+## B Expected Allowance
+
+B题和A题类似，也是纯暴力
+
+代码：
+
+```cpp
+#include<iostream>
+#include<cmath>
+using namespace std;
+long value[10000];
+
+void cal(long now,int pos,int n,int m)
+{
+    for(int i = 1 ; i <= m ; i ++)
+        if(pos == n)
+            value[now + i] ++;
+        else
+            cal(now + i,pos + 1,n,m);
+}
+
+
+int main()
+{
+    long m,n,k;
+    while(scanf("%ld %ld %ld",&n,&m,&k), n || m || k )
+    {
+        memset(value,0,sizeof(value));
+        cal(0,1,n,m);
+        double output = 0.0;
+        double fm = pow((double)m,(double)n);
+        for(long i = n ; i <= n * m ; i ++)
+            if(i - k <= 0)
+                output += (double)value[i] / fm;
+            else
+                output += (double)value[i] / fm * (double)(i - k);
+
+        printf("%.8lf\n",output);
+    }
+    return 0;
+}
+```
+
+## 第七场
+第七场很多题目都有想法，可是很多都没能写出来
+
+同样B和E是水题，直接暴力能过，不过就是要有耐性
+
+## B要注意一下判断的优先级.
+
+代码如下：
+
+```cpp
+#include<iostream>
+#include<cstring>
+using namespace std;
+double bank[10][10000];
+char cmd[20];
+int isExist[10][10000];
+int main()
+{
+    int n = 1;
+    //freopen("b.in","r",stdin);
+    while(scanf("%d",&n),n)
+    {
+        memset(bank,0,sizeof(bank));
+        memset(isExist,0,sizeof(isExist));
+        while(n --)
+        {
+            int tmpInt1,tmpInt2;
+            double tmpMoney;
+            scanf("%d/%d %lf",&tmpInt1,&tmpInt2,&tmpMoney);
+            isExist[tmpInt2][tmpInt1] = 1;
+            bank[tmpInt2][tmpInt1] = tmpMoney;
+        }
+        while(scanf("%s",cmd) , strcmp(cmd,"end"))
+        {
+            if(!strcmp(cmd,"withdraw"))
+            {
+                int tmpInt1,tmpInt2;
+                double tmpMoney;
+                scanf("%d/%d %lf",&tmpInt1,&tmpInt2,&tmpMoney);
+                printf("withdraw %.2lf: ",tmpMoney);
+                if(isExist[tmpInt2][tmpInt1])
+                {
+                    if(bank[tmpInt2][tmpInt1] < tmpMoney)
+                        printf("insufficient funds\n");
+                    else
+                    {
+                        printf("ok\n");
+                        bank[tmpInt2][tmpInt1] -= tmpMoney;
+                    }
+                }
+                else
+                    printf("no such account\n");
+            }
+            else if(!strcmp(cmd,"deposit"))
+            {
+                int tmpInt1,tmpInt2;
+                double tmpMoney;
+                scanf("%d/%d %lf",&tmpInt1,&tmpInt2,&tmpMoney);
+                printf("deposit %.2lf: ",tmpMoney);
+                if(isExist[tmpInt2][tmpInt1])
+                {
+                    printf("ok\n");
+                    bank[tmpInt2][tmpInt1] += tmpMoney;
+                }
+                else
+                    printf("no such account\n");
+            }
+            else if(!strcmp(cmd,"create"))
+            {
+                int tmpInt1,tmpInt2;
+                scanf("%d/%d",&tmpInt1,&tmpInt2);
+                printf("create: ");
+                if(isExist[tmpInt2][tmpInt1])
+                    printf("already exists\n");
+                else
+                {
+                    printf("ok\n");
+                    isExist[tmpInt2][tmpInt1] = 1;
+                    bank[tmpInt2][tmpInt1] = 0;
+                }
+            }
+            else if(!strcmp(cmd,"transfer"))
+            {
+                int tmpInt1,tmpInt2,tmpInt3,tmpInt4;
+                double tmpMoney;
+                scanf("%d/%d %d/%d %lf",&tmpInt1,&tmpInt2,&tmpInt3,&tmpInt4,&tmpMoney);
+                printf("transfer %.2lf: ",tmpMoney);
+                if(isExist[tmpInt2][tmpInt1] && isExist[tmpInt4][tmpInt3])
+                {
+                    if(tmpInt2 == tmpInt4 && tmpInt1 == tmpInt3)
+                        printf("same account\n");
+                    else if(bank[tmpInt2][tmpInt1] < tmpMoney)
+                        printf("insufficient funds\n");
+                    else
+                    {
+                        if(tmpInt2 == tmpInt4)
+                            printf("ok\n");
+                        else
+                            printf("interbank\n");
+                        bank[tmpInt2][tmpInt1] -= tmpMoney;
+                        bank[tmpInt4][tmpInt3] += tmpMoney;
+                    }
+                }
+                else
+                    printf("no such account\n");
+            }
+        }
+        printf("end\n\n");
+    }
+    printf("goodbye");
+    return 0;
+}
+```
+
+## E Stock Exchange
+
+我这题TLE一次，原因是很郁闷的忘了把freopen函数给注释掉 -_-!!
+
+我的代码如下:
+
+```cpp
+#include<iostream>
+#include<cstring>
+using namespace std;
+char Issuer[12];
+struct Member
+{
+    char name[30];
+    double money;
+    char type[10];
+};
+Member mem[1001];
+int main()
+{
+    int n;
+    //freopen("e.txt","r",stdin);
+    while(scanf("%d %s",&n,Issuer), strcmp(Issuer,"END") || n)
+    {
+        int i,j;
+        for(i = 0 ; i < n ; i ++)
+            scanf("%s %s %lf",mem[i].name,mem[i].type,&mem[i].money);
+
+        printf("%s\n",Issuer);
+        int num = 0;
+        for(i = 0 ; i < n ; i ++)
+        {
+            num = 0;
+            printf("%s:",mem[i].name);
+            for(j = 0 ; j < n ; j ++)
+            {
+                if(mem[i].type[0] == mem[j].type[0])
+                    continue;
+                if(mem[i].type[0] == 'b'
+                    && mem[j].money <= mem[i].money)
+                    printf(" %s",mem[j].name),num ++;
+                else if(mem[i].type[0] == 's'
+                    && mem[j].money >= mem[i].money)
+                    printf(" %s",mem[j].name),num ++;
+            }
+            if(num)
+                putchar('\n');
+            else
+                printf(" NO-ONE\n");
+        }
+    }
+    return 0;
+}
+```
+
+## C题很烦，但是我觉得可以通过列出各种特殊情况出来死套。太烦了所以没写
+
+## D题我觉得可以通过DP+Hash来完成，按最长子序列的反向DP（不过我觉得等我想出来DP方案时间也到了，就没写）
+
+## F题我没什么思路
+
+## G题我认为可以DP，主要是算出三个子段的最小值，且三个子段的长度和为k-1，但是DP的话要写24种分支，我觉得这个方法并不好，所以也没写
+
+
+以上各题希望大牛能分享思路，指点一二。

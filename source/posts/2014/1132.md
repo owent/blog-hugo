@@ -1,0 +1,54 @@
+---
+title: '[转]类似github的框架'
+tags:
+  - git
+id: 1132
+categories:
+  - Article
+  - Collection
+date: 2014-12-23 10:52:51
+---
+
+> [原文地址]: http://www.cnblogs.com/kingzzm/p/3413357.html](http://www.cnblogs.com/kingzzm/p/3413357.html)
+
+github是程序员经常上的网站，但如果是在一家苦逼不能访问外网的公司，那不能把自己的代码托管在github上绝对是一件非常痛苦的事情。如 果想要在公司内网也可以用github托管自己的代码，那就要自己搭建类似github的服务器，好在类似github的框架有很多，基本上都是基于 git的，可以无缝衔接github而无需额外学习其他技术。
+
+## github企业版
+
+[github enterprise](https://enterprise.github.com/)，如果你的基金 充足，github企业版绝对是你的首选。它基本上包涵了现有github网站上面的一切功能，你使用它甚至在视觉上都不会发生任何变化，界面都是和现有 github一样的。而且安装十分方便，安装文件就是一个虚拟机镜像文件，只要用虚拟机加载就可以了。但刚才说了“如果你的基金充足”，说明它是要收费 的，而且价格不菲，1个20人团队的license每年要5000美刀。国外有用到github企业版的公司有Bizzard（玩游戏的都知道），国内用 的很少，我了解到的只有豆瓣在用，而且只用在其中一个或几个项目组（PS:豆瓣好像有自己的代码托管工具叫豆瓣Code，克隆github且增加了自己的 特性）。
+
+## gitlab
+
+[gitlab](https://github.com/gitlabhq/gitlabhq)，是用Ruby On Rails开发的一款开源代码托管框架，界面也是仿照github设计的，github用户可以快速上手，最重要的是它是一个开源的软件，这意味着你可以 免费获取到软件，并将它部署到自己的机器上。但是gitlab的安装过程比较复杂，安装需要依赖以下几个工具：
+
+*   ruby 1.9.3+
+*   git 1.7.10+
+*   redis 2.0+
+*   MySQL or PostgreSQL
+另外gitlab的markdown文件显示功能不是很好，比如markdown中的table和嵌入html在github上面是可以正常显示，但是在gitlab上面就不行。
+
+## GitBucket
+
+[GitBucket](https://github.com/takezoe/gitbucket)，是一个用scala写的高仿github的代码托管框架。这个框架是今年才开发的，目前功能还不是很齐全，数据库也是用的内存数据库，但是github上面的基本功能都有。它的一个最重要的特点是**安装非常方便**，只需要下载gitbucket最新版本的war包，然后放到随便哪个web容器（Jetty，Tomcat）就可以启起来了，想尝尝鲜的同学可以试用一下。
+
+## 其他框架
+
+下面列举一些其他类似的框架，没怎么用过不好做评价，下面的括号表示用哪种语言写的。
+
+*   [Gitorious](http://gitorious.org/)(Ruby)
+*   [InDefero](http://www.indefero.net)(PHP)
+*   [Girocco](http://repo.or.cz)(Perl)
+*   [Gitosis](http://eagain.net/gitweb/?p=gitosis.git)(Python)
+*   [Gitolite](http://github.com/sitaramc/gitolite)(Perl)
+这里也有一篇文章是介绍类似github框架的框架，看[这里](http://blacka.com/david/2010/09/28/hosting-your-own-git-repositories/)。
+
+
+转载这个是由于给公司的代码仓库提供gitlab以外的一些备选。
+
+个人比较看好**GitBucket**，主要是部署简单。
+目前最新2.6版本是把数据直接放在运行用户的[用户目录/.gitbucket]文件夹下。
+配置文件是 ~/.gitbucket/gitbucket.conf
+不过目前感觉文档和维护工具都还很不全面，可选的配置项也不多。可以再观察看看，以后有需要再说。
+
+
+最近无意中碰到一个国人开发的系统，**Gogs**，  [http://gogs.io](http://gogs.io) 似乎还不错

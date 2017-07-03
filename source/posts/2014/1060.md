@@ -1,0 +1,359 @@
+---
+title: 再议 C++ 11 Lambda表达式
+tags:
+  - c++0x/11
+  - c++11
+  - cpp
+  - function
+  - g++
+  - gcc
+  - lambda
+  - STL
+  - template
+id: 1060
+categories:
+  - Article
+  - Blablabla
+date: 2014-06-03 20:55:44
+---
+
+再议 C++ 11 Lambda表达式
+==============
+
+目录
+------
+<!-- toc -->
+
+C++ 的Lambda表达式
+------
+C++ 11 标准发布，各大编译器都开始支持里面的各种新特性，其中一项比较有意思的就是lambda表达式。
+
+语法规则
+------
+C++ 11 Lambda表达式的四种声明方式
+
+1. \[ capture \] ( params ) mutable(optional) exception attribute -> ret { body }
+2. \[ capture \] ( params ) -> ret { body }
+3. \[ capture \] ( params ) { body }
+4. \[ capture \] { body }
+
++ **capture**是外部引用的参数
++ **params**是函数参数
++ 后面可以跟一些函数修饰符
++ **ret**是返回值类型，如果不指定，会推断一个类型
++ **body**部分是函数内容
+具体用法可以参照[C++文档](http://en.cppreference.com/w/cpp/language/lambda)，这里就不复述了
+
+这四个声明式都会返回一个匿名的**仿函数**实例）。
+这里有一个比较重要的一点，就是他是一个**仿函数**实例，而不是直接一个**函数**。
+
+类型
+------
+我们可以通过一个简单的示例来看它的类型。
+
+```cpp
+#include <cstdio>
+#include <typeinfo>
+
+int main(){
+    auto f1 = [](int, char*){
+        return 0;
+    };
+
+    typedef int (*f_t)(int, char*);
+
+    auto f2 = [](int, char*) {
+        return 1;
+    };
+
+    f_t f3 = f2;
+
+    puts(typeid(f1).name());
+    puts(typeid(f2).name());
+    puts(typeid(f3).name());
+    return 0;
+}
+```
+
+上面的结果在GCC里输出
+>Z4mainEUliPcE_
+>
+>Z4mainEUliPcE0_
+>
+>PFiiPcE
+
+在clang(with -stdlib=libc++)中输出
+>Z4mainE3\$_1
+>
+>Z4mainE3\$_0
+>
+>PFiiPcE
+
+在VC12中输出
+>class &lt;lambda_215c4a8550380ee3200a8b722b5d538b&gt;
+>
+>class &lt;lambda_cb3f26d0aaec1026a36e541fdceeb301&gt;
+>
+>int (__cdecl*)(int,char * __ptr64)
+
+可见，在不同的编译器中是可以有不同的命名方式的，并且对每一个不同的函数体（body部分）都会有一个特定的类型。
+而它实现了转换成普通函数的接口，故而 *f_t f3 = f2;* 这一行得以执行成功。
+而如果我们把代码稍微修改一下：
+```cpp
+#include <cstdio>
+#include <typeinfo>
+
+int main(){
+    int m = 0;
+    auto f1 = [](int, char*){
+        return 0;
+    };
+
+    typedef int (*f_t)(int, char*);
+
+    auto f2 = [&](int x, char*) {
+        m += x;
+        return 1;
+    };
+
+    f_t f3 = f2;
+
+    puts(typeid(f1).name());
+    puts(typeid(f2).name());
+    puts(typeid(f3).name());
+
+    f3(2, 0);
+    return 0;
+}
+```
+这时候编译的时候会报错。
+t.cpp: In function ‘int main()’:
+t.cpp:17:14: error: cannot convert ‘main()::__lambda1’ to ‘f_t {aka int (*)(int, char*)}’ in initialization
+     f_t f3 = f2;
+              ^
+类型转换失败，这段示例和上面不同的是这次指定了要传入**m**的引用类型到**f2**中，然而普通函数**f3**是不接受外部引用的。
+这其实很好理解。在构建f2的时候m的引用包装可以作为仿函数的成员记录下来，也就是说。这里的main()::__lambda1可以是这样：
+```cpp
+class __lambda1 {
+private:
+    int &m;
+
+public:
+    __lambda1(int &m_):m_(m){}
+    int operator()(int x, char*) {
+        m += x;
+        return 1;
+    }
+};
+```
+简单地说，可以理解为编译器自动生成了这个class，然后赋值给f2，然而普通函数f3无法由这个functor转换而来，因为没有地方放置这个m的引用。
+如果有兴趣的话可以把f2和f1的size打印出来，f2一定比f1大。一般情况下f2比f1大一个指针的大小。加上考虑到c++的地址规则（保证空对象的地址不会和其他的变量混用,所以空对象的size会被补齐到1Byte），f2也可能比f1大一个指针的大小再减一个字节*（32位架构下相差3字节，64位架构下相差7字节）*
+
+为什么要关心lambda表达式的类型
+------
+为什么要关心lambda表达式的类型呢？这关系到一些兼容型api的实现。
+首先，如果用std::function绑定lambda表达式，它会走仿函数的执行流程，而不是函数的。（关于std::function实现原理可以参照: [std和boost的function与bind实现剖析](//www.owent.net/?p=938)）
+其次，是因为我在设计之前的[协程任务框架](https://github.com/owt5008137/libcopp)的API的时候，碰上了一些麻烦。
+
+这个麻烦起源于对任务系统的一个接口设计。
+我们先来看看微软PPL库的线程任务系统的一个有意思的接口。
+```cpp
+task<StorageFile^> t1(createOp);
+
+t1.then([_this](StorageFile^ resultOp){
+    _this->m_VideoStorage = resultOp;
+    return _this->m_MediaCaptureMgr->StartRecordToStorageFileAsync(_this->m_EncodingProfile, _this->m_VideoStorage);
+}).then ([_this](){
+   _this->m_recordState = true;
+   _this->btnRecording->Content = "Stop Recording";
+  
+});
+```
+这段代码摘自MSDN的一个示例，主要注意有一个then函数，它是创建一个任务并在执行完这个任务后继续执行。
+但是它这里有一点比较重要的是，它的task必须指定返回值且必须返回类型一致。
+
+而在我这里的任务接口里，我希望的是统一有一个int型的返回值（仿照进程执行结果只返回一个int型）。并且如果task的action函数是一个int型返回值的，接受它成为task返回码，否则使用默认的0作为返回值。
+目标是使其支持类似如下形式的调用：（参见: https://github.com/owt5008137/libcopp/blob/master/sample/sample_task_with_lambda.cpp ）
+```cpp
+// create a task using lambda expression
+my_task_t::ptr_t first_task = my_task_t::create([&](){
+    puts("|first task running...");
+    printf("test code already reset => %d\n", ++ test_code);
+    return 0;
+});
+
+// add many next task using lambda expression
+first_task->next([=](){
+    puts("|second task running...");
+    printf("test code should be inited 128 => %d\n", test_code);
+    return 0;
+})->next([&](){
+    puts("|haha ... this is the third task.");
+    printf("test code is the same => %d\n", ++ test_code);
+    return 0;
+})->next([&](){
+    puts("|it's boring");
+    printf("test code is %d\n", ++ test_code);
+    return 0;
+});
+// 这里不再列举出next传入task、action、函数、仿函数和成员函数的情况。
+
+```
+
+于是有了如下接口：
+```cpp
+/** next接口：类似ppl的then接口 **/
+
+// 接受task指针
+ptr_t next(ptr_t next_task);
+// 接受task action对象
+ptr_t next(action_ptr_t action, size_t stack_size);
+// 接受仿函数及lambda表达式
+template<typename Ty>
+ptr_t next(Ty functor, size_t stack_size);
+// 接受普通函数
+template<typename Ty>
+ptr_t next(Ty (*func)(), size_t stack_size);
+// 接受成员函数且必须使用类实例绑定
+template<typename Ty, typename TInst>
+ptr_t next(Ty (TInst::*func), TInst* instance, size_t stack_sizei);
+
+/** 对于action的类型分支时 **/
+// functor
+template<typename Ty>
+class task_action_functor: public impl::task_action_impl;
+
+// function
+template<typename Ty>
+class task_action_function: public impl::task_action_impl;
+
+template<>
+class task_action_function<int>: public impl::task_action_impl;
+
+// mem function
+template<typename Ty, typename Tc>
+class task_action_mem_function: public impl::task_action_impl;
+
+template<typename Tc>
+class task_action_mem_function<int, Tc>: public impl::task_action_impl;
+```
+利用模板特化或偏特化实现在next函数传入不同类型对象时，构建不同的task action，以实现不同函数返回值的不同处理。
+但是对于仿函数，暂时我还没有找到一个跨平台并且兼容所有主流编译器并能在不使用C++ 11的decltype关键字并在编译期对其*operator()()*的返回值不同而产生差异化的完美的方案。（这里如果哪位大神如果有比较简单的解决方案可以指导一下，感激不尽）
+
+这也是上面使用lambda表达式作为next函数的参数时，必须有一行return 0;的原因。需要让lambda表达式自动推断返回类型位int型。
+
+也许这也是ppl库必须指定task返回值的原因。
+
+类型推断和Lambda表达式
+------
+
+lambda难以处理返回值，究其原因主要是无返回值和有返回值时的行为差异。
+比如上面的例子中，可以加一个代理返回值的函数来处理返回值差异。比如：
+```cpp
+template<typename Tr>
+int func(Tr ret) {
+    return 0;
+}
+template<>
+int func(int ret) {
+    return ret;
+}
+
+// === 调用 ===
+auto f = [](){
+    // ... any code
+    return ...;
+}
+
+int ret = func(f());
+```
+这个函数在ret传入int型时返回lambda函数返回的int，否则返回0。然而如果lambda表达式没有返回值，就比较难处理了。
+因为不能出现类似
+```cpp
+template<>
+int func(void) {
+    return 0;
+}
+```
+这样的语法。但是前文说过，在不使用decltype时这个问题很难解决，那么如果使用**decltype**如何实现呢？
+
+### 利用C++11 decltype关键字适配Lambda表达式
+
+直接上代码吧
+```cpp
+#include <cstdio>
+#include <typeinfo>
+
+template<typename Tr>
+struct func {
+    template<typename Tf>
+    int operator()(Tf& f) {
+        f();
+        return -1;
+    }
+};
+
+template<>
+struct func<int>{
+
+    template<typename Tf>
+    int operator()(Tf& f) {
+        return f();
+    }
+};
+
+template<>
+struct func<void> {
+    template<typename Tf>
+    int operator()(Tf& f) {
+        f();
+        return 1;
+    }
+};
+
+
+int main() {
+
+    auto f1 = [](){
+        puts("Hello");
+    };
+
+    auto f2 = [](){
+        puts("Hello");
+        return 100;
+    };
+
+    auto f3 = [](){
+        puts("Hello");
+        return "hahaha";
+    };
+
+    int ret = 0;
+    
+    ret = func<decltype(f1())>()(f1);
+    printf("fn %s, ret %d\n", typeid(f1).name(), ret);
+    
+    ret = func<decltype(f2())>()(f2);
+    printf("fn %s, ret %d\n", typeid(f2).name(), ret);
+
+    ret = func<decltype(f3())>()(f3);
+    printf("fn %s, ret %d\n", typeid(f3).name(), ret);
+
+    return 0;
+}
+```
+这段代码分别适配了lambda表达式**无返回值**的，返回值类型是**int**的和反回值类型是**const char\***的。基本覆盖了前面提到的各种情况。
+究其原因，就是**decltype**可以在不执行表达式的情况下判定表达式的返回值。
+那么不使用**decltype**要实现这个功能思路就很清晰了，利用type_traits技术或者编译器功能来获取表达式类型。
+
+### 不使用C++11 decltype关键字的适配方案？
+
+对于GCC和Clang编译器，所幸有个typeof关键字。
+对于VC编译器就比较悲剧了，还好VS2010以上版本已经支持decltype。
+
+当然还有一些比较绕的方法，可以通过手工注册一些信息来标识类型，但是这些方法个人感觉并不是很完美，这里就不列举了。
+
+写在最后
+------
+写这篇文章主要是对近期碰到的这个lambda表达式行为的一些总结和记录。当可以全线使用C++11特性的时候这些问题都不复存在。但是在现在这个过渡时期，大多生产环境用得都是很低版本的编译器，还不支持C++11的这些特性。而这个时候需要开发出兼容老编译器又支持一些高级特性的组件和库就尤其麻烦。
+希望C+11普及的那一天早日到来吧。

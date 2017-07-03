@@ -1,0 +1,47 @@
+---
+title: Prime最小生成树(个人模板)
+tags:
+  - acm
+  - template
+id: 75
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2009-09-15 16:43:29
+---
+
+```cpp
+//Prime连通路模块
+#define N 1000         //最大数据规模
+#define MAXNUM 3000000   //最大路径长度
+typedef double PrimeType;//路径类型
+
+PrimeType PrimeRecord[N];
+PrimeType dis[N][N];
+int isLined[N] = {1,0};
+
+PrimeType GetPrimeLength(const long n)
+{
+    PrimeType tmpLen = MAXNUM;
+    long tmpPos = 0,left = n - 1;
+    PrimeType sumLen = 0;
+
+    for(long i = 1 ; i < n ; i ++)
+        PrimeRecord[i] = dis[0][i];
+    while(left --)
+    {
+        tmpLen = MAXNUM;
+        for(long i = 1 ; i < n ; i ++)
+            if(!isLined[i] && PrimeRecord[i] < tmpLen)
+                tmpPos = i,tmpLen = PrimeRecord[i];
+
+        sumLen += tmpLen;
+        isLined[tmpPos] ++;
+        for(long i = 1 ; i < n ; i ++)
+            if(dis[tmpPos][i] < PrimeRecord[i])
+                PrimeRecord[i] = dis[tmpPos][i];
+    }
+
+    return sumLen;
+}
+```

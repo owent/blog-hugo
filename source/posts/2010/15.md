@@ -1,0 +1,27 @@
+---
+title: Catalan 数
+tags:
+  - acm
+id: 15
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-09-08 16:47:57
+---
+
+Catalan数:
+
+$$ h(1)＝1,h(0)=1 $$
+
+$$ h(n)= h(0)*h(n-1)+h(1)*h(n-2) + … + h(n-1)h(0) (其中n>=2) $$
+
+$$ h(n)=C(2n,n)/(n+1) (n=1,2,3,…) $$
+
+相关结论：
+n边形能分解成三角形的分法数为  h(n – 2)
+n个节点能组成的二叉树个数为      h(n)
+一个栈(无穷大)的进栈序列为1，2，3，…，n，出栈序列种数为   h(n)
+
+参考（转载）：
+http://zh.wikipedia.org/wiki/%E5%8D%A1%E7%89%B9%E5%85%B0%E6%95%B0
+http://baike.baidu.com/view/4076365.htm

@@ -1,0 +1,580 @@
+---
+title: 线段树相关问题 (引用 PKU POJ题目) 整理
+tags:
+  - acm
+  - pku
+  - poj
+id: 8
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-10-12 16:45:11
+---
+
+## 1.RangeMinimum、Maximum Query问题（计算单调区间内出现最多（少）的次数）
+
+对元素的起点做离散化，再把离散化后的位置作为线段树的[l, r),记录次数为t.
+
+对输入区间a, b:
+
+如果（a = b）{很好处理}，
+
+如果（a = b – 1）{分别计算a、b的次数，取大（小）的一项}，
+
+如果（a < b – 1）{分别计算a、b的次数和线段树[a + 1, b – 1)的次数，取大（小）的一项};
+ 
+> pku3264-Balanced Lineup RMQ问题,求区间最大最小值的差
+> 
+> pku3368-Frequent values 转化为RMQ问题求解
+ 
+ 
+## 2.排队插队问题(ID为i的人插到第j位，求最后序列)
+
+先把插队顺序记录下来，然后倒序插入。用线段树记录已有的序列，计算当前人物的序号,注意重复插入的情况(重复插入则结果序列中只处理第一次出现位置)。
+线段树记录[i, j)中的已插入的人数，所以每次插入都是insert(n, n + 1)，Query函数和一般的find有所不同,传入的是偏移量，通过偏移量计算.
+忘了哪道题了，反正有的。
+ 
+## 3.矩形交求面积/周长
+
+对纵坐标离散化并做扫描线。
+
+如果求周长则记录原始y轴覆盖段数ocn，原始和当前覆盖区域长度ocl，cl，则ans+=abs(ocl-cl)+ocn*(x_now-x_pre)
+
+如果计算面积只需要记录原始覆盖区域长度ocl，然后ans+=ocl*(x_now-x_pre)
+
+> pku1151-Atlantis 求矩形并的面积,用线段树+离散化+扫描线
+> 
+> pku1177-picture 求矩形并的周长,用线段树+离散化+扫描线
+ 
+4.覆盖涂色查找颜色种数问题
+
+把坐标离散化，注意边界如果是整数，右边+1取开区间，防止出现[(1,10),(1,3),(6,10)]输出为2的情况。
+
+离散化可以放在线段树里，尽量不要用map离散化（效率问题），Insert到字节点时，先把父节点颜色插入子节点并重置父节点为未涂色。
+
+查询时查询涂色子节点数量即可
+
+pku2528-Mayor's posters 区间涂色问题,使用离散化+线段树
+ 
+注意开线段树的大小，由于用数组模拟有空间浪费，注意不要RE，一般节点数可设为最大子节点数的8倍
+
+注意离散化尽量用sort取不重复点而不是用map，用sort的效率大约是map的10倍
+
+相关代码：
+
+## 普通线段树[无离散化]：
+
+```cpp
+struct _SegTree_Data
+{
+    int l, r;
+    int v;
+};
+struct SegTree
+{
+    const static int maxn = 500000;
+    _SegTree_Data data[4 * maxn];
+
+    //初始化函数（如果需要）
+    void init(int l, int r, int f = 0)
+    {
+        data[f].l = l;
+        data[f].r = r;
+        data[f].v = 0;
+        if(r > l + 1)
+        {
+            int m = (l + r) / 2;
+            init(l, m, 2 * f + 1);
+            init(m, r, 2 * f + 2);
+        }
+    }
+
+    //参数：插入区间[l,r),区间父结点[f]
+    void insert(int l, int r, int f = 0)
+    {
+        //根据需要修改
+        data[f].v ++;
+        if(data[f].l == l && data[f].r == r)
+            return;
+        //--------------
+        int m = (data[f].l + data[f].r) / 2;
+        if(l >= m)//区间在右子节点上
+            insert(l, r, 2 * f + 2);
+        else if(r <= m)//区间在作左子节点上
+            insert(l, r, 2 * f + 1);
+        else
+            insert(l, m, 2 * f + 1), insert(m, r, 2 * f + 2);
+    }
+
+    //参数：查找区间[l,r),区间父结点[f]
+    //返回：区间值
+    int find(int l, int r, int f = 0)
+    {
+        if(data[f].l == l && data[f].r == r)
+            return data[f].v;
+        int m = (data[f].l + data[f].r) / 2;
+        if(l >= m)//区间在右子节点上
+            return find(l, r, 2 * f + 2);
+        else if(r <= m)//区间在作左子节点上
+            return find(l, r, 2 * f + 1);
+        else // 根据需要修改
+            return find(l, m, 2 * f + 1) + find(m, r, 2 * f + 2);
+    }
+
+    //排队问题的查找位置函数
+    //参数：插入位置[rp](相对父结点起始位置的偏移),区间父结点[f]
+    //返回：实际位置
+    int query(int rp, int f = 0)
+    {
+        if(data[f].v == 0)
+            return data[f].l + rp;
+        int lc = 2 * f + 1;
+        int ll = data[lc].r - data[lc].l - data[lc].v;//计算左子节点剩余位置数量
+        //注意rp是偏移量[0,rp],ll是个数[1,ll]
+        if(rp < ll)//目标在左子节点中
+            return query(rp , lc);
+        else//目标在右子节点中
+            return query(rp - ll, lc + 1);
+    }
+};
+```
+
+## 矩形交[MAP离散化]：
+
+```cpp
+#include <iostream>
+#include <cstdio>
+#include <algorithm>
+#include <map>
+
+//注释代码为计算周长时使用
+struct SegTree;
+//用于离散化y轴坐标
+std::map<double, int> hash;//离散化映射
+std::map<double, int>::iterator itr;
+double mapOf[2 * 10500];//离散化位置对应的值
+
+struct _SegTree
+{
+    int l, r;//作用域[l,r)
+    int c/*, cn*/;//全覆盖次数[c]，覆盖区间段数[cn]
+    double cl;//覆盖区域长度[cl]
+    //bool lc, rc;//左顶点覆盖[lc]，右顶点覆盖[rc]
+    _SegTree(){}
+    _SegTree(int l, int r)
+    {
+        this->l = l;
+        this->r = r;
+        //lc = rc = false;
+        c /*= cn*/ = 0;
+        cl = 0.0;
+    }
+};
+
+struct SegTree
+{
+    const static int maxn = 10500;
+    _SegTree data[4 * maxn];
+    //初始化，置零
+    void init(int l, int r, int f = 0)
+    {
+        data[f] = _SegTree(l, r);
+        if(r - l > 1)
+        {
+            int m = (l + r) / 2;
+            init(l, m, 2 * f + 1);
+            init(m, r, 2 * f + 2);
+        }
+    }
+
+    //插入区间[l,f)
+    void insert(int l, int r, int f = 0)
+    {
+        if(data[f].l == l && data[f].r == r)
+            data[f].c ++;
+        else
+        {
+            int m = (data[f].l + data[f].r) / 2;
+            int lc = 2 * f + 1;
+            if(l >= m)//区间在右子节点
+                insert(l, r, lc + 1);
+            else if(r <= m)//区间在左子节点
+                insert(l, r, lc);
+            else
+                insert(l, m, lc), insert(m, r, lc + 1);
+        }
+
+        update(f);
+    }
+
+    //删除区间
+    void del(int l, int r, int f = 0)
+    {
+        if(data[f].l == l && data[f].r == r)
+            data[f].c --;
+        else
+        {
+            int m = (data[f].l + data[f].r) / 2;
+            int lc = 2 * f + 1;
+            if(l >= m)//区间在右子节点
+                del(l, r, lc + 1);
+            else if(r <= m)//区间在左子节点
+                del(l, r, lc);
+            else
+                del(l, m, lc), del(m, r, lc + 1);
+        }
+
+        update(f);
+    }
+
+    //更新记录状态集
+    void update(int f = 0)
+    {
+        if(data[f].c > 0)//全覆盖判断
+        {
+            //data[f].lc = data[f].rc = true;
+            data[f].cl = mapOf[data[f].r] - mapOf[data[f].l];//离散化的还原
+            //data[f].cn = 1;
+            return;
+        }
+        else if(data[f].r - data[f].l <= 1)//单位节点
+        {
+            //data[f].lc = data[f].rc = false;
+            data[f].cl = 0.0;
+            //data[f].cn = 0;
+            return;
+        }
+        int lc = 2 * f + 1;
+        data[f].cl = data[lc].cl + data[lc + 1].cl;
+        //data[f].cn = data[lc].cn + data[lc + 1].cn;
+        //if(data[lc].rc == true && data[lc + 1].lc == true)
+            //data[f].cn --;
+        //data[f].lc = data[lc].lc;
+        //data[f].rc = data[lc + 1].rc;
+    }
+};
+
+struct node
+{
+    double x, uy, dy;
+    bool isAdd;
+    node(){}
+    node(double x, double uy, double dy, bool isAdd): x(x), uy(uy), dy(dy), isAdd(isAdd){}
+};
+
+SegTree root;//线段树
+node ls[2 * SegTree::maxn];//输入矩阵
+
+bool cmp(node l, node r)
+{
+    if(l.x != r.x)
+        return l.x < r.x;
+    if(l.isAdd != r.isAdd)
+        return l.isAdd;
+    return l.dy < r.dy;
+}
+int main()
+{
+    int n, hl;
+    while(::scanf("%d", &n), n)
+    {
+        double ans = 0;
+        double lux, luy, rlx, rly;
+        root.init(0, SegTree::maxn);
+        hash.clear();
+        for(int i = 0; i < n; i ++)
+        {
+            //读入左上角和右下角
+            ::scanf("%lf %lf %lf %lf", &lux, &luy, &rlx, &rly);
+            ls[2 * i] = node(lux, rly, luy, true);
+            ls[2 * i + 1] = node(rlx, rly, luy, false);
+            hash[rly] = hash[luy] = 0;
+        }
+        for(hl = 0, itr = hash.begin(); itr != hash.end(); itr ++, hl ++ )
+            itr->second = hl, mapOf[hl] = itr->first;
+
+        std::sort(ls, ls + 2 * n, cmp);//排序后从左到右扫描
+        double preX = ls[0].x;
+        for(int i = 0; i < 2 * n; i ++)
+        {
+            double ocl = root.data[0].cl;
+            //int ocn = root.data[0].cn;
+            if(ls[i].isAdd)
+                root.insert(hash[ls[i].dy], hash[ls[i].uy]);
+            else
+                root.del(hash[ls[i].dy], hash[ls[i].uy]);
+            //求周长
+            //ans += (ls[i].x - preX) * 2 * ocn;
+            //ans += abs(ocl - root.data[0].cl);
+            //求面积
+            ans += ocl * (ls[i].x - preX);
+            if(ls[i].x > preX)
+                preX = ls[i].x;
+        }
+
+        ::printf("%.2lf\n", ans);
+    }
+    return 0;
+}
+```
+
+## 涂色覆盖问题[[Sort数值离散化]：
+
+```cpp
+#include <iostream>
+#include <algorithm>
+#include <cstdio>
+#include <cstring>
+
+int map[20010];// 用于离散化
+int seg[10005][2];
+bool check[10005];
+struct _SegTree_Data
+{
+    int l, r;
+    int v;//区间覆盖颜色，夹缝覆盖颜色
+    bool leaf;//叶节点
+};
+struct SegTree
+{
+    const static int maxn = 10005;
+    _SegTree_Data data[8 * maxn];
+
+    //初始化函数（如果需要）
+    void init(int l, int r, int f = 0)
+    {
+        data[f].l = map[l];
+        data[f].r = map[r];
+        data[f].v = 0;
+        if(r > l + 1)
+        {
+            int m = (l + r) / 2;
+            init(l, m, 2 * f + 1);
+            init(m, r, 2 * f + 2);
+            data[f].leaf = false;
+        }
+        else
+            data[f].leaf = true;
+    }
+
+    //参数：插入区间[l,r),插入值[v],区间父结点[f]
+    void insert(int l, int r, int v, int f = 0)
+    {
+        //根据需要修改
+        if(data[f].l == l && data[f].r == r)
+        {
+            data[f].v = v;
+            return;
+        }
+        //--------------
+        int m = data[2 * f + 2].l;
+        if(data[f].v > 0)
+        {
+            data[2 * f + 1].v = data[2 * f + 2].v = data[f].v;
+            data[f].v = 0;
+        }
+        if(l >= m)//区间在右子节点上
+            insert(l, r, v, 2 * f + 2);
+        else if(r <= m)//区间在作左子节点上
+            insert(l, r, v, 2 * f + 1);
+        else
+            insert(l, m, v, 2 * f + 1), insert(m, r, v, 2 * f + 2);
+    }
+
+    //参数：查找区间父结点[f]
+    //返回：段数
+    int find(int f = 0)
+    {
+        if(data[f].v > 0)
+        {
+            if(!check[data[f].v])
+            {
+                check[data[f].v] = true;
+                return 1;
+            }
+            return 0;
+        }
+        if(data[f].leaf == false)
+            return find(2 * f + 1) + find(2 * f + 2);
+        return 0;
+    }
+};
+
+SegTree root;
+
+int main()
+{
+    int t;
+    scanf("%d", &t);
+    while(t --)
+    {
+        int n, rn;
+        scanf("%d", &n);
+        for(int i = 0; i < n; i ++)
+        {
+            scanf("%d %d", &seg[i][0], &seg[i][1]);
+            map[2 * i] = seg[i][0];
+            map[2 * i + 1] = seg[i][1] + 1;//注意右边界为开区间
+        }
+        memset(check, false, sizeof(check));
+        std::sort(map, map + 2 * n);
+        rn = 1;
+        for(int i = 1; i < 2 * n; i ++)//去除重复点
+            if(map[i] != map[i - 1])
+                map[rn ++] = map[i];
+
+        root.init(0, rn - 1);
+        check[0] = true;
+        for(int i = 0; i < n; i ++)
+            root.insert(seg[i][0], seg[i][1] + 1, i + 1);
+
+        printf("%d\n", root.find());
+    }
+    return 0;
+}
+```
+
+## 二维线段树（这段不是自己写的Copy来的）：
+
+```cpp
+//下面我就简单介绍一下我理解中的二维线段树。顾名思义，二维线段树需要有两个维度，所以实现它的最基本思想就是树中套树。假设有一个矩形横坐标范围1—n，纵坐标范围1—m。我们可以以横坐标为一个维度，建立一棵线段树，假设为tree1，在这棵树的每个节点中以纵坐标建立一棵线段树，设为tree2，假设我们在tree1所处在的节点的的横坐标范围为l,r，那么该节点表示的矩形范围为横坐标为l—r，纵坐标范围为1—m。若我们正处在该节点中tree2的某个节点，该节点的纵坐标范围为d—u，那么tree2中的这个节点所代表的矩形范围，横坐标l—r，纵坐标d—u。所以千万不要糊涂应该怎么树中套树，仔细想想其实思想就是这么简单，我们要知道二维线段树并不是一棵树，我们不能把其统一成某种能表示平面的节点，而是根据各个节点的含义组合出能表示平面的节点。
+//代码
+//1：定义数据结构：
+//
+//    一维线段树的节点定义。
+typedef struct
+{
+    int l, r;   // 线段左右端点坐标
+    int mv;   // 该线段范围内的最大值
+} NodeOne;
+
+//一维线段树的类定义。
+struct OneDemonTree
+{
+        const int maxn = 1005;
+        NodeOne data[3 * maxn];    // 节点数组
+        void init(int l, int r, int step);   // 建立线l—r线段树
+        void insert(int l, int r, int var, int step); // 把var插入到线段l—r中
+        void delet(int l, int r, int step);   // 删除l—r线段
+        int query(int l, int r, int step);   // 查询l---r的最大值
+};
+
+//二维线段树节点定义：
+typedef struct
+{
+    int l, r;             // 横坐标范围l—r，
+    OneDemonTree tree;    // 以纵坐标建立的线段树
+} NodeTwo;
+
+//二维线段树类定义：
+struct TwoDemonTree
+{
+        const int maxn = 1005;
+        int l, r;    // 横坐标范围l—r，
+        NodeTwo data[3 * maxn]; //二维线段树节点数组
+// 建立横坐标范围为xl-xr，纵坐标范围yd—yu的线段树。
+        void init(int xl, int xr, int yd, int yu, int step);
+// 在xl-xr yd-yu 的矩形范围内插入var
+        void insert(int xl, int xr, int yd, int yu, int var, int step);
+// 删除…
+        void delet(int xl, int xr, int yd, int yu, int step);
+//查询xl-xr yd-yu 范围内的最大值
+        int query(int xl, int xr, int yd, int yu, int step);
+};
+//2： 操作实现：
+//一维线段树初始化、插入、查询操作
+void OneDemonTree::init(int l, int r, int step)
+{
+    data[step].l = l;
+    data[step].r = r;
+    data[step].mv = 0;
+    if(l == r)
+        return;
+    int mid = (l + r) >> 1;
+    init(l, mid, 2 * step);
+    init(mid + 1, r, 2 * step + 1);
+}
+void OneDemonTree::insert(int l, int r, int var, int step)
+{
+    if(data[step].mv < var)
+        data[step].mv = var;
+    if(data[step].l == data[step].r)
+        return;
+    int mid = (data[step].l + data[step].r) >> 1;
+    if(l <= mid)
+        insert(l, r, var, 2 * step);
+    if(r > mid)
+        insert(l, r, var, 2 * step + 1);
+    int v = data[2 * step].mv > data[2 * step + 1].mv ? data[2 * step].mv : data[2 * step + 1].mv;
+    if(data[step].mv < v)
+        data[step].mv = v;
+}
+
+int OneDemonTree::query(int l, int r, int step)
+{
+    if(l <= data[step].l && r >= data[step].r)
+        return data[step].mv;
+    int mid = (data[step].l + data[step].r) >> 1;
+    int mv = 0;
+    if(l <= mid)
+        mv = query(l, r, 2 * step);
+    if(r > mid)
+    {
+        int rs = query(l, r, 2 * step + 1);
+        if(rs > mv)
+            mv = rs;
+    }
+    return mv;
+}
+
+//二维线段树的建立、插入、查询操作：
+void TwoDemonTree::init(int xl, int xr, int yd, int yu, int step)
+{
+    data[step].l = xl;
+    data[step].r = xr;
+    data[step].tree.init(yd, yu, 1);
+    if(xl == xr)
+        return;
+    int mid = (xl + xr) >> 1;
+    init(xl, mid, yd, yu, 2 * step);
+    init(mid + 1, xr, yd, yu, 2 * step + 1);
+}
+
+void TwoDemonTree::insert(int xl, int xr, int yd, int yu, int var, int step)
+{
+    data[step].tree.insert(yd, yu, var, 1);
+    if(data[step].l == data[step].r)
+        return;
+    int mid = (data[step].l + data[step].r) >> 1;
+    if(xl <= mid)
+        insert(xl, xr, yd, yu, var, 2 * step);
+    if(xr > mid)
+        insert(xl, xr, yd, yu, var, 2 * step + 1);
+}
+
+int TwoDemonTree::query(int xl, int xr, int yd, int yu, int step)
+{
+   if(xl <= data[step].l && xr >= data[step].r)
+        return data[step].tree.query(yd, yu, 1);
+   int mid = (data[step].l + data[step].r) >> 1;
+   int rs = 0;
+   if(xl <= mid)
+        rs = query(xl, xr, yd, yu, 2 * step);
+   if(xr > mid)
+   {
+        int tmp = query(xl, xr, yd, yu, 2 * step + 1);
+        if(tmp > rs)
+            rs = tmp;
+   }
+   return rs;
+}
+
+//3：二维线段树的时空复杂度分析
+//空间复杂度分析：
+//一棵坐标范围为1-n的线段数的节点总数不超过3*N，那么二维线段树共需要3*N*3*M个节点，所以空间消耗为O(9*M*N)。
+//时间复杂度分析：
+//初始化：O(m*n*logm*logn)
+//插入： O(logm*logn)。
+//删除： O(logm*logn)。
+//查询： O(logm*logn)。
+```

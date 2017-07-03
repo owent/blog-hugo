@@ -1,0 +1,89 @@
+---
+title: 点到直线距离 和 线段间最短距离 (OWenT 模板)
+tags:
+  - acm
+  - template
+id: 80
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2009-08-14 11:33:38
+---
+
+点到直线距离
+
+```cpp
+// (x0,y0)到(x1,y1)和(x2,y2)确定的直线的距离
+
+double disBetweenPointAndLine(double x0,double y0,double x1,double y1,double x2,double y2)
+{
+    //化为ax+by+c=0的形式
+    double a = y1-y2;
+    double b = x2-x1;
+    double c = x1*y2-x2*y1;
+    double d = (a*x0+b*y0+c)/sqrt(a*a+b*b);
+    /*
+    如果是线段判断垂足
+
+    double xp = (b*b*x0-a*b*y0-a*c)/(a*a+b*b);
+    double yp = (-a*b*x0+a*a*y0-b*c)/(a*a+b*b);
+    double xb = (x1>x2)?x1:x2;
+    double yb = (y1>y2)?y1:y2;
+    double xs = x1+x2-xb;
+    double ys = y1+y2-yb;
+    if(xp > xb || xp < xs || yp > yb || yp < ys)
+    {
+        d = sqrt((x0 - x1) * (x0 - x1) + (y0 - y1) * (y0 - y1));
+        if(d > sqrt((x0 - x2) * (x0 - x2) + (y0 - y2) * (y0 - y2)))
+            d = sqrt((x0 - x2) * (x0 - x2) + (y0 - y2) * (y0 - y2));
+    }
+    */
+    return fabs(d);
+}
+```
+
+线段间最短距离
+
+```cpp
+//{(x1,y1),(x2,y2)}{(x3,y3),(x4,y4)}
+//导入点到直线或线段的距离模板
+
+double GetLineDistance(double x1,double y1,double x2,double y2,double x3,double y3,double x4,double y4)
+{
+    double tmpDouble = disBetweenPointAndLine(x1,y1,x3,y3,x4,y4);
+    if(tmpDouble > disBetweenPointAndLine(x2,y2,x3,y3,x4,y4))
+        tmpDouble = disBetweenPointAndLine(x2,y2,x3,y3,x4,y4)；
+    if(tmpDouble > disBetweenPointAndLine(x3,y3,x1,y1,x2,y2))
+        tmpDouble = disBetweenPointAndLine(x3,y3,x1,y1,x2,y2)；
+    if(tmpDouble > disBetweenPointAndLine(x4,y4,x1,y1,x2,y2))
+        tmpDouble = disBetweenPointAndLine(x4,y4,x1,y1,x2,y2)；
+
+    return tmpDouble;
+}
+
+double disBetweenPointAndLine(double x0,double y0,double x1,double y1,double x2,double y2)
+{
+    //化为ax+by+c=0的形式
+    double a = y1-y2;
+    double b = x2-x1;
+    double c = x1*y2-x2*y1;
+    double d = (a*x0+b*y0+c)/sqrt(a*a+b*b);
+    /*
+    如果是线段判断垂足
+    */
+    double xp = (b*b*x0-a*b*y0-a*c)/(a*a+b*b);
+    double yp = (-a*b*x0+a*a*y0-b*c)/(a*a+b*b);
+    double xb = (x1>x2)?x1:x2;
+    double yb = (y1>y2)?y1:y2;
+    double xs = x1+x2-xb;
+    double ys = y1+y2-yb;
+    if(xp > xb || xp < xs || yp > yb || yp < ys)
+    {
+        d = sqrt((x0 - x1) * (x0 - x1) + (y0 - y1) * (y0 - y1));
+        if(d > sqrt((x0 - x2) * (x0 - x2) + (y0 - y2) * (y0 - y2)))
+            d = sqrt((x0 - x2) * (x0 - x2) + (y0 - y2) * (y0 - y2));
+    }
+
+    return fabs(d);
+}
+```

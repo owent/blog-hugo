@@ -1,0 +1,111 @@
+---
+title: 非常帅气的Linq to sql
+tags:
+  - database
+  - linq
+  - mysql
+  - sqlserver
+id: 447
+categories:
+  - Article
+  - Blablabla
+date: 2011-06-02 10:57:03
+---
+
+Linq是.NET 3里新增的东西，我在软件工程课程设计里初步应用到一点，而且主要用在Lambda表达式上，今天算是在好奇心驱动下尝试了一下在数据库方面的应用。
+
+
+在数据库数据层自动化上，Linq强大地让我很惊喜。
+
+文档看这里：[http://msdn.microsoft.com/library/bb384429.aspx](http://msdn.microsoft.com/library/bb384429.aspx "http://msdn.microsoft.com/library/bb384429.aspx")
+
+微软的东西首先在微软的产品上用，我直接用Sql Server Express了，随便建了两个表（方法见：[http://msdn.microsoft.com/zh-cn/library/ms247254.aspx](http://msdn.microsoft.com/zh-cn/library/ms247254.aspx "http://msdn.microsoft.com/zh-cn/library/ms247254.aspx")）然后需要做的就是新建Linq to Sql项，然后把建好的表拖进来，一切都是可视化，so easy。
+
+[![图片木有了，网络错误？](http://www.owent.net/wp-content/uploads/2011/06/image_thumb.png "其实我想说，点一下是可以放大滴")](http://www.owent.net/wp-content/uploads/2011/06/image.png "还是大的好看")
+
+	[**其实我想说，这个图片点一下是会放大滴**](http://www.owent.net/wp-content/uploads/2011/06/image.png "点吧，点吧")
+
+我无耻地发现，类似关联，外键这种东西，他直接给你分析出来了，而且可以任意修改，一切都是自动化的，华丽丽的微软。之后的代码操作异常简单，我只测试了查询和添加（具体代码见本文尾巴）。需要注意的问题是由于用的Sql Server Express而且文件是相对路径，造成的结果就是bin文件夹里一组数据库文件，工程目录下一组，默认用的是bin目录下的那一组。
+
+但是对于其他数据库，因为微软一向不鸟，用起来就不太爽了。还好我找到一个Dblinq库（官方：[http://dblinq.codeplex.com/](http://dblinq.codeplex.com/ "http://dblinq.codeplex.com/")）支持MySQL, PostgreSQL, Oracle, Ingres, SQLite, FireBird, and SQL Server。OK这个NB啦。不过到现在为止，这个东西还不能可视化。
+
+但是，他有个自动生成代码的工具，已经可以让我们很方便地使用了。在下载完Dblinq包解压后，有个DbMetal.exe的文件，通过这个文件可以生成代码文件，具体怎么用就用DbMetal --help来看吧，我这里直接把我本地的Wordpress数据库当白鼠了。我的命令是
+
+> DbMetal.exe -provider=MySql -database:myblog -server:localhost -user:root -password:******(这个必须匿) -namespace:LinqTest -code:MyBlog.cs -sprocs
+
+然后他帮我生成了个74Kb的文件，文件名是MyBlog.cs，生成的时候要注意的就是因为我用的是0.2.0.1版本，需要把MySql.Data.dll复制到DbMetal的根目录里。其他数据库的应该也差不多吧。
+
+运行结果就不贴了，然后贴出我的测试代码：
+
+```cs
+using System;
+using System.Linq;
+
+#region MYSQL
+using MySql.Data.MySqlClient;
+#endregion
+
+namespace LinqTest {
+    class Program {
+        static void Main(string[] args) {
+            // MySql的初始化
+            string connStr = @"server=localhost;database=myblog;user=root;pwd=******（这个同样要匿）;port=3306";
+            MySqlConnection conn = new MySqlConnection(connStr);
+            var tm = new MyBLog(conn);
+            // Sql Server Express 的初始化
+            var t = new DataClassesDataContext();
+
+            // 第一个表
+            var rs1 = from sample in t.sample
+                     select sample;
+            foreach (var i in rs1) {
+                Console.WriteLine("id: " + i.ID + " val: " + i.值);
+            }
+
+            // 第二个表
+            var rs2 = from Sample2 in t.Sample2
+                 where Sample2.相关ID > 1
+                 select Sample2;
+            var rl2 = rs2.ToList();
+            foreach (var i in rl2) {
+                Console.WriteLine("id: " + i.PID + " sid: " + i.相关ID + " date: " + i.日期);
+            }
+
+            // 插入操作
+            Sample2 s2 = new Sample2() {
+                PID = rl2.Last().PID + 1,
+                相关ID = rl2.Last().相关ID,
+                日期 = DateTime.Now
+            };
+            t.Sample2.InsertOnSubmit(s2); // 木有错，这样就标记为插入了
+            t.SubmitChanges();// 因为之后没有查询，所以这里要Submit一下，否则不会进数据库
+
+            // MySql和Dblinq
+            var rs3 = (from WpCommentMeta in tm.WpCommentMeta
+                        where WpCommentMeta.MetaID > 10
+                        orderby WpCommentMeta.CommentID
+                        select WpCommentMeta).Skip(3).Take(3);
+            foreach (var i in rs3.ToList()) {
+                Console.WriteLine("MetaID: " + i.MetaID + " CommentID: " + i.CommentID);
+                Console.WriteLine("Key:\r\n" + i.MetaKey + "\r\nValue:\r\n" + i.MetaValue);
+                Console.WriteLine("");
+            }
+        }
+    }
+}
+```
+
+另外，有个东西忘了提了。**关于效率**的问题。
+
+第一次尝试Linq to Sql的时候我就有个疑问，他的效率怎么样？因为他可以有很多的筛选比如上文代码中的where和order，这个不是问题，问题是Skip和Take函数，我想如果每次都是把数据全select出来然后筛选效率必然很慢，我试了一下MySQL的这一段的调试（因为我的Sql Server是Express版的没有分析工具），我很惊喜地发现Linq最为神奇的地方在于在写完select的那一句的时候并没有连接数据库，Linq会在需要访问数据的时候从已知条件生成SQL语句从提交给数据库，然后处理就如上文，在 var rs3那一句并没有访问数据库，而是在rs3.ToList()执行时访问的数据库，并且在日志记录里生成的SQL语句为
+
+```sql
+SELECT `comment_id`, `meta_id`, `meta_key`, `meta_value`
+FROM `myblog`.`wp_commentmeta`
+WHERE (`meta_id` > 10)
+ORDER BY `comment_id` LIMIT 3 OFFSET 3
+```
+
+可以看出，生成的SQL非常给力的。另外也是这个延迟执行的原因，SQL语句会在查询的时候提交，在t.Sample2.InsertOnSubmit(s2); 的后面要加上&nbsp; t.SubmitChanges(); 因为之后没有查询，没有访问数据库，所以这里要Submit一下，否则内存里的对象不会提交，也就不会进数据库，这条记录就没有了。
+
+Linq的体验暂时就到这里吧，非常神奇。

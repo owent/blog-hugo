@@ -1,0 +1,3 @@
+[submodule "themes/distinctionpp"]
+	path = themes/distinctionpp
+	url = git@github.com:owt5008137/hugo-theme-distinctionpp.git

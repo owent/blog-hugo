@@ -1,0 +1,182 @@
+---
+title: 'C++又一坑:动态链接库中的全局变量'
+tags:
+  - c
+  - cpp
+  - linux
+  - windows
+  - 内存实现
+  - 坑
+  - 编译
+id: 962
+categories:
+  - Article
+  - Blablabla
+date: 2014-01-04 17:30:32
+---
+
+前几天我们项目的日志系统出现了一点问题，但是一直没有时间去深究。
+昨天在同事的帮助下，无意中猜了一种可能性，结果还真被我猜中了，于是今天就特别研究了一下，记录下来。
+
+其实主要问题是三个模块。
+
++ 模块 a, 静态库 a
++ 模块 b, 二进制 b, 静态引用a, 动态加载c
++ 模块 c, 动态链接库c, 静态引用a
+
+关键在于静态库a里有一个静态全局变量，没错就是我们的日志模块。
+原先的这个静态的模块中的静态全局变量是有**构造函数**的，也就是构造函数干了点事情。
+
+我们都知道，程序载入在进入主函数前会依次初始化全部的全局和静态变量。载入动态链接库时也不例外。
+这时候矛盾就来了，二进制b在进入主函数前会初始化模块a中的全局变量，执行构造函数；然而载入动态链接库c时，也会启动对c内的全局变量进行初始化，也会执行同一个对象的构造函数。这样，**一个对象就会执行两次构造函数**。
+
+在我们的程序里，就是第二次执行构造函数的时候把全局变量的成员置空了。导致的结果是，我们的模块一开始有效，正常运行了一会会之后，就失效了。
+当然在c里，并没有构造函数一说，对象构造时除了内存分配，什么都没干，所以**在纯c里并不会出现问题**。
+
+这是碰到的问题，但是是不是在所有环境里都这样呢？或者使用静态成员函数又如何？
+以下做了一个简单的测试: 
+
+## 模块a
+### a.h
+```cpp
+struct foo_class {
+    int m;
+
+    foo_class();
+    ~foo_class();
+
+    static foo_class _;
+};
+```
+
+### a.cpp
+```cpp
+#include <cstdio>
+#include "a.h"
+
+foo_class foo_class::_;
+
+
+foo_class::foo_class() {
+    m = 10;
+    printf("foo_class::foo_class(), this-> 0x%llx\n", this);
+}
+
+foo_class::~foo_class() {
+    printf("foo_class::~foo_class(), this-> 0x%llx\n", this);
+}
+```
+
+### 编译选项
+```
+gcc -O0 -g -ggdb a.cpp -o libtest_a.a -c -fPIC
+```
+
+## 模块b
+### b.cpp
+```cpp
+#include <dlfcn.h>
+#include <errno.h>
+ 
+#include <cstdio>
+#include <cstdlib>
+
+#include "a.h"
+
+
+int main() {
+    void (*dll_func)() = NULL;
+    char* error = NULL;
+
+    foo_class::_.m += 1000;
+    printf("&foo_class::_ = 0x%llx, foo_class::_.m = %d\n", &foo_class::_, foo_class::_.m);
+
+
+    void* handle = dlopen("libtest_c.so", RTLD_LAZY);
+    if (!handle) {
+        fprintf(stderr, "%s\n", dlerror());
+        return -1;
+    }
+
+    dlerror();
+
+    *(void **) (&dll_func) = dlsym(handle, "dll_func");
+
+    if ((error = dlerror()) != NULL)  {
+        fprintf(stderr, "%s\n", error);
+        return -2;
+    }
+
+    (*dll_func)();
+
+    dlclose(handle);
+
+    return 0;
+}
+```
+
+### 编译选项
+```
+gcc -O0 -g -ggdb b.cpp -o test_b -fPIC -ldl -L$PWD -ltest_a -lstdc++
+```
+
+## 模块c
+### c.cpp
+```cpp
+#include <cstdio>
+
+#include "a.h"
+
+
+extern "C" {
+
+void dll_func() {
+    foo_class::_.m += 100;
+    printf("&foo_class::_ = 0x%llx, foo_class::_.m = %d\n", &foo_class::_, foo_class::_.m);
+}
+
+}
+```
+
+### 编译选项
+```
+gcc -O0 -g -ggdb c.cpp -o libtest_c.so -shared -fPIC -L$PWD -ltest_a -lstdc++
+```
+
+这是三个模块的代码和编译选项。我分别至于Linux和Windows内的GCC编译测试。
+在**Linux**中的GCC 4.4.6 运行结果如下:
+
+```
+foo_class::foo_class(), this-> 0x600f98
+&foo_class::_ = 0x600f98, foo_class::_.m = 1010
+foo_class::foo_class(), this-> 0x600f98
+&foo_class::_ = 0x600f98, foo_class::_.m = 110
+foo_class::~foo_class(), this-> 0x600f98
+foo_class::~foo_class(), this-> 0x600f98
+```
+从结果中可以看出来，在Linux中多个动态链接库和主程序引用的同一个全局变量（地址相同），但是每一个二进制实例都会完成一次构造。这就造成了同一个实例多次构造，导致我们最初碰到的结果。
+
+在**Windows**中Cygwin的GCC 4.8.2 中运行结果如下:
+
+```
+foo_class::foo_class(), this-> 0x100406010
+&foo_class::_ = 0x100406010, foo_class::_.m = 1010
+foo_class::foo_class(), this-> 0x5aa426010
+&foo_class::_ = 0x5aa426010, foo_class::_.m = 110
+foo_class::~foo_class(), this-> 0x5aa426010
+foo_class::~foo_class(), this-> 0x100406010
+```
+
+但是在Windows中，虽然每个动态链接库和主程序引用的同一个全局变量也各自都执行了一次构造。但是，每一个二进制内的全局变量，实际上并不是同一个。他们并不冲突，但是他们也不在一个内存区域内，所以即便是纯C下和Linux内的行为也不一样。
+
+这也就意味着，**在Linux中，载入的动态链接库实际上可以直接使用外部框架或者其他模块的全局数据，但是在Windows下确是隔离的，不能直接访问到。**
+另外, 我从另一篇文章上看到，这个行为与dlopen时flag是**RTLD_GLOBAL还是RTLD_LOCAL**有关。但是我这里实测没有任何变化。但是结果和编译选项**-fPIC**有关(原因去看gcc文档吧，我就不复述啦)。
+PS: 如果不是直接使用的全局变量，而是直接使用函数接口，并且返回一个static的局部变量这种方式，测试结果也是一样的；
+而且如果不是通过dlopen动态加载，而是通过编译时链接进去的话，也是构造了两次。
+这里就不再另外贴出输出结果了。
+
+其实，根本问题是多个动态链接库里共享的内存对象的构造问题。在不同环境下有不同的行为，也许会藏地比较隐晦。着实是个坑呐。
+
+## 整理后记
+
+其实这个原因在[《程序员的自我修养-链接、装载与库》](https://book.douban.com/subject/3652388/)里说的比较清楚。当时碰到这个坑的时候还没看过这本书。这个写得确实不错，推荐一下。

@@ -1,0 +1,92 @@
+---
+title: 一个C++关于成员变量偏移地址的小Trick
+tags:
+  - c
+  - trick
+id: 879
+categories:
+  - Article
+  - Blablabla
+date: 2013-08-26 14:16:37
+---
+
+今天看到一个小例子，发现了一个小trick。见代码：
+
+```cpp
+#include <cstdio>
+#include <cstdlib>
+
+class base_1
+{
+public:
+    int a;
+};
+
+class base_2
+{
+public:
+    int b;
+};
+
+class base_3: public base_1, public base_2
+{
+public:
+    int c;
+};
+
+int main(int argc, char* argv[]) {
+
+    printf("&base_1::a = %p\n", &base_1::a);
+    printf("&base_2::b = %p\n", &base_2::b);
+    printf("&base_3::a = %p\n", &base_3::a);
+    printf("&base_3::b = %p\n", &base_3::b);
+    printf("&base_3::c = %p\n", &base_3::c);
+
+
+    base_3 t;
+    t.a = 1;
+    t.b = 2;
+    t.c = 3;
+
+    typedef int (base_3::*tip);
+    tip pm = NULL;
+
+    printf("base_3::a = %d\n", t.base_3::a);
+    printf("base_3::b = %d\n", t.base_3::b);
+    printf("base_3::c = %d\n", t.base_3::c);
+
+    pm = &base_3::a;
+    printf("base_3::a(%p) = %d(ptr)\n", pm, t.*pm);
+    pm = &base_3::b;
+    printf("base_3::b(%p) = %d(ptr)\n", pm, t.*pm);
+    pm = &base_3::c;
+    printf("base_3::c(%p) = %d(ptr)\n", pm, t.*pm);
+
+    return 0;
+}
+```
+
+猜猜看这个代码输出什么？
+答案是：
+
+```
+&base_1::a = 00000000
+&base_2::b = 00000000
+&base_3::a = 00000000
+<u>&base_3::b = 00000000</u>
+&base_3::c = 00000008
+base_3::a = 1
+base_3::b = 2
+base_3::c = 3
+base_3::a(00000000) = 1(ptr)
+base_3::b(00000004) = 2(ptr)
+base_3::c(00000008) = 3(ptr)
+```
+
+注意带下划线&base_3::b那一行，木有错，这个值不是4，而是0。我看了一下生成的汇编，很遗憾地他直接 push 0进栈了。
+而下面赋值的pm = &base_3::b那里，汇编里直接 mov 了 4。
+而且GCC和VC都是这样，所以不知道这么做的原因。
+
+## 整理后记
+
+原因：和编译优化有关。

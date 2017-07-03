@@ -1,0 +1,139 @@
+---
+baseURL: "https://owent.net/"
+
+# include content marked as draft
+buildDrafts:                false
+# include content with publishdate in the future
+buildFuture:                false
+# include content already expired
+buildExpired:               false
+# enable this to make all relative URLs relative to content root. Note that this does not affect absolute URLs.
+relativeURLs:               true
+canonifyURLs:               true
+# config file (default is path/config.yaml|json|toml)
+config:                     "config.yaml"
+contentDir:                 "source"
+dataDir:                    "data"
+defaultExtension:           "html"
+defaultLayout:              "post"
+# Missing translations will default to this content language
+defaultContentLanguage:     "zh-CN"
+# Renders the default content language in subdir, e.g. /en/. The root directory / will redirect to /en/
+defaultContentLanguageInSubdir: false
+# The below example will disable all page types and will render nothing.
+disableKinds:               false
+disableLiveReload:          false
+# Enable GitInfo feature
+enableGitInfo:              false
+# Build robots.txt file
+enableRobotsTXT:            true
+# Do not inject generator meta tag on homepage
+disableHugoGeneratorInject: false
+# Enable Emoji emoticons support for page content.
+# See www.emoji-cheat-sheet.com
+enableEmoji:                false
+# Show a placeholder instead of the default value or an empty string if a translation is missing
+enableMissingTranslationPlaceholders: false
+footnoteAnchorPrefix:       ""
+footnoteReturnLinkContents: ""
+
+# google analytics tracking id
+googleAnalytics:            ""
+languageCode:               "zh-CN"
+layoutDir:                  "layouts"
+# Enable Logging
+log:                        false
+# Log File path (if set, logging enabled automatically)
+logFile:                    ""
+# "yaml", "toml", "json"
+metaDataFormat:             "yaml"
+# Edit new content with this editor, if provided
+newContentEditor:           ""
+# Don't sync permission mode of files
+noChmod:                    false
+# Don't sync modification time of files
+noTimes:                    false
+paginate:                   10
+paginatePath:               "page"
+permalinks:
+  post: /:year/:id.html
+
+# Pluralize titles in lists using inflect
+pluralizeListTitles:        true
+# Preserve special characters in taxonomy names ("Gérard Depardieu" vs "Gerard Depardieu")
+preserveTaxonomyNames:      false
+# filesystem path to write files to
+publishDir:                 "public"
+# enables syntax guessing for code fences without specified language
+pygmentsCodeFencesGuessSyntax: false
+# color-codes for highlighting derived from this style
+pygmentsStyle:              "monokai"
+# true: use pygments-css or false: color-codes directly
+pygmentsUseClasses:         false
+# maximum number of items in the RSS feed
+rssLimit:                   15
+# default sitemap configuration map
+sitemap:                     sitemap.xml
+# filesystem path to read files relative from
+source:                     "posts"
+staticDir:                  "static"
+# display memory and timing of different steps of the program
+stepAnalysis:               false
+# theme to use (located by default in /themes/THEMENAME/)
+themesDir:                  "themes"
+theme:                      "hugo-xmin"
+title:                      "I'm OWenT"
+# if true, use /filename.html instead of /filename/
+uglyURLs:                   true
+# Do not make the url/path to lowercase
+disablePathToLower:         true
+# if true, auto-detect Chinese/Japanese/Korean Languages in the content. (.Summary and .WordCount can work properly in CJKLanguage)
+hasCJKLanguage:             true
+# verbose output
+verbose:                    false
+# verbose logging
+verboseLog:                 false
+# watch filesystem for changes and recreate as needed
+watch:                      true
+
+# custom options
+
+params:
+  description: "Chanllege Everything"
+  author: "OWenT"
+  GitHubUser: "owt5008137"
+  SidebarRecentLimit: 5
+
+author:
+    name: "OWenT"
+    email: "admin@owent.net"
+
+ignoreFiles:
+  - "README\\.md$"
+
+taxonomies:
+  category: "categories"
+  tag: "tags"
+
+blackfriday:
+  taskLists: true
+  smartypants: true
+  angledQuotes: false
+  fractions: true
+  smartDashes: true
+  latexDashes: true
+  hrefTargetBlank: true
+  plainIDAnchors: true
+  extensions:
+    - noIntraEmphasis
+    - tables
+    - fencedCode
+    - autolink
+    - strikethrough
+    - laxHtmlBlocks
+    - hardLineBreak
+    - footnotes
+  extensionsmask:
+
+copyright: "本作品由 [owent](//www.owent.net) 创作，采用[知识共享署名-非商业性使用-相同方式共享 4.0 国际许可协议](//creativecommons.org/licenses/by-nc-sa/4.0/)进行许可。"
+---

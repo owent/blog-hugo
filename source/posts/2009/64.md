@@ -1,0 +1,80 @@
+---
+title: POJ PKU 2378 Tree Cutting 解题报告
+tags:
+  - acm
+  - pku
+  - poj
+id: 64
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2009-12-23 14:09:13
+---
+
+又来发解题报告了
+
+这回是树状DP
+
+```cpp
+/*
+ * 树状DP
+ * 首先把数据想象成树状的
+ * 由于输入数据为树状，不需要构建树
+ * 可令degree[i]为包括i且以i为根节点的所有子节点数量
+ * dp[i]为删除i后的最大子节点数量或父亲节点数量 （这里我理解了很久）
+ */
+#include<iostream>
+#include<cstdio>
+#include<vector>
+using namespace std;
+vector<int>chirld[10002];
+int dp[10002] = {0}
+    ,degree[10002] = {0}
+    ,isJudged[10002] = {0};
+
+int search(int pos,int &n);
+int main()
+{
+    int n,i,a,b;
+    bool isnone = true;
+    scanf("%d",&n);
+    for(i = 1 ; i < n ; i ++)
+    {
+        scanf("%d %d",&a,&b);
+        chirld[a].push_back(b);
+        chirld[b].push_back(a);
+    }
+
+    search(1 , n);
+
+    for(i = 1 ; i <= n ; i ++)
+        if(dp[i] * 2 <= n)
+            printf("%d\n",i) , isnone = false;
+
+    if(isnone)
+        printf("NONE\n");
+    return 0;
+}
+
+int search(int pos,int &n)
+{
+    int i,j;
+    degree[pos] = 1;
+    isJudged[pos] = 1;
+    dp[pos] = 0;
+
+    for(i = 0 ; i < chirld[pos].size() ; i ++)
+    {
+        if(!isJudged[chirld[pos].at(i)])//如果已经判断过就是父亲节点了
+        {
+            degree[pos] += search(chirld[pos].at(i) , n);
+            if(dp[pos] < degree[chirld[pos].at(i)])
+                dp[pos] = degree[chirld[pos].at(i)];
+        }
+    }
+
+    if(dp[pos] < n - degree[pos])//判断父亲节点数量
+        dp[pos] = n - degree[pos];
+    return degree[pos];
+}
+```

@@ -1,0 +1,101 @@
+---
+title: POJ PKU 3659 Cell Phone Network 解题报告
+tags:
+  - acm
+  - pku
+  - poj
+id: 28
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-06-01 15:51:00
+---
+
+题目链接：[http://acm.pku.edu.cn/JudgeOnline/problem?id=3659](http://acm.pku.edu.cn/JudgeOnline/problem?id=3659)
+
+这题不算难题了，基本算是中等题
+
+题目大意是给出一颗树，在一些点建一个信号塔，信号塔覆盖范围是其所在点和邻近点，问最少几个信号塔可以覆盖全区域
+
+**思路是树状DP（后序遍历）**，有三个状态，分别记录父节点建塔，本节点建塔和子节点建塔的最少建塔数量
+
+需要注意的就是子节点建塔的判断，子节点建塔只要一个以上的子节点建塔即可
+
+代码如下：
+
+```cpp
+#include <iostream>
+#include <cstdio>
+#include <cstring>
+#include <vector>
+#include <cmath>
+using namespace std;
+
+struct node
+{
+    vector<int> linkto;
+    int build[3];//0 为自己建塔， 1 为父节点建塔， 2为子节点建塔
+};
+
+node pasture[10005];
+
+int calcPos(int pos, int f);
+int main()
+{
+    int i, j, n, a, b, res;
+
+    scanf("%d", &n);
+    for(i = 0; i < n - 1; i ++)
+    {
+        scanf("%d %d", &a, &b);
+        pasture[a - 1].linkto.push_back(b - 1);
+        pasture[b - 1].linkto.push_back(a - 1);
+    }
+
+    calcPos(0, 0);
+    res = min(pasture[0].build[0], pasture[0].build[2]);
+
+    printf("%d\n", res);
+    return 0;
+}
+
+int calcPos(int pos, int f)
+{
+    int i, tmp;
+    bool flag = false;
+    pasture[pos].build[0] = 1;
+    pasture[pos].build[1] = 0;
+    pasture[pos].build[2] = 0;
+
+    for(i = 0; i < pasture[pos].linkto.size(); i ++)
+    {
+        if(pasture[pos].linkto[i] != f)
+        {
+            calcPos(pasture[pos].linkto[i], pos);
+            pasture[pos].build[0] += min(min(pasture[ pasture[pos].linkto[i] ].build[0], pasture[ pasture[pos].linkto[i] ].build[1])
+                , pasture[ pasture[pos].linkto[i] ].build[2]);
+            pasture[pos].build[1] += min(pasture[ pasture[pos].linkto[i] ].build[0], pasture[ pasture[pos].linkto[i] ].build[2]);
+            pasture[pos].build[2] += min(pasture[ pasture[pos].linkto[i] ].build[0], pasture[ pasture[pos].linkto[i] ].build[2]);
+            flag = flag || (pasture[ pasture[pos].linkto[i] ].build[0] <= pasture[ pasture[pos].linkto[i] ].build[2]);
+        }
+    }
+
+    if(pasture[pos].build[2] == 0)
+    {
+        pasture[pos].build[2] = 100000;
+        return 0;
+    }
+    if(flag == false)
+    {
+        tmp = 100000;
+        for(i = 0; i < pasture[pos].linkto.size(); i ++)
+        {
+            if(pasture[pos].linkto[i] != f
+                && pasture[pasture[pos].linkto[i]].build[0] - pasture[pasture[pos].linkto[i]].build[2] < tmp)
+            tmp = pasture[pasture[pos].linkto[i]].build[0] - pasture[pasture[pos].linkto[i]].build[2];
+        }
+        pasture[pos].build[2] += tmp;
+    }
+    return 0;
+}
+```

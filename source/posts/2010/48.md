@@ -1,0 +1,109 @@
+---
+title: PKU POJ 1720 SQUARES 解题报告
+tags:
+  - acm
+  - pku
+  - poj
+id: 48
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-04-03 17:12:41
+---
+
+题目链接：http://acm.pku.edu.cn/JudgeOnline/problem?id=1720
+
+这题纯计算几何就搞定了，开始我写了个很长很长的代码，但是Wa掉，也不知道是代码那里有疏漏还是精度问题
+
+后来看了一篇解题报告，改为全用long处理，然后根据他的一些方法，代码量也精简了不少
+
+我的原先的方法是判断左边和底边的覆盖，分别计算每个square的覆盖区域和长度
+
+解题报告里也是计算覆盖，不过用斜率代替了我分别计算的左边和底边，同时这里我原先用的是double，但是以斜
+
+率计算可以优化为记录斜率的点，这样就不需要用double，解决了精度问题
+
+然后是判断square的重叠问题，我原先是分成两部分的，左边和底边的在后的被在前的覆盖，报告里这里有更好的
+
+算法，记录边界点，以x轴和y轴坐标和来判断哪个被哪个覆盖
+
+最后只要对每一个square，从上到下找出被覆盖的斜率，然后最后被覆盖的位置相对于圆点的斜率大于square右下
+
+角点的相对于圆点的斜率，那么这个square必然没被覆盖完全，也就是看得到
+
+我的代码：
+
+```cpp
+/**
+ * URL:http://acm.pku.edu.cn/JudgeOnline/problem?id=1720
+ * Author: OWenT
+ * 计算几何
+ */
+#include <iostream>
+#include <cstring>
+#include <cstdio>
+#include <algorithm>
+using namespace std;
+
+
+typedef struct
+{
+    long x,y;
+    long L;
+}point;
+
+point zero = {0, 0};
+point p[1005];
+
+int cross( point p0, point p1 , point p2)
+{
+    int t = ( p1.x -p0.x ) * ( p2.y -p0.y ) -( p2.x -p0.x ) * ( p1.y -p0.y);
+    if ( t > 0 )
+        return 1;
+    if ( t < 0 )
+        return -1 ;
+    return 0 ;
+}
+bool cmp(point a , point b )
+{
+    return cross( zero , a, b ) < 0;//按斜率降序排列
+}
+int main()
+{
+    long n , i , j , count;
+    point tmp1 , tmp2;
+    scanf("%ld", &n) ;
+    for ( i = 0 ; i < n; i ++)
+    {
+        scanf("%ld %ld %ld" , &p[i].x, &p[i].y , &p[i].L);
+        p[i].y += p[i].L;
+    }
+    sort(p, p + n, cmp);
+    count = 0 ;
+    for ( i = 0 ; i < n; i ++)
+    {
+        tmp1 = p[i] ;
+        for ( j = 0 ; j < n; j ++)
+        {
+            if ( p[i].x + p[i].y <= p[j].x + p[j].y )
+                continue;
+
+            tmp2.x = p[j].x + p[j].L ;
+            tmp2.y = p[j].y -p[j].L;
+            int t1 = cross(zero, p[j] , tmp1 ) ;
+            int t2 = cross(zero, tmp2, tmp1 ) ;
+            if ( t1 != t2 )//不等的情况必然有覆盖
+                tmp1 = tmp2;
+            else if(t1 > 0)
+                break;//由于按斜率降序排序，第j的点斜率都小于tmp1，那么后面的必然小于
+        }
+        tmp2.x = p[i].x + p[i].L ;
+        tmp2.y = p[i].y - p[i].L ;
+        if ( cross(zero, tmp2, tmp1 )> 0 )
+            count ++;
+    }
+    printf("%ld\n", count) ;
+
+    return 0;
+}
+```

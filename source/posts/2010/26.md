@@ -1,0 +1,79 @@
+---
+title: 'C#格式化输出(记录)'
+tags:
+  - c
+id: 26
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-06-08 05:39:06
+---
+
+```cs
+int a = 12345678;
+//格式为sring输出
+Label1.Text = string.Format("asdfadsf{0}adsfasdf",a);
+Label2.Text = "asdfadsf"+a.ToString()+"adsfasdf";
+Label1.Text = string.Format("asdfadsf{0:C}adsfasdf",a);//asdfadsf￥1,234.00adsfasdf
+Label2.Text = "asdfadsf"+a.ToString("C")+"adsfasdf";//asdfadsf￥1,234.00adsfasdf
+double b = 1234.12543;
+int a = 12345678;
+//格式为特殊的string样式输出
+Label1.Text = string.Format("asdfadsf{0:C}adsfasdf",b);//asdfadsf￥1,234.13adsfasdf
+Label2.Text = "asdfadsf"+b.ToString("C")+"adsfasdf";//asdfadsf￥1,234.13adsfasdf
+Label1.Text = string.Format("{0:C3}",b);//￥1,234.125
+Label2.Text = b.ToString("C3");//￥1,234.125
+Label1.Text = string.Format("{0:d}",a);//十进制--12345678
+Label2.Text = b.ToString("d");//十进制--相同的类型，转换报错
+Label1.Text = string.Format("{0:e}",a);//指数--1.234568e+007
+Label2.Text = b.ToString("e");//指数--1.234125e+003
+Label1.Text = string.Format("{0:f}",a);//定点数--12345678.00
+Label2.Text = b.ToString("f");//定点数--1234.13
+Label1.Text = string.Format("{0:n}",a);//数值--12,345,678.00
+Label2.Text = b.ToString("n");//数值--1,234.13
+Label1.Text = string.Format("{0:x}",a);//十六进制--bc614e
+Label2.Text = b.ToString("x");//16--带有小数不能转换，出错
+Label1.Text = string.Format("{0:g}",a);//通用为最紧凑--12345678
+Label2.Text = b.ToString("g");//通用为最紧凑--1234.12543
+Label1.Text = string.Format("{0:r}",a);//转来转去不损失精度--整数不允许用，报错
+Label2.Text = b.ToString("r");//转来转去不损失精度--1234.12543
+double b = 4321.12543;
+int a = 1234;
+自定义模式输出：
+//"0"描述：占位符，如果可能，填充位
+Label1.Text = string.Format("{0:000000}",a);// 001234
+Label2.Text = string.Format("{0:000000}",b);// 004321
+//"#"描述：占位符，如果可能，填充位
+Label1.Text = string.Format("{0:####### }",a);// 1234
+Label2.Text = string.Format("{0:####### }",b);// 4321
+Label1.Text = string.Format("{0:#0#### }",a);// 01234
+Label2.Text = string.Format("{0:0#0000}",b);// 004321
+//"."描述：小数点
+Label1.Text = string.Format("{0:000.000}",a);//1234.000
+Label2.Text = string.Format("{0:000.000}",b);//4321.125
+double b = 87654321.12543;
+int a = 12345678;
+//","描述：数字分组，也用于增倍器
+Label1.Text = string.Format("{0:0,00}",a);// 12,345,678
+Label2.Text = string.Format("{0:0,00}",b);// 87,654,32
+Label1.Text = string.Format("{0:0,}",a);// 12346
+Label2.Text = string.Format("{0:0,}",b);// 87654
+Label1.Text = string.Format("{0:0,,}",a);// 12
+Label2.Text = string.Format("{0:0,,}",b);// 88
+Label1.Text = string.Format("{0:0,,,}",a);// 0
+Label2.Text = string.Format("{0:0,,,}",b);// 0
+//"%"描述：格式为百分数
+Label1.Text = string.Format("{ 0:0% }",a);// 1234567800%
+Label2.Text = string.Format("{ 0:#% }",b);// 8765432113%
+Label1.Text = string.Format("{ 0:0.00% }",a);// 1234567800.00%
+Label2.Text = string.Format("{ 0:#.00% }",b);// 8765432112.54%
+//"abc"描述：显示单引号内的文本
+Label1.Text = string.Format("{0:'文本'0}",a);// 文本12345678
+Label2.Text = string.Format("{0:文本0}",b);// 文本87654321
+//"\"描述：后跟1要打印字的字符，也用于转移符\n等
+Label1.Text = string.Format("\"你好！\"");// "你好！"
+Label2.Text = string.Format("[url=file://\\c\\books\\new\\we.asp]\\c\\books\\new\\we.asp");//\c\books\new\we.asp
+//"@"描述：后跟要打印字的字符,
+Label1.Text = string.Format(@"""你好！"""); // "你好！"要打印"则需要输入两对才可以
+Label2.Text = string.Format(@"\c\books\new\we.asp");//\c\books\new\we.asp 
+```

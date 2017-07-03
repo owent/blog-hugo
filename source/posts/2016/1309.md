@@ -1,0 +1,116 @@
+---
+title: 重写了llvm+clang+libc++和libc++abi的构建脚本
+tags:
+  - c
+  - c++0x/11
+  - clang
+  - cpp
+  - libc++
+  - libc++abi
+  - libcxx
+  - libcxxabi
+  - llvm
+id: 1309
+categories:
+  - Article
+  - Blablabla
+  - Work
+date: 2016-11-19 15:42:21
+---
+
+重写了llvm+clang+libcxx+libcxxabi的构建脚本
+======
+
+由于之前整理的服务器框架已经完成了，就需要用各种静态分析工具跑一遍。原来的llvm+clang的编译脚本是从GCC那个脚本copy过来然后改的，使用的时候各种问题。所以干醋重新折腾一遍，重写了。
+
+之前的脚本，每次升级版本都要折腾下，一开始是编译的默认静态库巨大无比，后来改成动态库后一会儿好一会儿不好。
+目测3.9.0版本的问题是开启动态库的编译模式以后有些子工程还是静态库，并且会漏掉加-fPIC，即便我在cmake的选项里加了也没用。
+而且有时候是用gcc编译正常，用clang自举编译的时候失败。
+然后每次测试一次都要花费巨量的时间，巨慢无比。我只是编译出来玩+当某些工具使用啊喂。要不要这么折腾我啊喂。
+
+所以索性重写了，然后这回干脆不适用原来的动态库命令了，llvm的文档里说那个命令仅供llvm的developer。然后有新的选项是把编译出来的各种.a都动态链接到一起（我试了下保留Debug信息的话这个libLLVM.so有900MB）。所以干脆不保留Debug信息了。
+然而之前发现的make install的时候的python目录的bug依然存在，所以就还是保留了那个bug的处理。
+
+也是醉，现在的脚本终于第一次编译个自举编译又都OK了，然后建议的额外的编译flags也改成了使用llvm-config来显示。并且新的脚本的编译速度也比以前大幅提升了。
+
+写这个脚本的时候发现过一些问题，llvm套件编译的时候要耗费巨量的内存。一开始我是用CPU核心数除2的多进程编译的，后来发现内存扛不住。加交换区的话有很慢，所以现在的策略是先4进程编译，失败了再2进程，再失败1进程，再失败就真的是失败了。
+之前观测得是2进程的时候要消耗大约12GB内存。
+
+另外一开始我是RelWithDebInfo编译的，也就是带了调试符号。后来发现，这么编译的话编出来的各种静态库和动态库都巨大无比，大约一起十多个GB。
+然后用这个带调试信息的clang自举编译的时候又巨慢无比，而且内存有彪上去了。我编译跑了一下午也没跑完。所以索性改成Release编译了，去除了调试符号。
+现在编译速度比较正常了，编译出的文件大小已比较正常了。
+
+再就是一些组件的细节调整了下，编译lldb的时候会检查下依赖的库有没有，没有就跳过。默认都睡编译lldb和lld了。
+openmp我不用所以没加进去，反正加一下也不麻烦。dragonegg的依赖过于奇葩，我也没加进去了，这也是个折腾的主儿，而且真的需要用gcc的前端+llvm的后端吗？有需要的人自己加吧。
+
+希望不要下次版本有各种问题吧，唉。次版本的编译脚本位于:  https://github.com/owent-utils/bash-shell/tree/master/LLVM%26Clang%20Installer/3.9
+
+### NOTICE
+
+1. 第二次自举编译完成后，不再依赖libstdc++，转而依赖编译出来的libc++和libc++abi,但是仍然会依赖libgcc_s.so
+2. llvm内部分组件没有使用LIBCXX_LIBCXXABI_INCLUDE_PATHS来查找c++abi的头文件，故而编译的时候直接把这个目录加到了C_INCLUDE_PATH里
+3. 使用动态库，原先使用静态库会导致编译出来的二进制非常大，现在全部使用动态库
+4. CentOS 7下测试默认包+lld通过, 本地测试过的编译命令如下
+> clang -O0 -g -ggdb -std=c++11 -stdlib=libstdc++ -lstdc++ *[源文件...]*
+> 
+> clang++ -O0 -g -ggdb -std=c++11 -stdlib=libstdc++ *[源文件...]*
+> 
+> clang -O0 -g -ggdb -std=c++11 -stdlib=libc++ -lc++ -lc++abi *[源文件...]*
+> 
+> clang -O0 -g -ggdb -std=c++14 -stdlib=libc++ -lc++ -lc++abi *[源文件...]*
+> 
+> clang++ -O0 -g -ggdb -std=c++11 -stdlib=libc++ -lc++abi *[源文件...]*
+> 
+> clang++ -O0 -g -ggdb -std=c++14 -stdlib=libc++ -lc++abi *[源文件...]*
+> 
+> 其他选项参见: llvm-config --cflags ; llvm-config --cxxflags ; llvm-config --ldflags
+
+
+* 如果使用***clang -stdlib=libc++***则需要加上***-lc++ -lc++abi***的链接选项,或者使用***clang++ -stdlib=libc++ -lc++abi***。（无论如何-lc++abi都要手动加链接符号）
+* 如果使用***clang -stdlib=libstdc++***则需要加上***-lstdc++***的链接选项,或者使用***clang++ -stdlib=libstdc++***
+* 建议使用**llvm-config --cflags**,**llvm-config --cxxflags**和**llvm-config --ldflags**来查看需要附加的编译选项
+
+编译安装 LLVM + Clang 3.9
+### 准备环境及依赖项
+
+1. cmake
+2. Python
+3. **python-devel/python-dev(lldb依赖项)**
+4. **swig(lldb依赖项)**
+5. **libedit/libedit-devel/libedit-dev(lldb依赖项)**
+6. **libxml2-devel(lldb依赖项)**
+7. **ncurses-devel(lldb依赖项)**
+8. GCC 4.7 or higher
+
+### 我编译的环境
+#### 系统：
+CentOS 7.1
+
+#### 系统库：
+详情参见 [llvm官网](http://llvm.org/)
+
+#### 编译的依赖库：
++ libc++ 3.9.0
++ libc++abi 3.9.0
++ libunwind 3.9.0(这个库不会install)
+
+#### 默认编译目标：
++ llvm 3.9.0
++ clang 3.9.0
++ compiler_rt 3.9.0
++ clang_tools_extra 3.9.0
++ lldb 3.9.0
++ lld 3.9.0
+
+#### 注：
++ (所有的库都会被安装在**$PREFEX_DIR**里)
+
+#### 额外建议：
++ 如果增加编译组件，比如已装有gtest要编译lld，使用命令***./install.sh -t +openmp*** 
+
+#### History:
++ 2016-11-14     Created
+
+
+#### 参考文献
+1. [llvm官网](http://llvm.org/)

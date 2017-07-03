@@ -1,0 +1,165 @@
+---
+title: POJ 2192 Zipper HDU 2059 龟兔赛跑
+tags:
+  - acm
+  - hdu
+  - poj
+id: 861
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2013-07-15 18:39:41
+---
+
+今天心情好，刷了两到ACM水题，思路很简单都在注释里，所以直接贴代码:
+
+```cpp
+/**
+ * @file 龟兔赛跑.cpp
+ * @brief 龟兔赛跑 AC代码 (DP)
+ * DP方程式: [到第i的充电站的最短时间] = [到最后一个冲了电的充电站的最短时间] + [那个充电站到第i个充电站的时间]
+ *
+ * @link http://acm.hdu.edu.cn/showproblem.php?pid=2059
+ * @version 1.0
+ * @author OWenT
+ * @date 2013.07.15
+ *
+ * @history
+ *
+ *
+ */
+
+#include <cstdio>
+#include <iostream>
+#include <cstring>
+#include <algorithm>
+#include <set>
+#include <numeric>
+
+int pn[128];
+double dp[128]; /** dp[i] 表示 到第i个充电站的最小时间(0为开始位置，n+1为终点) **/
+
+double calc_charge_time(int dis, int v1, int v2, int c) {
+    if (dis <= c)
+        return 1.0 * dis / v1;
+
+    return 1.0 * c / v1 + 1.0 * (dis - c) / v2;
+}
+
+int main(int argc, char* argv[]) {
+    using namespace std;
+
+    double eps = std::numeric_limits<double>::epsilon();
+    int l, n, c, t, vr, v1, v2;
+
+    while(cin>> l) {
+        cin >> n>> c>> t>> vr>> v1>> v2;
+
+        pn[0] = 0; /** 0为起点 **/
+        for (int i = 1; i <= n; ++ i) {
+            cin>> pn[i];
+        }
+        pn[n + 1] = l; /** n+1为终点 **/
+
+        memset(dp, 0, sizeof(dp));
+        for(int i = 0; i <= n + 1; ++ i) {
+            dp[i] = calc_charge_time(pn[i] - pn[0], v1, v2, c);
+        }
+
+        for(int i = 1; i <= n + 1; ++ i) {
+            for(int j = 0; j < i; ++ j) {
+                double tc = calc_charge_time(pn[i] - pn[j], v1, v2, c) + t + dp[j];
+                dp[i] = std::min(tc, dp[i]);
+            }
+            
+        }
+
+        double rt = 1.0 * l / vr, tt = dp[n + 1];
+
+        if (tt < rt)
+            puts("What a pity rabbit!");
+        else
+            puts("Good job,rabbit!");
+    }
+
+    return 0;
+}
+
+/**
+ * @file Zipper.cpp
+ * @brief Zipper AC代码 (DP)
+ * @link http://poj.org/problem?id=2192
+ * DP方程式: [A串消耗个数i][B串消耗个数j] = min{[A串消耗个数i - 1][B串消耗个数j]|[A串消耗个数i][B串消耗个数j + 1]}
+ * 以上分支选取条件是 A或B的新选用字符和C串新字符匹配
+ *
+ * @version 1.0
+ * @author OWenT
+ * @date 2013.07.15
+ *
+ * @history
+ *
+ *
+ */
+
+#include <cstdio>
+#include <cstring>
+#include <algorithm>
+#include <set>
+#include <numeric>
+
+
+char strA[256], strB[256], strC[512];
+int dp[256][256]; /** dp[i][j] = k 表示A消耗了i个字符，B消耗了j个字符，拼成的C串消耗了k个字符（其实就是i+j） **/
+
+int main(int argc, char* argv[]) {
+    using namespace std;
+    int s, n;
+
+    scanf("%d", &n);
+    for( s = 0; s < n; ++ s) {
+        scanf("%s %s %s", strA, strB, strC);
+        int lenA = strlen(strA);
+        int lenB = strlen(strB);
+        int lenC = strlen(strC);
+        bool bFlag = false;
+
+        if ( lenC != lenA + lenB ) {
+            printf("Data set %d: no\n", s + 1);
+            continue;
+        }
+
+        memset(dp, 0, sizeof(dp));
+
+        if (strA[0] == strC[0])
+            dp[1][0] = 1;
+        if (strB[0] == strC[0])
+            dp[0][1] = 1;
+
+        for (int i = 0; i <= lenA; ++ i) {
+            for (int j = 0; j <= lenB; ++ j) {
+                if (0 == dp[i][j])
+                    continue;
+
+                int ri = i + 1, rj = j + 1;
+
+                if (strA[i] == strC[dp[i][j]]) {
+                    dp[ri][j] = dp[i][j] + 1;
+                    if (ri + j == lenC)
+                        bFlag = true;
+                }
+
+                if (strB[j] == strC[dp[i][j]]) {
+                    dp[i][rj] = dp[i][j] + 1;
+                    if (i + rj == lenC)
+                        bFlag = true;
+                }
+            }
+        }
+
+        printf("Data set %d: %s\n", s + 1, bFlag? "yes": "no");
+    }
+
+    return 0;
+}
+
+```

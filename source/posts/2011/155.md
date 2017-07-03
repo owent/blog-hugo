@@ -1,0 +1,76 @@
+---
+title: 我们学校的IPV6很不错嘛
+tags:
+  - ecust
+  - ipv6
+id: 155
+categories:
+  - Article
+  - Web
+date: 2011-01-04 08:55:08
+---
+
+**我们学校的资源列表（ECUST）**
+
+用Ubuntu的人，只要把有线和无线网络设置为IPV6自动，然后取消下面的需要IPV6
+
+来建立连接就可以用校园网反问IPV6站点了。反正我就这么搞定了
+
+**all in [http://ipv6.ecust.edu.cn](http://ipv6.ecust.edu.cn)**
+
+**校内IPv6网络资源**
+
+[http://www.ecust6.edu.cn](http://www.ecust6.edu.cn)    华东理工大学网站
+
+[ftp://ftp.ecust6.edu.cn](ftp://ftp.ecust6.edu.cn)     华东理工大学FTP站点
+
+[http://video.ecust6.edu.cn/](http://video.ecust6.edu.cn/)     华东理工大学IPv6视频点播网站
+
+[http://xxb.ecust.edu.cn/](http://xxb.ecust.edu.cn/)     华东理工大学信息办网站
+
+[http://xyzh.ecust.edu.cn/](http://xyzh.ecust.edu.cn/)     华东理工大学校友会网站
+
+[http://student.ecust.edu.cn/](http://student.ecust.edu.cn/)     华东理工大学学工部网站
+
+[http://cise.ecust.edu.cn/](http://cise.ecust.edu.cn/)     华东理工大学信息学院网站
+
+[http://ies.ecust.edu.cn/](http://ies.ecust.edu.cn/)     华东理工大学国际教育学院网站
+
+[http://pharmacy.ecust.edu.cn](http://pharmacy.ecust.edu.cn)/     华东理工大学药学院网站
+
+[http://hgxy.ecust.edu.cn/](http://hgxy.ecust.edu.cn/)     华东理工大学化工学院网站
+
+[http://art.ecust.edu.cn/](http://art.ecust.edu.cn/)      华东理工大学艺术学院网站
+
+[http://gh.ecust.edu.cn/](http://gh.ecust.edu.cn/)     华东理工大学工会网站
+
+[http://zsb.ecust.edu.cn/](http://zsb.ecust.edu.cn/)     华东理工大学本科招生网站
+
+**国内IPv6网络资源**
+
+[http://www.tsinghua6.edu.cn/ ](http://www.tsinghua6.edu.cn/ )    清华大学
+
+[http://ipv6.sjtu.edu.cn/](http://ipv6.sjtu.edu.cn/)     上海交通大学
+
+[http://www.fudan6.edu.cn/](http://www.fudan6.edu.cn/)     复旦大学
+
+**国际IPv6网络资源**
+
+[http://ipv6.google.com/](http://ipv6.google.com/)       Google
+
+[http://www.ist-ipv6.org](http://www.ist-ipv6.org)/       欧洲IPv6研发项目
+
+[http://www.eurov6.com/](http://www.eurov6.com/)         欧洲IPv6联盟。
+
+[http://www.ipv6forum.org](http://www.ipv6forum.org)         欧洲IPv6论坛。
+
+还有自己添加几个：
+
+	http://www.sixxs.net/     NB的代理，IPV6 <==> IPV4
+
+下面这张图在你用IPV6的时候才能看见。
+
+ 
+
+<div id="e_p_ipv6" style="color:Red;font-weight: bolder;">![ECUST IPV6 网络拓扑图](http://ipv6.ecust.edu.cn/tupu.jpg "ECUST IPV6 网络拓扑图")</div>
+

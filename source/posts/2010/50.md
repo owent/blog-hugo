@@ -1,0 +1,133 @@
+---
+title: PKU POJ 1724 ROADS 解题报告
+tags:
+  - acm
+  - pku
+  - poj
+id: 50
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-04-02 17:07:50
+---
+
+看来我的搜索真的很烂，简单的搜索都搞定的这么痛苦
+
+题目链接：http://acm.pku.edu.cn/JudgeOnline/problem?id=1724
+
+题目大意是输入   拥有钱数，城市数，路的数量
+
+然后输入格式是 起点，终点，路长，路费
+
+要求从城市1到城市n的路费不超过拥有的钱的最短路
+
+就是有条件的最短路问题
+
+我的方法就是BFS搜索
+
+减枝的地方很简单，就是路费超过拥有的费用就跳过，记录状态时候可以用堆或者优先队列如图：
+
+如果路的输入是
+```
+1 2 3 0
+1 3 2 0
+1 4 5 0
+3 4 9 0
+2 4 1 0
+```
+
+那么BFS的结果就是（带括号的为到终点的路长）
+
+第一层1->2，1->3，1->4，记录的状态就是路长分别为：3，2，5，队列为：2，3，（5）
+
+第二层3->4，队列为：3，（5），（11）
+
+第三层2->4，队列为：（4），（5），（11）
+
+由于最短路径是到终点的，所以跳出，4就是答案
+
+贴代码：
+
+```cpp
+/**
+ * URL：http://acm.pku.edu.cn/JudgeOnline/problem?id=1724
+ * Author: OWenT
+ * 优先队列（STL）+BFS
+ */
+#include <iostream>
+#include <cstdio>
+#include <vector>
+#include <queue>
+#include <cstring>
+using namespace std;
+
+#define inf 1000000
+
+class node
+{
+public:
+    long pdl, d, ctm;//已走过的路长, 终点, 花费
+    friend bool operator<(node a,node b)
+    {
+       return a.pdl > b.pdl;
+    }
+};
+
+typedef struct
+{
+    long d,l,t;
+}road;
+
+vector<road>rd[10005];//路
+priority_queue<node>state;//STL 优先队列
+int main()
+{
+    long k,n,r,i,output = inf;
+    scanf("%ld %ld %ld", &k, &n, &r);
+
+    for(i = 0; i < r; i ++)
+    {
+        road tmpRd;
+        long s;
+        scanf("%ld %ld %ld %ld", &s, &tmpRd.d, &tmpRd.l, &tmpRd.t);
+        rd[s].push_back(tmpRd);
+    }
+
+    //初始化
+    node tmpNd;
+    tmpNd.ctm = tmpNd.pdl = 0;
+    tmpNd.d = 1;
+    state.push(tmpNd);
+
+    //BFS
+    while(!state.empty())
+    {
+        node nd = state.top();
+        state.pop();
+        long s = nd.d;
+        if(s == n)
+        {
+            output = nd.pdl;
+            break;
+        }
+        for(i = 0; i < rd[s].size(); i ++)
+        {
+            if(nd.ctm + rd[s][i].t <= k)
+            {
+                node ad;
+                ad.d = rd[s][i].d;
+                ad.ctm = nd.ctm + rd[s][i].t;
+                ad.pdl = nd.pdl + rd[s][i].l;
+                state.push(ad);
+            }
+        }
+    }
+
+    //输出，inf即为没有符合的情况
+    if(output >= inf)
+        printf("-1\n");
+    else
+        printf("%ld\n", output);
+    return 0;
+}
+```

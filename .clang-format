@@ -1,0 +1,31 @@
+BasedOnStyle: LLVM
+Language: JavaScript
+AlignEscapedNewlinesLeft: true
+AlignAfterOpenBracket: DontAlign
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortIfStatementsOnASingleLine: false
+AllowShortBlocksOnASingleLine: false
+AllowShortFunctionsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AlwaysBreakTemplateDeclarations: false
+KeepEmptyLinesAtTheStartOfBlocks: false
+BraceWrapping:                         
+  AfterClass:      false   
+  AfterControlStatement: false
+  AfterEnum:       false
+  AfterFunction:   false          
+  AfterNamespace:  false                
+  AfterStruct:     false
+  AfterUnion:      false
+  BeforeCatch:     false
+  BeforeElse:      false   
+  IndentBraces:    false
+BreakBeforeBraces: Custom
+ColumnLimit: 180
+CommentPragmas: ''
+IndentWidth: 4
+MaxEmptyLinesToKeep: 2
+NamespaceIndentation: All
+TabWidth: 4
+UseTab: Never

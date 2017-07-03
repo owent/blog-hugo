@@ -1,0 +1,566 @@
+---
+title: Boost.Spirit 初体验
+tags:
+  - BOOST
+  - c
+  - EBNF
+  - LL
+  - Spirit
+  - STL
+  - 扩展巴科斯范式
+  - 语法分析
+id: 674
+categories:
+  - Article
+  - Blablabla
+  - Work
+date: 2012-11-08 18:57:34
+---
+
+使用代码生成代码是一件十分美妙的事情，于是有了各种代码生成器。但是生成代码，意味着要有对生成规则的分析和处理。
+Boost.Spirit 就是这么一个语法分析工具，它实现了对**上下文无关文法的LL分析**。支持**EBNF(扩展巴科斯范式)**。
+Boost.Spirit 的使用真的是把模板嵌套用到了极致。确实这么做造成了非常强的扩展性，生成的代码也非常高效，但是嵌套的太复杂了，对于初学者而言真心难看懂。
+你能想象在学习阶段一个不是太明白的错误导致编译器报出的几十层模板嵌套错误信息的感受吗？而且，这么复杂的模板嵌套还直接导致了编译速度的巨慢无比。
+其实在之前，我已经使用过Spirit的Classic版本，即1.X版本，但是过多的复制操作让我觉得当时用得很低效，还好分析的内容并不复杂所以没。体现出来
+这回就来研究下功能更强劲的2.X 版本。
+
+**Boost.Spirit V2 大体上分为三个部分，Qi、Karma和Lex** 
+
+Qi 库主要是规则生成和解析器，使用方式类似巴科斯范式
+Karma 库则是格式化输出工具
+Lex 库是类似Flex的规则生成工具，使用正则表达式，某些时候比直接使用Qi更容易看懂一些
+
+> 注：所有示例的最终运行结果都放在最后
+
+## 首先来试用Qi库：
+Qi库是以解析器Parser为核心的，首先提供了一些基本的解析器，比如整型、字符、浮点数等等。
+具体内容参见Boost.Spirit的**Qi部分**的**Qi Parsers** 章节
+
+Qi还包含属性的定义，参见**Qi部分**的 **Compound Attribute Rules** 章节，属性定义主要是描述了不同的语法规则锁使用的数据结构，帮助我们判断数据转储和读取的。这里面也描述了Qi的解析器支持的操作符。
+使用属性定义说明中的操作符、qi::rule和上一条提到的基本解析器，可以组成复杂地满足我们需求的解析规则
+
+另外就是Qi的动作器部分了，见**Qi部分**的 **Parser Semantic Actions** 章节，动作器用于处理匹配玩解析器之后的操作。
+申明形式是 **parser[f]** 其动作函数的形式支持以下格式:
+```cpp
+// 如果f是普通或静态函数，f必须满足以下形式之一
+void f(Attrib const&);
+void f(Attrib const&, Context&);
+void f(Attrib const&, Context&, bool&);
+
+// 如果f是仿函数，f必须重载下列操作符之一
+void operator()(Attrib const&, unused_type, unused_type) const;
+void operator()(Attrib const&, Context&, unused_type) const;
+void operator()(Attrib const&, Context&, bool&) const;
+
+// 以上的Attrib都指的是属性器类型
+```
+
+另外，Boost.Spirit还实现了一个Phoenix辅助框架，这是用于生成对类似Lambda表达式的支持的代码的。可以简化很多操作，只要复合Boost.Phoenix的一些规则
+这里有个综合Sample：
+
+```cpp
+#include <cstdio>
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include <vector>
+
+
+// 提供规则生成工具
+#include <boost/spirit/include/qi.hpp>
+
+// 提供高级规则生成工具
+#include <boost/spirit/repository/include/qi_confix.hpp>
+
+// 提供数据处理工具
+#include <boost/spirit/include/phoenix.hpp>
+
+
+// 高级自定义Action函数
+struct SpiritQiStringAssign {
+    mutable std::string& strAssigned;
+    SpiritQiStringAssign(std::string& strAttached): strAssigned(strAttached){}
+
+    void operator()(std::vector<char> const &strVecTestOut, boost::spirit::qi::unused_type, boost::spirit::qi::unused_type) const {
+        strAssigned.assign(strVecTestOut.data(), strVecTestOut.size());
+    }
+};
+
+void test_spirit_qi() {
+    using namespace boost::spirit;
+    using boost::phoenix::at;
+    using boost::phoenix::ref;
+    using boost::phoenix::push_back;
+    using boost::spirit::ascii::space;
+    using boost::spirit::ascii::char_;
+    using boost::spirit::eol;
+    using std::string;
+
+    // ============================================================
+    // ============ Spirit QI component， 规则构造工具 ============
+    // ============================================================
+    string strTest = "123.6 45 ABC";
+    double dTestOut = 0.0;
+    std::vector<int> stIntTestOut;
+    int iTestOut;
+    string strTestOut;
+    std::vector<char> strVecTestOut;
+
+    bool res = qi::parse(strTest.begin(), strTest.end(), qi::double_, dTestOut);
+    std::cout<< "Spirit.Qi    => Line "<< std::setw(4)<< __LINE__<< ": QI::Parse double "<< (res?"true": "false")<< std::endl;
+
+    dTestOut = 1.0;
+    /**
+     * 复合规则时可使用多种操作符，包括 >>、>、*、+、-、!、& 等等
+     *     关于复合规则组合的操作符文档参照 Boost.Spirit 库 Qi 部分 Compound Attribute Rules 章节
+     * 
+     * qi::rule<Iterator, A1, A2, A3> 可用于建立复杂语法规则（注意要符合EBNF范式，要消除左递归）
+     *     关于qi::rule的文档参照 Boost.Spirit 库 Qi 部分 Nonterminals 章节
+     * 
+     * Qi行为属性（申明形式 规则[函数/仿函数]）接受的函数类型为：
+     *     函数：
+     *         void f(Attrib const&);
+     *         void f(Attrib const&, Context&);
+     *         void f(Attrib const&, Context&, bool&);
+     *     仿函数（以下为N选1）：
+     *         定义 void operator()(Attrib const&, Context&, bool&) const;
+     *         定义 void operator()(Attrib const&, Context&, unused_type) const;
+     *         定义 void operator()(Attrib const&, unused_type, unused_type) const;
+     * 也可以用 Boost.Phoenix 构造Qi行为属性
+     *     示例中分别采用了Phoenix的ref、assign和push_back来获取输入数据
+     */
+    qi::rule<std::string::iterator> stQiRule = 
+        // 第一部分，引用包装+等号操作符，浮点型
+        qi::double_[ref(dTestOut) = qi::_1] >> space>>
+        // 第二部分，push_back函数，整型
+        qi::int_[push_back(boost::phoenix::ref(stIntTestOut), qi::_1)][ref(iTestOut) = qi::_1] >> space>>  
+        // 第三部分，自定义函数\仿函数，stl数据结构 
+        (*(qi::char_))[SpiritQiStringAssign(strTestOut)];
+
+    res = qi::parse(strTest.begin(), strTest.end(), stQiRule);
+    std::cout<< "Spirit.Qi    => Line "<< std::setw(4)<< __LINE__<< ": QI::Parse complex struct "<< (res?"true": "false")<< std::endl;
+    std::cout<< "Spirit.Qi    => \t\t double:"<< dTestOut<< " int:"<< stIntTestOut[0]<< " string:"<< strTestOut<< std::endl;
+    
+
+    // Qi 高级规则生成器示例
+    using boost::spirit::repository::confix;
+    string c_commit_content, cpp_commit_content;
+    auto c_comment = confix("/*", "*/")[*((char_ - "*/")[push_back(boost::phoenix::ref(c_commit_content), qi::_1)])];
+    qi::rule<string::iterator> cpp_comment = confix("//", eol)[*((char_ - eol)[push_back(boost::phoenix::ref(cpp_commit_content), qi::_1)])];
+
+    strTest = "\r\n Hello /* This is C style comment. */ also // This is CPP style comment \r\n Oh yeah.";
+    
+    res = qi::parse(strTest.begin(), strTest.end(), *(*(char_ - "/*" - "//")>> (c_comment | cpp_comment)));
+    std::cout<< "Spirit.Qi    => Line "<< std::setw(4)<< __LINE__<< ": QI::Parse confix rule "<< (res?"true": "false")<< std::endl;
+    std::cout<< "Spirit.Qi    => \t\t c style comment:"<< c_commit_content<< std::endl;
+    std::cout<< "Spirit.Qi    => \t\t c++ style comment:"<< cpp_commit_content<< std::endl;
+}
+```
+
+对于上面代码中的高级生成器，可以参见**Boost.Spirit**的**Spirit Repository**章节
+
+## 接下来是Karma库：
+
+这个库是用来把一些STL的数据结构按和Qi一样的规则转化成到输出流的，感觉用处不大，只是一个为了完整而存在的东西。
+大体上和Qi差不多，只不过是反过来了。比如，Qi使用的是输入流，Karma使用的是输出流。
+另外Karma有一个比较特别的地方，因为规则生成大多数的第一个数据不是Karma组件，所以有个函数karma::eps，用于生成一个空的Karma表达式。
+直接上例程吧：
+
+```cpp
+#include <cstdio>
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include <vector>
+
+// 提供数据生成工具
+#include <boost/spirit/include/karma.hpp>
+
+// 生成Vector
+static std::vector<int> GenIntVec(){
+    std::vector<int> ret;
+    ret.push_back(3);
+    ret.push_back(1);
+    ret.push_back(4);
+    ret.push_back(1);
+    ret.push_back(5);
+    ret.push_back(9);
+    ret.push_back(2);
+    ret.push_back(6);
+    ret.push_back(5);
+    ret.push_back(3);
+    ret.push_back(5);
+    ret.push_back(9);
+
+    return ret;
+}
+
+void test_spirit_karma() {
+    using namespace boost::spirit;
+    using boost::spirit::ascii::space;
+
+    // ============================================================
+    // ============ Spirit karma component, 输出生成器 ============
+    // ============================================================
+    std::vector<int> stKarmaIntVec = GenIntVec();
+    std::string strKarma;
+    std::back_insert_iterator<std::string> stStrInsertIter(strKarma);
+    /**
+     * 基本规则的使用方式为
+     * karma::类型            生成输出. 如: karma::int_
+     * karma::类型(匹配值)    只生成值为匹配值的输出. karma::int_()
+     * karma::eps(...) << ... << ... 复合生成器
+     * karma::eps() 函数，当其内部succeed属性被设为true时，会生成转换规则
+     * 具体类型参照 Boost.Spirit 库 Karma 部分 Karma Generators 章节
+     *
+     * karma 的自定义规则、属性行为等类似 qi，可参照Karma部分的相应章节
+     */
+    karma::generate_delimited(stStrInsertIter, karma::eps(true)<< '[' < < (karma::int_ % ',')<< ']', space, stKarmaIntVec);
+    std::cout<< "Spirit.Karma => Line "<< std::setw(4)<< __LINE__<< ": Karma::generate_delimited => "<< strKarma<< std::endl;
+
+}
+```
+
+## 最后是Lex库：
+
+可能有人之前听说过Flex库，用来生成代码的。而Boost.Spirit的Lex库的很多地方和它很像（我也没用过Flex，官方是这么说的）。
+Lex的好处呢，就是可以用正则表达式描述一个规则，而且可以动态生成。而且可以可Qi混合起来使用。
+在研究这个库的时候，我也同时发现，想要真正高效的使用Spirit库，还应该像这里的例程一样，各种模板继承，但是，这也会增加编程的复杂度。
+
+Lex对并不是支持所有正则表达式的语法，其支持的正则表达式规则可以参见 **Lex库** 的 **Supported Regular Expressions** 章节
+
+对于Lex库的规则类型分离，**首先可以采用和Flex类似的做法，自定义数据分段处理的仿函数**，只要完成
+
+```cpp
+template <typename Token>
+bool operator()(Token const& t) const
+```
+
+这样的操作符重载即可，在函数中，可以通过不同的ID区分匹配的内容，具体例程下面有
+
+或者，和Qi一样，**可以使用扩展的Phoenix功能实现简单的动作器操作**
+
+同时，Lex支持命名模式，可以使用lex::lexer::self.add_pattern来**创建命名模式**和使用**{占位符名称}**来设置命名占位符的token定义
+另外，Lex还可以**和Qi结合使用**，无论是Lex的模式结构还是按自定义数据分段处理仿函数时使用的ID编号的方法，都有相应的方法让他依据Lex的规则分析，按Qi的动作处理函数处理
+
+Lex还有一个重要的部分，**静态规则生成**。
+静态规则生成比较特殊，首先，生成规则的写法和上面提到的一致，不同的地方有两点首先是lex::lexertl::lexer的使用要改成lex::lexertl::static_lexer
+第二处比较特别，就是需要使用lex::lexertl::generate_static_dfa函数，依据规则，生成代码。
+
+上诉所有要点的Sample如下：
+
+```cpp
+#include <cstdio>
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include <vector>
+#include <functional>
+
+// 提供语法分析和转换工具
+#include <boost/spirit/include/lex.hpp>
+#include <boost/spirit/include/lex_lexertl.hpp>
+#include <boost/spirit/include/lex_static_lexertl.hpp>
+#include <boost/spirit/include/lex_generate_static_lexertl.hpp>
+
+// 可结合Qi使用
+#include <boost/spirit/include/qi.hpp>
+
+// 提供类Lambda表达式功能
+#include <boost/spirit/include/phoenix.hpp>
+
+// 生成的静态lex文件
+#include "spirit_lex_static_test.hpp"
+
+namespace lex = boost::spirit::lex;
+namespace qi = boost::spirit::qi;
+
+static std::string g_strLexAnaContent = "Hello World!\r\n I'm OWenT\r\nMy blog is http://www.owent.net";
+static enum token_ids
+{
+    ID_OWENT = 1000,
+    ID_EOL,
+    ID_CHAR,
+    IDANY = boost::spirit::lex::min_token_id + 1,
+};
+
+// 自定义functor
+static void test_spirit_lex_custom_functor();
+// 使用 Phoenix
+void test_spirit_lex_phoenix_functor();
+// 混合Qi使用
+void test_spirit_lex_qi_functor();
+// 静态lex生成器
+void test_spirit_lex_static();
+void test_spirit_lex_static_gencode(); // 静态lex生成器
+
+void test_spirit_lex() {
+    using namespace boost::spirit;
+    using boost::spirit::ascii::space;
+
+    // ============================================================
+    // ============  Spirit Lex component, 语法分析器  ============
+    // ============================================================
+
+    // ====== 支持动态和静态分析的类似 Flex 的语法分析生成器 ======
+    std::cout<< "Spirit.Lex   => Line "<< std::setw(4)<< __LINE__<< ": Lex::Parse content "<< std::endl<< g_strLexAnaContent<< std::endl;
+
+    // 自定义functor示例
+    test_spirit_lex_custom_functor();
+
+    // 使用 Phoenix示例
+    test_spirit_lex_phoenix_functor();
+
+    // 混合Qi使用示例
+    test_spirit_lex_qi_functor();
+
+    // 静态lex生成器示例
+    // 第一步，使用 lex::lexertl::generate_static_dfa 生成代码
+    test_spirit_lex_static_gencode();
+    // 第二步，使用第一步生成的代码进行编译(第一次编译注释掉下面这行代码，不然不能编译通过的)
+    test_spirit_lex_static();
+}
+
+
+// ========== 自定义functor ========== 
+template <typename Lexer>
+struct word_count_tokens1 : lex::lexer<Lexer>
+{
+    word_count_tokens1()
+    {
+        this->self.add
+            ("(?i:owent)", ID_OWENT)    // 忽略大小写，统计 owent 个数
+            ("\n", ID_EOL)              // 新的一行
+            (".", ID_CHAR)              // 换行外的任意字符
+        ;
+    }
+};
+
+struct counter1
+{
+    int& o;
+    int& l;
+    counter1(int& _o, int& _l): o(_o), l(_l){}
+
+    template <typename Token>
+    bool operator()(Token const& t) const
+    {
+        switch (t.id()) {
+        case ID_OWENT: 
+            ++ o;
+            break;
+        case ID_EOL:
+            ++l;
+            break;
+        case ID_CHAR:
+            break;
+        }
+
+        return true;        // 继续分析
+    }
+};
+
+void test_spirit_lex_custom_functor()
+{
+    int o = 0, l = 1;
+    word_count_tokens1<lex::lexertl::lexer<> > functor;
+    const char* begin = g_strLexAnaContent.c_str();
+    const char* end = begin + g_strLexAnaContent.size();
+
+    bool res = lex::tokenize(begin, end, functor, counter1(o, l));
+    std::cout<< "Spirit.Lex   => Line "<< std::setw(4)<< __LINE__<< ": Lex::tokenize ("<< (res?"true": "false")<< ")"<< std::endl;
+    std::cout<< "Spirit.Lex   => \t\t "<< "Lines: "<< l<< ", OWenTs: "<< o<< std::endl;
+}
+
+// ========== 使用 Phoenix ==========
+template <typename Lexer>
+struct word_count_tokens2 : lex::lexer<Lexer>
+{
+    word_count_tokens2()
+      : o(0), l(1)
+      , owent("(?i:owent)")
+      , eol("\n")
+      , any(".")
+    {
+        this->self
+            =   owent   [++ boost::phoenix::ref(o)]
+            |   eol     [++ boost::phoenix::ref(l)]
+            |   any     
+            ;
+    }
+
+    int o, l;
+    lex::token_def<> owent, eol, any;
+};
+
+void test_spirit_lex_phoenix_functor()
+{
+    typedef lex::lexertl::token<std::string::iterator, lex::omit, boost::mpl::false_> token_type;
+    typedef lex::lexertl::actor_lexer<token_type> lexer_type;
+    word_count_tokens2<lexer_type> word_count_lexer;
+
+    std::string::iterator begin = g_strLexAnaContent.begin();
+    std::string::iterator end = g_strLexAnaContent.end();
+    lexer_type::iterator_type iter = word_count_lexer.begin(begin, end);
+
+    using lex::lexertl::token_is_valid;
+    while(iter != word_count_lexer.end() && token_is_valid(*iter))
+        ++ iter;
+    std::cout<< "Spirit.Lex   => Line "<< std::setw(4)<< __LINE__<< ": Lex::token_is_valid ("<< (iter == word_count_lexer.end()?"true": "false")<< ")"<< std::endl;
+    std::cout<< "Spirit.Lex   => \t\t "<< "Lines: "<< word_count_lexer.l<< ", OWenTs: "<< word_count_lexer.o<< std::endl;
+}
+
+// ========== 混合Qi使用 ==========
+template <typename Lexer>
+struct word_count_tokens3 : lex::lexer<Lexer>
+{
+    word_count_tokens3()
+    {
+        // 命名模式
+        this->self.add_pattern("OWENT", "(?i:owent)"); 
+
+        // 命名模式绑定
+        owent = "{OWENT}";
+
+        this->self.add
+            (owent)          
+            ('\n') 
+            (".", ID_CHAR)
+        ;
+    }
+
+    lex::token_def<std::string> owent;
+};
+
+template <typename Iterator>
+struct word_count_grammar3 : qi::grammar<Iterator>
+{
+    template <typename TokenDef>
+    word_count_grammar3(TokenDef const& tok)
+      : word_count_grammar3::base_type(start)
+      , o(0), l(1)
+    {
+        start =  *(   tok.owent          [++ boost::phoenix::ref(o)] // 使用Lex内的owent成员定义
+                  |   qi::lit('\n')          [++ boost::phoenix::ref(l)] // 和Qi内的一样
+                  |   qi::token(ID_CHAR)                               // 使用Lex内定义ID的token
+                  )
+              ;
+    }
+
+    int o, l;
+    qi::rule<Iterator> start;
+};
+
+void test_spirit_lex_qi_functor()
+{
+    typedef lex::lexertl::token<std::string::iterator, boost::mpl::vector<std::string> > token_type;
+    typedef lex::lexertl::lexer<token_type> lexer_type;
+    typedef word_count_tokens3<lexer_type>::iterator_type iterator_type;
+
+    word_count_tokens3<lexer_type> word_count;          // lexer 分析器
+    word_count_grammar3<iterator_type> g(word_count);   // 语法解析器
+
+    bool res = lex::tokenize_and_parse(g_strLexAnaContent.begin(), g_strLexAnaContent.end(), word_count, g);
+    std::cout<< "Spirit.Lex   => Line "<< std::setw(4)<< __LINE__<< ": Lex::tokenize_and_parse ("<< (res?"true": "false")<< ")"<< std::endl;
+    std::cout<< "Spirit.Lex   => \t\t "<< "Lines: "<< g.l<< ", OWenTs: "<< g.o<< std::endl;
+}
+
+// ========== 静态lex生成器 ==========
+template <typename Lexer>
+struct word_count_tokens4 : lex::lexer<Lexer>
+{
+    word_count_tokens4()
+    {
+        // 命名模式
+        this->self.add_pattern("OWENT", "(?i:owent)"); 
+
+        // 命名模式绑定
+        owent = "{OWENT}";
+
+        this->self.add
+            (owent)          
+            ('\n') 
+            (".", IDANY)
+        ;
+    }
+
+    lex::token_def<std::string> owent;
+};
+
+template <typename Iterator>
+struct word_count_grammar4 : qi::grammar<Iterator>
+{
+    template <typename TokenDef>
+    word_count_grammar4(TokenDef const& tok)
+      : word_count_grammar4::base_type(start)
+      , o(0), l(1)
+    {
+        start =  *(   tok.owent          [++ boost::phoenix::ref(o)]    // 使用Lex内的owent成员定义
+                  |   qi::lit('\n')      [++ boost::phoenix::ref(l)]    // 和Qi内的一样
+                  |   qi::token(IDANY)                                  // 使用Lex内定义ID的token
+                  )
+              ;
+    }
+
+    int o, l;
+    qi::rule<Iterator> start;
+};
+
+void test_spirit_lex_static()
+{
+    typedef lex::lexertl::token<std::string::iterator, boost::mpl::vector<std::string> > token_type;
+    typedef lex::lexertl::static_lexer<token_type, lex::lexertl::static_::lexer_owent> lexer_type;    // 【这里和第三个示例不一样】
+    typedef word_count_tokens4<lexer_type>::iterator_type iterator_type;
+
+    word_count_tokens4<lexer_type> word_count;          // lexer 分析器
+    word_count_grammar4<iterator_type> g(word_count);   // 语法解析器
+
+    bool res = lex::tokenize_and_parse(g_strLexAnaContent.begin(), g_strLexAnaContent.end(), word_count, g);
+    std::cout<< "Spirit.Lex   => Line "<< std::setw(4)<< __LINE__<< ": Lex::tokenize_and_parse ("<< (res?"true": "false")<< ")"<< std::endl;
+    std::cout<< "Spirit.Lex   => \t\t "<< "Lines: "<< g.l<< ", OWenTs: "<< g.o<< std::endl;
+}
+
+#include <fstream>
+void test_spirit_lex_static_gencode()
+{
+    word_count_tokens4<lex::lexertl::lexer<> > word_count;
+    std::ofstream out("spirit_lex_static_test.hpp");
+    lex::lexertl::generate_static_dfa(word_count, out, "owent");
+}
+```
+
+Lex的例程比较长，其实很多部分是一样的，但是为了方便观看，就复制了很多遍
+
+## 各种Sample的运行结果如下：
+```
+============================== Test: Boost.Spirit.Qi ==============================
+Spirit.Qi    => Line   49: QI::Parse double true
+Spirit.Qi    => Line   80: QI::Parse complex struct true
+Spirit.Qi    =>                  double:123.6 int:45 string:ABC
+Spirit.Qi    => Line   93: QI::Parse confix rule true
+Spirit.Qi    =>                  c style comment: This is C style comment.
+Spirit.Qi    =>                  c++ style comment: This is CPP style comment
+
+ 
+
+============================== Test: Boost.Spirit.Karma ==============================
+Spirit.Karma => Line   50: Karma::generate_delimited =>  [ 3 , 1 , 4 , 1 , 5 , 9 , 2 , 6 , 5 , 3 , 5 , 9 ]
+
+============================== Test: Boost.Spirit.Lex ==============================
+Spirit.Lex   => Line   54: Lex::Parse content
+Hello World!
+I’m OWenT
+My blog is http://www.owent.net
+Spirit.Lex   => Line  119: Lex::tokenize (true)
+Spirit.Lex   =>                  Lines: 3, OWenTs: 2
+Spirit.Lex   => Line  157: Lex::token_is_valid (true)
+Spirit.Lex   =>                  Lines: 3, OWenTs: 2
+Spirit.Lex   => Line  212: Lex::tokenize_and_parse (true)
+Spirit.Lex   =>                  Lines: 3, OWenTs: 2
+Spirit.Lex   => Line  267: Lex::tokenize_and_parse (true)
+Spirit.Lex   =>                  Lines: 3, OWenTs: 2
+```
+
+最后，我觉得要用这个东西的话还是要比较慎重，这里面有大量模板嵌套，一旦出现一点错误极难分析和调试
+另外感觉模板使用过度了些，会导致编译速度大幅下降。所以对其还是要有所取舍。如果要做比较复杂的东西，而不是所有成员都对他极为熟悉，还是少用为妙。
+以上都是个人观点和学习记录，如果有不对的地方还请指正。

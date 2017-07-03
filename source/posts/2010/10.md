@@ -1,0 +1,188 @@
+---
+title: POJ PKU 1474 Video Surveillance 解题报告
+tags:
+  - acm
+  - pku
+  - poj
+id: 10
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-10-04 11:49:56
+---
+
+题目链接：[http://poj.org/problem?id=1474](http://poj.org/problem?id=1474)
+
+写这题的目的是看完了zzy的论文，写了半平面交，验证一下正确性，结果发现我写的问题还是很多的。
+
+题目大意是问能不能放一个摄像机，使得摄像机能看到整个多边形内部。
+
+这题和1279和3130差不多，过了这题再去对付那两题就简单多了。
+
+代码如下：
+
+```cpp
+/**
+ * 二维ACM计算几何模板
+ * 注意变量类型更改和EPS
+ * #include <cmath>
+ * #include <cstdio>
+ * By OWenT
+ */
+
+
+#include <cmath>
+#include <cstdio>
+#include <algorithm>
+
+const double eps = 1e-8;
+const double pi = std::acos(-1.0);
+//点
+class point
+{
+public:
+    double x, y;
+    point(){};
+    point(double x, double y):x(x),y(y){};
+
+    static int xmult(const point &ps, const point &pe, const point &po)
+    {
+        return (ps.x - po.x) * (pe.y - po.y) - (pe.x - po.x) * (ps.y - po.y);
+    }
+};
+
+//两点表示的向量
+class pVector
+{
+public:
+    point s, e;//两点表示，起点[s]，终点[e]
+
+    pVector(){}
+    pVector(const point &s, const point &e):s(s),e(e){}
+
+    //向量与向量的叉乘,参数：向量[_Off]
+    double operator *(const pVector &_Off) const
+    {
+        return (e.x - s.x) * (_Off.e.y - _Off.s.y) - (e.y - s.y) * (_Off.e.x - _Off.s.x);
+    }
+
+    //直线平行，参数：直线向量[_Off]
+    bool parallel(const pVector &_Off) const
+    {
+        return std::fabs((*this) * _Off) < eps;
+    }
+
+    //两直线交点，参数：目标直线[_Off]
+    point crossLPt(pVector _Off)
+    {
+        //注意先判断平行和重合
+        point ret = s;
+        double t = ((s.x - _Off.s.x) * (_Off.s.y - _Off.e.y) - (s.y - _Off.s.y) * (_Off.s.x - _Off.e.x))
+                / ((s.x - e.x) * (_Off.s.y - _Off.e.y) - (s.y - e.y) * (_Off.s.x - _Off.e.x));
+        ret.x += (e.x - s.x) * t;
+        ret.y += (e.y - s.y) * t;
+        return ret;
+    }
+};
+
+class polygon
+{
+public:
+    const static long maxpn = 2000;
+    point pt[maxpn];//点（顺时针或逆时针）
+    long n;//点的个数
+
+    //-----------半平面交-------------
+    //复杂度:O(nlog2(n))
+    //#include <algorithm>
+    //半平面计算极角函数[如果考虑效率可以用成员变量记录]
+    static double hpc_pa(const pVector &_Off)
+    {
+        return atan2(_Off.e.y - _Off.s.y, _Off.e.x - _Off.s.x);
+    }
+    //半平面交排序函数[优先顺序: 1.极角 2.前面的直线在后面的左边]
+    static bool hpc_cmp(const pVector &l, const pVector &r)
+    {
+        double lp = hpc_pa(l), rp = hpc_pa(r);
+        if(fabs(lp - rp) > eps)
+            return lp < rp;
+        return point::xmult(l.s, r.e, r.s) < 0.0;
+    }
+    //用于计算的双端队列
+    pVector dequeue[maxpn];
+    //获取半平面交的多边形
+    //参数：向量集合[l]，向量数量[ln];(半平面方向在向量左边）
+    polygon& halfPanelCross(pVector _Off[], int ln)
+    {
+        int i, tn;
+        n = 0;
+        std::sort(_Off, _Off + ln, hpc_cmp);
+        //平面在向量左边的筛选
+        for(i = tn = 1; i < ln; i ++)
+
+            if(fabs(hpc_pa(_Off[i]) - hpc_pa(_Off[i - 1])) > eps)
+                _Off[tn ++] = _Off[i];
+        ln = tn;
+        int bot = 0, top = 1;
+        dequeue[0] = _Off[0];
+        dequeue[1] = _Off[1];
+        for(i = 2; i < ln; i ++)
+        {
+            if(dequeue[top].parallel(dequeue[top - 1]) ||
+                dequeue[bot].parallel(dequeue[bot + 1]))
+                return (*this);
+            while(bot < top &&
+                point::xmult(dequeue[top].crossLPt(dequeue[top - 1]), _Off[i].e, _Off[i].s) > eps)
+                top --;
+            while(bot < top &&
+                point::xmult(dequeue[bot].crossLPt(dequeue[bot + 1]), _Off[i].e, _Off[i].s) > eps)
+                bot ++;
+            dequeue[++ top] = _Off[i];
+        }
+
+        while(bot < top &&
+            point::xmult(dequeue[top].crossLPt(dequeue[top - 1]), dequeue[bot].e, dequeue[bot].s) > eps)
+            top --;
+        while(bot < top &&
+            point::xmult(dequeue[bot].crossLPt(dequeue[bot + 1]), dequeue[top].e, dequeue[top].s) > eps)
+            bot ++;
+        //计算交点(注意不同直线形成的交点可能重合)
+        if(top <= bot + 1)
+            return (*this);
+        for(i = bot; i < top; i ++)
+            pt[n ++] = dequeue[i].crossLPt(dequeue[i + 1]);
+        if(bot < top + 1)
+            pt[n ++] = dequeue[bot].crossLPt(dequeue[top]);
+        return (*this);
+    }
+};
+
+pVector line[polygon::maxpn];
+point pt[polygon::maxpn];
+polygon ans;
+
+int main()
+{
+    int n, i;
+    int t = 1;
+    //freopen("d:\\in.txt", "r", stdin);
+    //freopen("d:\\myout.txt", "w", stdout);
+    while(::scanf("%d", &n), n)
+    {
+        for(i = 0; i < n; i ++)
+            ::scanf("%lf %lf", &pt[i].x, &pt[i].y);
+        for(i = 0; i < n; i ++)
+            line[i] = pVector(pt[(i + 1) % n], pt[i]);
+
+        if(t > 1)
+            puts("");
+        ::printf("Floor #%d\n", t ++);
+        ans.halfPanelCross(line, n);
+        if(ans.n > 0)
+            ::printf("Surveillance is possible.\n");
+        else
+            ::printf("Surveillance is impossible.\n");
+    }
+    return 0;
+}
+```

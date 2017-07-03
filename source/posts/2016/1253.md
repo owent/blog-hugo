@@ -1,0 +1,214 @@
+---
+title: 接入letsencrypt+全面启用HTTP/2
+tags:
+  - https
+  - linux
+  - nginx
+  - ssl
+  - Web
+id: 1253
+categories:
+  - Article
+  - Blablabla
+date: 2016-05-07 15:10:43
+---
+
+# 接入letsencrypt+全面启用HTTP/2
+
+之前我的域名只有owent.net和www.owent.net买了SSL证书，现在有[letsencrypt](https://letsencrypt.org/)可以拿到免费的SSL签证，就稍微花了点时间把我的域名的其他部分接入了[letsencrypt](https://letsencrypt.org/)签证系统。另外根据其他人的一些配置建议，提高了HTTPS的安全性配置和性能配置（主要是缓存）。另外原本我的blog就已经启用了spdy，然而现在新版本的[nginx](http://nginx.org/)（[1.10](http://nginx.org/en/CHANGES-1.10)）已经release，原先的spdy模块被取消，新增了http/2模块。但是直接换nginx掉包是不行滴（后面有说原因），所以顺带自己处理了一下HTTP/2和nginx新版本的问题。
+
+并且也对公司里的域名和webserver也这么搞了一下。全面启用HTTPS。
+
+## 接入letsencrypt
+[letsencrypt](https://letsencrypt.org/)是Mozilla发起的一个提倡大家用加密的HTTP连接的项目，它允许大家申请到免费的SSL证书，用于HTTPS的证书认证。并且现在它的CA已经被大部分浏览器所接受。我这里本地Win10里使用的IE11，Edge，Firefox 46，Chrome 50全部都能认证通过了。当然手机上也可以。
+
+[letsencrypt](https://letsencrypt.org/)的证书签发流程和其他购买的证书不太一样，像购买的证书，都是买来以后CA商签名好我们直接用就可以了。但是[letsencrypt](https://letsencrypt.org/)是提供了一个脚本用于我们自己生成证书，并且申请认证的服务器必须是对外的服务器。因为它在认证的过程中会验证网站所属权。然后这个证书的有效期是三个月，所以每隔一段时间必须续期。
+
+[letsencrypt](https://letsencrypt.org/)的官方网站是 https://letsencrypt.org/
+
+github地址是 https://github.com/letsencrypt/letsencrypt ，现在好像会自动跳转到 https://github.com/certbot/certbot 。
+
+### letsencrypt生成签证
+官方网站和github都有比较详细的提供了使用方法，我这里就不复述了。它有自动设置apache或者nginx的功能，但是我自己使用的是手动的模式，脚本如下:
+
+```bash
+# clone repo into /home/website/letsencrypt/letsencrypt
+
+mkdir -p /home/website/letsencrypt;
+git clone https://github.com/letsencrypt/letsencrypt /home/website/letsencrypt/letsencrypt;
+cd /home/website/letsencrypt/letsencrypt;
+./letsencrypt-auto --help;
+
+# make cert
+./letsencrypt-auto certonly --webroot -w /home/website/angel_blog -d gf.owent.net -d angel.owent.net -w /home/website/owent_blog -d owent.net -d www.owent.net;
+
+# renew all certs
+./letsencrypt-auto renew;
+
+```
+
+我的网站都放在/home/website下，签证的域名gf.owent.net和angel.owent.net网站根目录位于/home/website/angel_blog，另一组域名owent.net和www.owent.net的网站根目录位于/home/website/owent_blog。这个步骤里，[letsencrypt](https://letsencrypt.org/)会在我们制定的网站根目录里放一些临时文件，然后由[letsencrypt](https://letsencrypt.org/)通过我们指定的所有域名尝试访问这些文件，所以执行这个命令的用户必须对网站根目录可写，并且写出的结果webserver要有权限读，并且要立即生效。[letsencrypt](https://letsencrypt.org/)会尝试所有的域名，这是用于验证域名确实是你的，并且任何一个域名访问不正常都不会正常发签证给你。
+
+### letsencrypt自动续期
+前面说了letsencrypt证书的有效期是三个月，所以自动续期就很有必要了（不然难道没三个月我还要手动来搞一下？）。续期就是直接crontab就好了，本身[letsencrypt](https://letsencrypt.org/)有renew命令。先执行以下脚本：
+
+```bash
+echo "#!/bin/sh
+
+/home/website/letsencrypt/letsencrypt/letsencrypt-auto renew;
+
+cp /etc/letsencrypt/live/gf.owent.net/* /home/website/ssl/angel;
+
+chown nginx:users -R /home/website/ssl/angel;
+
+systemctl reload nginx
+" > /home/website/letsencrypt/renew.sh;
+
+chmod +x /home/website/letsencrypt/renew.sh;
+```
+
+然后执行*crontab -e*，里面添加:
+
+```
+05 1 1,15 * * /home/website/letsencrypt/renew.sh
+```
+
+[letsencrypt](https://letsencrypt.org/)会把证书放在**/etc/letsencrypt/live/[域名]**里，我的证书都放在**/home/website/ssl/**中，所以我把它copy过去了，然后我的nginx的执行用户是nginx，所以改了下所有者，然后reload就好了。
+
+至此[letsencrypt](https://letsencrypt.org/)接入完毕。还是比较简单的。
+
+## 接入HTTP/2
+HTTP 2.0已经成为了标准，并且现在各大浏览器都已经支持了。再加上nginx的最新release版本已经移除了[ngx_http_spdy_module](http://nginx.org/en/docs/http/ngx_http_spdy_module.html)模块，增加了[ngx_http_v2_module](http://nginx.org/en/docs/http/ngx_http_v2_module.html)模块。然而我的nginx是直接用nginx的官方源装在了CentOS 7上，直接yum update的时候nginx被直接升到1.10版本了，而我原来配得都是SPDY的，这也是使得我不得不接入一下HTTP/2。
+
+但是这时候出了一个问题。SPDY似乎是使用了NPN做协议头协商，但是新的标准化的应该使用ALPN。而除了chrome以外貌似都不支持使用NPN协商HTTP/2（IE和Edge都不支持，Firefox我本地写错一个配置所以当时认为是不支持，实际上不太确定是否支持）。但是按nginx的文档，ALPN只在openssl 1.0.2以上才支持。又然而CentOS自带的openssl版本是1.0.1。这就比较麻烦了，得自己重新编译nginx，否则没法开启ALPN。
+
+不过也是为了简单，我世界使用了yum依赖关系安装了依赖包，然后仅仅重新编译nginx和openssl。编译选项直接照抄 http://nginx.org/en/linux_packages.html#arguments ，然后把openssl改掉，整个脚本如下
+
+```bash
+#!/bin/sh
+
+# 最好在执行完lnmp_for_el7.sh后，在使用本脚本覆盖安装nginx，最好不要直接使用本脚本（直接使用的话我没有测试）
+# CentOS 7默认使用openssl 1.0.1，但是这个版本不支持ALPN, 详见： http://nginx.org/en/docs/http/ngx_http_v2_module.html#issues
+# 但是nginx 1.10.0以后，只有HTTP/2模块，不再有spdy，并且除chrome外的浏览器都必须支持ALPN才能开启HTTP/2
+# 本脚本用于在CentOS 7上编译openssl 1.0.2并且重新编译nginx（除openssl外其他配置和官方版本一样）
+# 编译选项参考： http://nginx.org/en/linux_packages.html#arguments
+
+WORKING_DIR="$PWD";
+OPENSSL_PREFIX_DIR=/usr/local/openssl-1.0.2;
+OPENSSL_VERSION=1.0.2h;
+NGINX_VERSION=1.10.0;
+
+OPENSSL_DIR_NAME="openssl-$OPENSSL_VERSION";
+OPENSSL_PKG_NAME="$OPENSSL_DIR_NAME.tar.gz";
+NGINX_DIR_NAME="nginx-$NGINX_VERSION";
+NGINX_PKG_NAME="$NGINX_DIR_NAME.tar.gz";
+
+
+# 软件源
+rpm -ivh http://nginx.org/packages/centos/7/noarch/RPMS/nginx-release-centos-7-0.el7.ngx.noarch.rpm ;
+rpm -ivh http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm ;
+
+# 安装依赖项
+yum install -y yum-utils yum-plugin-remove-with-leaves yum-cron yum-plugin-upgrade-helper yum-plugin-fastestmirror rpm-build;
+yum-builddep -y nginx;
+
+# 下载openssl
+if [ ! -e "$OPENSSL_PKG_NAME" ]; then
+    wget "https://www.openssl.org/source/$OPENSSL_PKG_NAME";
+fi
+
+tar -axvf "$OPENSSL_PKG_NAME";
+
+# build nginx
+if [ ! -e "$NGINX_PKG_NAME" ]; then
+    wget "http://nginx.org/download/$NGINX_PKG_NAME";
+fi
+
+tar -axvf "$NGINX_PKG_NAME";
+cd "$NGINX_DIR_NAME";
+
+# 编译选项参考： http://nginx.org/en/linux_packages.html#arguments
+
+./configure \
+--prefix=/etc/nginx \
+--sbin-path=/usr/sbin/nginx \
+--conf-path=/etc/nginx/nginx.conf \
+--error-log-path=/var/log/nginx/error.log \
+--http-log-path=/var/log/nginx/access.log \
+--pid-path=/var/run/nginx.pid \
+--lock-path=/var/run/nginx.lock \
+--http-client-body-temp-path=/var/cache/nginx/client_temp \
+--http-proxy-temp-path=/var/cache/nginx/proxy_temp \
+--http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp \
+--http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp \
+--http-scgi-temp-path=/var/cache/nginx/scgi_temp \
+--user=nginx \
+--group=nginx \
+--with-http_ssl_module \
+--with-http_realip_module \
+--with-http_addition_module \
+--with-http_sub_module \
+--with-http_dav_module \
+--with-http_flv_module \
+--with-http_mp4_module \
+--with-http_gunzip_module \
+--with-http_gzip_static_module \
+--with-http_random_index_module \
+--with-http_secure_link_module \
+--with-http_stub_status_module \
+--with-http_auth_request_module \
+--with-threads \
+--with-stream \
+--with-stream_ssl_module \
+--with-http_slice_module \
+--with-mail \
+--with-mail_ssl_module \
+--with-file-aio \
+--with-http_v2_module \
+--with-ipv6 \
+--with-openssl="$WORKING_DIR/$OPENSSL_DIR_NAME" \
+--with-openssl-opt="-fPIC" ;
+
+make;
+make install;
+```
+
+这个脚本会覆盖掉nginx官方方式安装的nginx二进制，并且这个脚本也提交到了 https://github.com/owent-utils/bash-shell/blob/master/LNMP/nginx_with_http2_for_el7.sh 。比较麻烦的是以后nginx都得自己更新编译，没法直接yum update了（除非系统的openssl换成1.0.2以上）。
+
+这样以后，IE，Edge，Chrome和Firefox都能正确启用HTTP/2.0了。
+
+我这里Firefox测试的时候还出了点小插曲，不知道那个鬼插件把我的安全设置里的security.tls.version.max设成1了，然后ALPN协商HTTP/2必须用TLSv1.2，然后一直Firefox没法启用HTTP/2。开始我以为是nginx配置问题，后来发现尼玛这里不知道被哪个插件改成1了，于是一直只用TLSv1。导致一直没成功用HTTP/2。重置成默认以后就好了。
+
+## HTTPS安全性
+也是网络上看到一些安全配置建议，配了一下nginx里的SSL配置，提高安全性，我就直接贴配置吧。（仅SSL相关部分）
+```
+# /etc/nginx/nginx.conf
+http {
+    ssl_protocols TLSv1 TLSv1.1 TLSv1.2; # omit SSLv3 because of POODLE (CVE-2014-3566)
+    ssl_session_cache   shared:SSL:10m;
+    ssl_session_timeout 10m;
+    ssl_session_tickets off;
+    add_header Strict-Transport-Security "max-age=15768000; includeSubdomains; preload"; # HSTS, 180days
+    add_header X-Content-Type-Options nosniff;
+
+    # 手动指定允许的加密算法
+    ssl_ciphers 'ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA38
+4:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES25
+6-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA:ECDHE-ECDSA-DES-CBC3-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RS
+A-DES-CBC3-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:DES-CBC3-SHA:!DSS';
+    ssl_prefer_server_ciphers on; # 服务器决策加密算法
+    ssl_dhparam /home/website/ssl/dhparam.pem; # DH密钥
+    ssl_stapling on;
+    ssl_stapling_verify on;
+}
+```
+
+这里面配在http节点里是为了省事，因为还几个网站呢，就不需要单个配置了，全部继承http的配置即可。其中，DH密钥交换的密钥由以下命令生成:
+```bash
+openssl dhparam -out /home/website/ssl/dhparam.pem 2048;
+```
+
+密钥长度为2048位，放在/home/website/ssl/dhparam.pem。
+然后server节点里只要配*ssl_certificate*和*ssl_certificate_key*就行了。
+
+这样的配置，[SSLLabs](https://www.ssllabs.com)的评价是[A+](https://www.ssllabs.com/ssltest/analyze.html?d=owent.net)

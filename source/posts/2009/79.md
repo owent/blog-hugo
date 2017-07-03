@@ -1,0 +1,314 @@
+---
+title: ECUST 09年 校赛个人训练赛第五场总结
+tags:
+  - acm
+id: 79
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2009-08-14 11:40:56
+---
+
+# 校赛个人训练赛第五场报告
+
+今天战绩还行，AC了5题，今天总体没有太复杂的算法题，不过测试数据强度比之前有所增加
+我的钱四题很早就过了，但是第五题很晚才出主要是代码写得太混乱，思路也错了两次
+我过的题有五道，分别是ABCDG
+
+## A Coming Near
+
+A题是计算两个多边形的最近距离
+
+由于数据量不是很大，所以O（n^2）的算法就能过,也就是枚举,每一个用例的最坏情况是3*1000*1000
+
+具体是先枚举每两个点的距离,记录最小值
+
+再枚举每个点到另一个多边形上每条直线的距离,记录最小值即可
+
+不过lpld的因为越界导致的WA问题值得借鉴(及时把long型转为double型)
+
+```cpp
+#include<iostream>
+#include<cmath>
+using namespace std;
+struct vertex
+{
+    long x,y;
+};
+
+vertex prisonA[1000],prisonB[1000];
+
+double disBetweenAB(int posA,int posB)
+{
+    double tmp1 = prisonA[posA].x - prisonB[posB].x;
+    double tmp2 = prisonA[posA].y - prisonB[posB].y;
+    return sqrt(tmp1 * tmp1 + tmp2 * tmp2);
+}
+double disBetweenPointAndLine(long x0,long y0,long x1,long y1,long x2,long y2)
+{
+    double a = y1-y2;
+    double b = x2-x1;
+    double c = x1*y2-x2*y1;
+    double d = (a*x0+b*y0+c)/sqrt(a*a+b*b);
+    double xp = (b*b*x0-a*b*y0-a*c)/(a*a+b*b);
+    double yp = (-a*b*x0+a*a*y0-b*c)/(a*a+b*b);
+    double xb = (x1>x2)?x1:x2;
+    double yb = (y1>y2)?y1:y2;
+    double xs = x1+x2-xb;
+    double ys = y1+y2-yb;
+    if(xp > xb || xp < xs || yp > yb || yp < ys)
+        return 50000000;
+    else
+        return fabs(d);
+}
+
+int main()
+{
+    int m,n;
+    while(scanf("%d %d",&n,&m),n || m)
+    {
+        int i,j;
+        for(i = 0 ; i < n ; i ++)
+            scanf("%ld %ld",&prisonA[i].x,&prisonA[i].y);
+        for(i = 0 ; i < m ; i ++)
+            scanf("%ld %ld",&prisonB[i].x,&prisonB[i].y);
+        double tmpDouble = disBetweenAB(0,0);
+        for(i = 0 ; i < n ; i ++)
+            for(j = 0 ; j < m ; j ++)
+                if(disBetweenAB(i,j) < tmpDouble)
+                    tmpDouble = disBetweenAB(i,j);
+        for(i = 0 ; i < n ; i ++)
+            for(j = 0 ; j < m ; j ++)
+            {
+                double tmpDouble2 = disBetweenPointAndLine(prisonA[i].x,prisonA[i].y
+                    ,prisonB[j].x,prisonB[j].y,prisonB[(j+1)%m].x,prisonB[(j+1)%m].y);
+                if(tmpDouble2 < tmpDouble)
+                    tmpDouble = tmpDouble2;
+            };
+
+        for(i = 0 ; i < m ; i ++)
+            for(j = 0 ; j < n ; j ++)
+            {
+                double tmpDouble2 = disBetweenPointAndLine(prisonB[i].x,prisonB[i].y
+                    ,prisonA[j].x,prisonA[j].y,prisonA[(j+1)%n].x,prisonA[(j+1)%n].y);
+                if(tmpDouble2 < tmpDouble)
+                    tmpDouble = tmpDouble2;
+            };
+
+        printf("%.2lf\n",tmpDouble);
+    }
+    return 0;
+}
+```
+
+## B Love Letter
+B题是要求重新排列单词,使之成为字典里的单词,以此读懂别人打乱加密的Love Letter
+
+这题很简单,直接一个一个单词查找就行了,不过要注意一下换行的位置,因为题目要求输出和输入一样
+
+继续贴代码: 
+
+```cpp
+#include<iostream>
+#include<cstring>
+using namespace std;
+char dir[101][25];
+int dirCharNum[101][26] = {0};
+int lenDir[101];
+char tmpChar[50];
+void check(char c[],int n)
+{
+    char cN[26] = {0};
+    for(int i = 0 ; i < n ; i ++)
+    {
+        int len = strlen(c);
+        if(len != lenDir[i] || c[0] != dir[i][0] || c[len - 1] != dir[i][lenDir[i] - 1])
+            continue;
+
+        memset(cN,0,sizeof(cN));
+        for(int j = 0 ; j < len ; j ++)
+            cN[c[j] - 'a'] ++;
+        int isMatch = 1;
+        for(int k = 0 ; k < len ; k ++)
+            if(cN[k] != dirCharNum[i][k])
+            {
+                isMatch = 0;
+                break;
+            };
+
+        if(isMatch)
+        {
+            printf("%s",dir[i]);
+            break;
+        }
+    }
+}
+int main()
+{
+    int n;
+    cin>>n;
+    int i,j;
+    for(i = 0 ; i < n ; i ++)
+    {
+        scanf("%s",dir[i]);
+        lenDir[i] = strlen(dir[i]);
+        for(j = 0 ; j < lenDir[i] ; j ++)
+            dirCharNum[i][dir[i][j] - 'a'] ++;
+    }
+
+    while(scanf("%s",tmpChar) != EOF)
+    {
+        check(tmpChar,n);
+        if(getchar() == '\n')
+            printf("\n");
+        else
+            printf(" ");
+    }
+    return 0;
+}
+```
+
+## C Change Base
+C题是一道进制转换题,稍微思考一下就能推出公式了,然后每次处理mod一个10007就行
+
+(注: a % c + b % c = ( a + b ) % c       ( a * b ) % c = ( a % c * b % c ) % c )
+
+代码：
+
+```cpp
+#include<iostream>
+#include<cstring>
+using namespace std;
+char input[1002];
+
+
+long TypeTo10(char c[],int m,int mod)
+{
+    int tmpInt = 0;
+    int len = strlen(c);
+
+    for(int i = 0 ; i < len ; i ++)
+        tmpInt = (tmpInt * m + c[i] - '0') % mod;
+
+    return tmpInt;
+}
+int main()
+{
+    int t,m;
+    cin>>t;
+    while(t --)
+    {
+        cin>>m>>input;
+        cout<<TypeTo10(input,m,10007)<<endl;
+    }
+    return 0;
+}
+```
+
+## D Equation
+D题要用Hash的思想,但是因为是long型的数据而且数据量不大(1000*1000),可以不写哈希函数,直接映射
+
+我的代码如下: 
+
+```cpp
+#include<iostream>
+using namespace std;
+
+long hash[2000001];
+long ro[3000001] = {0};
+long f2[1001];
+int main()
+{
+    int t;
+    long r;
+    for(r = 0 ; r <= 1000 ; r ++)
+        f2[r] = r * r;
+    cin>>t;
+    while(t --)
+    {
+        scanf("%ld",&r);
+        if(ro[r])
+        {
+            printf("%ld\n",ro[r]);
+            continue;
+        }
+        memset(hash,0,sizeof(hash));
+
+        long i,j;
+        for(i = 0 ; f2[i] <= r && i <= 1000 ; i ++)
+            for(j = 0 ; j <= i; j ++)
+                if(j == i)
+                    hash[f2[i] + f2[j]] ++;
+                else
+                    hash[f2[i] + f2[j]] += 2;
+
+        long tmpInt = 0;
+
+        for(i = 0 ; f2[i] <= r && i <= 1000 ; i ++)
+            if(r - f2[i] <= 2000000)
+                tmpInt += hash[r - f2[i]];
+
+        printf("%ld\n",tmpInt);
+        ro[r] = tmpInt;
+    }
+    return 0;
+}
+```
+
+## G Fermat square prime
+G题是计算能用a^2+b^2表示的素数(a,b为素数)
+
+我的大体思路是先筛出素数表,再把素数依次组合,算出所有能这么表示的数
+
+最后再读入数据,判断读入的数据是否是能以a^2+b^2的素数
+
+代码如下: 
+
+```cpp
+#include<iostream>
+using namespace std;
+#define MAXN 1000001
+long prime[MAXN],numPrime = 0;
+int a[MAXN] = {0};
+int isFQSP[MAXN] = {0};
+long f2[1000] = {0};
+int main()
+{
+    //线性筛素数复杂度O(n)这个很重要，由于数据量小，可以打表
+    long i,j,k;
+    for(i = 2 ; i < 1000 ; i ++)
+    {
+        if(!a[i])
+            prime[numPrime ++] = i;
+        for(j = 0 ; j < numPrime && prime[j] * i <MAXN ; j ++)
+        {
+            a[prime[j] * i] ++;
+            if(i % prime[j] == 0)
+                break;
+        }
+    }
+
+    for(i = 0 ; i < numPrime && prime[i] < 1000; i ++)
+        f2[prime[i]] = prime[i] * prime[i];
+
+    for(i = 0 ; i < numPrime && prime[i] < 1000; i ++)
+        for(j = 0 ; j <= i ; j ++)
+            if(f2[prime[i]] + f2[prime[j]] < MAXN && !a[f2[prime[i]] + f2[prime[j]]])
+                isFQSP[f2[prime[i]] + f2[prime[j]]] ++;
+
+    int t;
+    scanf("%d",&t);
+    while(t --)
+    {
+        scanf("%ld",&k);
+        if(isFQSP[k])
+            printf("yes\n");
+        else
+            printf("no\n");
+    }
+    return 0;
+}
+```
+
+这次总体感觉前期不错，后期就一直卡住了，想到的算法错误浪费了我很多时间
+最后一题的思路错误导致一直WA，以后需要注意，思路清晰很重要。

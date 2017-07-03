@@ -1,0 +1,311 @@
+---
+title: 09年8月9日 ECUST ACM 练习赛总结
+tags:
+  - acm
+id: 82
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2009-08-10 16:14:16
+---
+## [Problem A](http://acm.hdu.edu.cn/diy/contest_showproblem.php?pid=1001&amp;cid=3627&amp;hide=1&amp;problem=Problem%20%20A)
+
+我没看题,队友很快AC我就没花时间看
+
+## [Problem B](http://acm.hdu.edu.cn/diy/contest_showproblem.php?pid=1002&amp;cid=3627&amp;hide=1&amp;problem=Problem%20%20B)
+
+DP题,但是我们确实都没想到方法,实在是我们的经验不足
+
+B题补充:
+B题的DP方法比较诡异(起码我理解了很久)
+令fn[i][j]为有i个数j次交换位置的排列数量
+很明显,当i+1时,如果把新增的数放在最后一位,那么交换次数不变(新增的数为i+1,最大).
+如果把新增的数放在第1到i位之间的话有i种放法,
+对于每一种fn[i][j]的排列中我们总能找到一种序列使得{(.)(.)(*)(.)(.)…(i+1)},["()表示一个元素"]
+中(i+1)和(*)交换位置后前i个元素的排列和其相同
+又因为(*)的位置可以有i种放法,以此我们发现,fn[i+1][j]=fn[i][j]+fn[i][j-1]×i
+继续贴代码:
+
+```cpp
+#include<iostream>
+using namespace std;
+
+__int64 fn[21][21] = {0};
+__int64 njc[21] = {0,1};
+
+__int64 gcd(__int64 a,__int64 b)
+{
+    if(a % b == 0)
+        return b;
+    return gcd(b,a % b);
+}
+int main()
+{
+    for(__int64 i = 2 ; i < 21 ; i ++)
+        njc[i] = njc[i - 1] * i;
+
+    for(int i = 0 ; i < 21 ; i ++)
+        fn[i][0] = 1;
+
+    for(int i = 2 ; i < 21 ; i ++)
+    {
+        //放在最后一位
+        for(int j = 1 ; j < i - 1 ; j ++)
+            fn[i][j] += fn[i - 1][j];
+
+        //不放在最后一位
+        for(int j = 1 ; j < i ; j ++)
+            fn[i][j] += fn[i - 1][j - 1] * (i - 1);
+    }
+
+    int t,w,h,s;
+    cin>>t;
+    while(t --)
+    {
+        cin>>w>>h>>s;
+        int tol = w * h;
+
+        __int64 tmpInt = 0;
+        for(int i = 0 ; i < s ; i ++)
+            tmpInt += fn[tol][i];
+
+
+        if(tmpInt == njc[tol])
+            cout<<1<<endl;
+        else if(tmpInt == 0)
+            cout<<0<<endl;
+        else
+        {
+            __int64 base = gcd(tmpInt,njc[tol]) ;
+            cout<<tmpInt / base<<"/"<<njc[tol] / base<<endl;
+        }
+    }
+    return 0;
+}
+```
+
+## Problem C
+
+这是一个简单的几何题,题意大致是给出几个目标图形的坐标,然后输入两个人的三次投标的坐标点,而坐标如果在N目标图形中,则加N分,结果是输出得分高的人名,或者如果平手输出Tied.
+由于输入得图形值包括多变形和圆,多变形直接用模板,圆很简单,圆心和投标所在点的距离≤半径即可.
+具体代码如下:
+
+```cpp
+#include<iostream>
+#include<cmath>
+using namespace std;
+
+#define eps 1e-8
+struct point{double x,y;};
+#define _sign(x) ((x)>eps?1:((x)<-eps?2:0))
+double xmult(point p1,point p2,point p0){
+    return (p1.x-p0.x)*(p2.y-p0.y)-(p2.x-p0.x)*(p1.y-p0.y);
+}
+
+
+//判点在凸多边形内或多边形边上,顶点按顺时针或逆时针给出
+int inside_convex(point q,int n,point* p)
+{
+    int i,s[3]={1,1,1};
+    for (i=0;i<n&&s[1]|s[2];i++)
+        s[_sign(xmult(p[(i+1)%n],q,p[i]))]=0;
+    return s[1]|s[2];
+}
+
+class rec
+{
+public:
+    point p1,p2,p3;
+    double r;
+    int type;//1矩形,2三角型,3三圆形
+
+    int isInside(point pt)
+    {
+        if(type == 1)
+        {
+            point rep[4];
+            rep[0].x = p1.x;
+            rep[0].y = p1.y;
+            rep[1].x = p2.x;
+            rep[1].y = p1.y;
+            rep[2].x = p2.x;
+            rep[2].y = p2.y;
+            rep[3].x = p1.x;
+            rep[3].y = p2.y;
+            return inside_convex(pt,4,rep);
+        }
+        else if(type == 2)
+        {
+            point rep[3];
+            rep[0].x = p1.x;
+            rep[0].y = p1.y;
+            rep[1].x = p2.x;
+            rep[1].y = p2.y;
+            rep[2].x = p3.x;
+            rep[2].y = p3.y;
+            return inside_convex(pt,3,rep);
+        }
+        else
+        {
+            return sqrt((pt.x - p1.x) * (pt.x - p1.x) + (pt.y - p1.y) * (pt.y - p1.y)) <= r;
+        }
+    }
+};
+
+
+rec m[1001];
+
+int main()
+{
+    int s;
+
+    scanf("%d",&s);
+
+    for(int i = 0 ; i < s ; i ++)
+    {
+        char tp;
+        getchar();
+        scanf("%c",&tp);
+        if(tp == 'R')
+            scanf("%lf %lf %lf %lf",&m[i].p1.x,&m[i].p1.y,&m[i].p2.x,&m[i].p2.y),m[i].type = 1;
+        else if(tp == 'T')
+            scanf("%lf %lf %lf %lf %lf %lf",&m[i].p1.x,&m[i].p1.y,&m[i].p2.x,&m[i].p2.y,&m[i].p3.x,&m[i].p3.y),m[i].type = 2;
+        else
+            scanf("%lf %lf %lf",&m[i].p1.x,&m[i].p1.y,&m[i].r),m[i].type = 3;;
+    }
+
+    int t;
+    scanf("%d",&t);
+    while(t --)
+    {
+        point p1,p2;
+        int score1 = 0,score2 = 0;
+        for(int i = 0 ; i < 3 ; i ++)
+        {
+            scanf("%lf %lf",&p1.x,&p1.y);
+
+            for(int j = 0 ; j < s ; j ++)
+                score1 += m[j].isInside(p1);
+        }
+
+        for(int i = 0 ; i < 3 ; i ++)
+        {
+            scanf("%lf %lf",&p2.x,&p2.y);
+
+            for(int j = 0 ; j < s ; j ++)
+                score2 += m[j].isInside(p2);
+        }
+
+        if(score1 > score2)
+        {
+            printf("Bob\n");
+        }
+        else if(score1 < score2)
+        {
+            printf("Hannah\n");
+        }
+        else
+        {
+            printf("Tied\n");
+        }
+    }
+    return 0;
+}
+```
+
+## [Problem D](http://acm.hdu.edu.cn/diy/contest_showproblem.php?pid=1004&amp;cid=3627&amp;hide=1&amp;problem=Problem%20%20D)
+是概率问题+二分,因为没时间了所以没仔细考虑
+D题补充:
+赛后进行了代码补写,主要是枚举起点,二分终点,然后由于他是先选起点再选终点,而不是两个一起选,所以概率计算要注意下
+如果共有b个第i个作为起点,j个作为终点,则概率为(j-i+1)/(b*(b-i+1));
+再就是我WA了很多次,最后把输出的%.10g改成%.10lf就AC了,为什么我也不清楚,题目说是SpecialJudge,应该两种情况是一样的啊
+这里我也不清楚为什么WA.以后尽量少用%g吧
+代码如下:
+```cpp
+#include<iostream>
+using namespace std;
+
+long list[200002];
+char record[200003];
+
+double GetPossiblitySmallThan(long maxn,long b,bool enableEqual);
+int main()
+{
+    int t;
+    long b,l,u;
+    scanf("%d",&t);
+    while(t --)
+    {
+        scanf("%ld",&b);
+        scanf("%s",record);
+        scanf("%ld %ld",&l,&u);
+
+        list[0] = 0;
+        for(long i = 1 ; i <= b ; i ++)
+            list[i] = list[i - 1] + record[i - 1] - 'A';
+
+        double p1 = GetPossiblitySmallThan(l,b,false);
+        double p2 = GetPossiblitySmallThan(u,b,true);
+
+        printf("%.10lf %.10lf %.10lf\n",p2 - p1, p1 , 1 - p2);
+    }
+    return 0;
+}
+
+double GetPossiblitySmallThan(long maxn,long b,bool enableEqual)
+{
+    double p = 0;
+    for(long i = 1 ; i <= b ; i ++)
+    {
+        if(list[i] - list[i - 1] > maxn || (list[i] - list[i - 1] == maxn && !enableEqual))
+            continue;
+        long be = i;
+        long ed = b;
+        long md = (be + ed + 1) / 2;
+        while(ed > be)
+        {
+            if(list[md] - list[i - 1] < maxn || (list[md] - list[i - 1] == maxn && enableEqual))
+                be = md;
+            else
+                ed = md - 1;
+
+            md = (be + ed + 1) / 2;
+        }
+
+        p += (double)(be - i + 1) / (double)b / (double)(b - i + 1);
+    }
+    return p;
+}
+```
+
+[Problem E](http://acm.hdu.edu.cn/diy/contest_showproblem.php?pid=1005&amp;cid=3627&amp;hide=1&amp;problem=Problem%20%20E)
+
+是极水的一题,由于题目不是很理解,所以不太敢写,最后报着试一试的心理给队员做,很快AC就没有再理
+
+[Problem F](http://acm.hdu.edu.cn/diy/contest_showproblem.php?pid=1006&amp;cid=3627&amp;hide=1&amp;problem=Problem%20%20F)
+
+跳过
+
+[Problem G](http://acm.hdu.edu.cn/diy/contest_showproblem.php?pid=1007&amp;cid=3627&amp;hide=1&amp;problem=Problem%20%20G)
+
+这题我没看懂.还是Q Boy看懂并交给Ultramanhu写的,也是很快AC
+
+[Problem H](http://acm.hdu.edu.cn/diy/contest_showproblem.php?pid=1008&amp;cid=3627&amp;hide=1&amp;problem=Problem%20%20H)
+
+没敢写,没接触过这类题
+
+[Problem I](http://acm.hdu.edu.cn/diy/contest_showproblem.php?pid=1009&amp;cid=3627&amp;hide=1&amp;problem=Problem%20%20I)
+
+这题我看完病没有想到好的方法,幸亏Q Boy很快推出规律,解决了这题,既w为偶数输出1.00 0.00否则0.00 1.00
+
+[Problem J](http://acm.hdu.edu.cn/diy/contest_showproblem.php?pid=1010&amp;cid=3627&amp;hide=1&amp;problem=Problem%20%20J)
+
+这题我们WA了10次,主要是我没有理解好题,认为概率是相加的,而导致Ultramanhu写的代码出错,还一直找不到错误所在。
+这题是求在小偷他妈所能承受的风险内Rob的银行的最大钱数,这道题我花了很多的时间.
+
+[Problem K](http://acm.hdu.edu.cn/diy/contest_showproblem.php?pid=1011&amp;cid=3627&amp;hide=1&amp;problem=Problem%20%20K)这题我们TLE了一次,因为除了模拟我也没想到好的算法,所以我也没怎么考虑.
+
+
+这次总体感觉英文水平很重要,很多题都是没读的很懂,特别是J题WA了10次,我花了几个小时在Debug上面最后才发现题目理解错误.
+而水题因为理解的不是很好也不太敢做,然后我们的数学能力也有所欠缺.一些关系推导的不是很好.很多东西也不熟悉.总体做题经验欠缺
+我觉得我们还是需要多磨合.熟悉各类题目

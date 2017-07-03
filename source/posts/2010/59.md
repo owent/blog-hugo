@@ -1,0 +1,100 @@
+---
+title: POJ PKU 2596 Dice Stacking 解题报告
+tags:
+  - acm
+  - pku
+  - poj
+id: 59
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-02-19 12:31:50
+---
+
+状态压缩+DP
+
+1972的增强版
+
+题目链接：[http://acm.pku.edu.cn/JudgeOnline/problem?id=2596](http://acm.pku.edu.cn/JudgeOnline/problem?id=2596)
+
+题意是给出小于10个的骰子，要求竖着叠成一条，而且每两个相接的骰子相接的面的数字相同
+
+求侧面数字的最大和。如果叠不出来输出0
+
+要注意的是1972题里必须按输入的骰子的顺序叠，而这里可以任意顺序，这样难度就大很多了
+
+由于只有10个骰子就可以用二进制来记录骰子的使用情况，再DP解决
+
+贴代码：
+
+```cpp
+/* 状态压缩+DP
+ * Base：0
+ * DP方程：dp[i][j1][k1] = max{dp[i & (~(1 << j1))][j2][k2] + maxs[j1][k1]}
+ * 其中第j1个骰子k1面相对面的数字与第j2个骰子k2面的值相同
+ * j1 != j2 , 状态i中必须包含j1和j2 , dp[i & (~(1 << j1)) > 0
+ */
+#include<iostream>
+#include<cstring>
+#include<cmath>
+using namespace std;
+
+int dice[10][6];//记录第i个骰子j面的值
+int maxs[10][6];//记录第i个骰子j面朝上时侧面最大值
+int sd[] = { 5, 3, 4, 1, 2, 0};//记录相对面
+int dp[1024][10][6];//记录状态i第j个骰子k面朝上时侧面最大值
+int main()
+{
+
+    int t,i,j,k,j1,k1,j2,k2,output,n;
+    cin>>t;
+    while(t --)
+    {
+        output = 0;
+        memset(dice, 0, sizeof(dice));
+        memset(maxs, 0, sizeof(maxs));
+        memset(dp, 0, sizeof(dp));
+        cin>>n;
+
+        for(i = 0; i < n; i ++)
+            for(j = 0; j < 6; j ++)
+                cin>>dice[i][j];
+
+        for(i = 0; i < n; i ++)
+            for(j = 0; j < 6; j ++)
+                for(k = 0; k < 6; k ++)
+                    if(j != k && j != sd[k])
+                        maxs[i][j] = max(maxs[i][j], dice[i][k]);
+
+
+        //DP 计算dp[i][j1][k1]
+        for(i = 0; i < (1 << n); i ++)
+        {
+            for(j1 = 0; j1 < n; j1 ++)
+                if(i & (1 << j1))//判断j1在状态i中
+                {
+                    if(i != (1 << j1))//两个骰子以上的情况
+                    {
+                        for(j2 = 0; j2 < n; j2 ++)
+                            if((i & (1 << j2)) && j1 != j2)//判断j2在状态i中且相接骰子不是同一个
+                                for(k1 = 0; k1 < 6; k1 ++)
+                                    for(k2 = 0; k2 < 6; k2 ++)
+                                        if(dice[j2][k2] == dice[j1][sd[k1]] && dp[i & (~(1 << j1))][j2][k2])//判断骰子相接面数字相同和子状态可达到
+                                            dp[i][j1][k1] = max(dp[i][j1][k1], dp[i & (~(1 << j1))][j2][k2] + maxs[j1][k1]);
+                    }
+                    else//只有一个骰子的情况
+                        for(k1 = 0; k1 < 6; k1 ++)
+                            dp[i][j1][k1] = maxs[j1][k1];
+                }
+        }
+
+        //Output
+        for(i = 0; i < n; i ++)
+            for(j = 0; j < 6; j ++)
+                output = max(output, dp[(1 << n) - 1][i][j]);
+
+        cout<<output<<endl;
+    }
+    return 0;
+}
+```

@@ -1,0 +1,109 @@
+---
+title: PKU POJ 2728 Desert King 解题报告
+tags:
+  - acm
+  - pku
+  - poj
+id: 45
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-04-07 10:51:26
+---
+
+题目链接：[http://acm.pku.edu.cn/JudgeOnline/problem?id=2728](http://acm.pku.edu.cn/JudgeOnline/problem?id=2728)
+
+和3757一样都是01分数规划的题，不同的是3757是用的二分，这里用的是Prim
+
+0-1背包部分和3757一样
+
+令m(l) = min{&sum;(1.0 * h[i][j] - l * dis[i][j] )}
+
+h[i][j]是i到j的高度差，dis是距离，把m(l)作为边的权值（黑书上有）
+
+由于m(l)为相对于l的单调函数，令l*为最优值，m(l*) = 0时的l*为所求
+
+而对于其他的l&lsquo;，对于min{ &sum;(1.0 * h[i][j] - l * dis[i][j] ) }中的边，令&sum;(1.0 * h[i][j] - l&#39; * dis[i][j] ) = 0
+
+| l*-l&#39; | &lt; | l* - l | &nbsp; ,所以可用迭代法来做这题
+
+（关于分数规划见《IOI国家集训队论文》07年胡伯涛论文中的《1.6\. 分数规划》部分）
+
+代码：
+
+```cpp
+/**
+* 2728 Desert King
+* URL: http://acm.pku.edu.cn/JudgeOnline/problem?id=2728
+* Author: OWenT
+* Blog: http://www.owent.net
+* 0-1分数规划 + Prim最小生成树 + 迭代法
+*/
+
+#include <iostream>
+#include <cstring>
+#include <cstdio>
+#include <cmath>
+using namespace std;
+
+#define MAXN 1005
+double minEle[MAXN], dis[MAXN][MAXN];
+long x[MAXN], y[MAXN], z[MAXN], alt[MAXN][MAXN], minFrom[MAXN];
+
+double primEX(double mat[MAXN][MAXN],const long &n, double rv);//拓展Prim,对于这题的专用修改版Prim算法
+
+int main()
+{
+    long i, j, n;
+    double res, resC;
+    while(scanf("%ld", &n), n)
+    {
+        for(i = 0; i < n; i ++)
+        {
+            scanf("%ld %ld %ld", &x[i], &y[i], &z[i]);
+            for(j = 0; j < i; j ++)
+            {
+                double tmp = (x[i] - x[j]) * (x[i] - x[j]) + (y[i] - y[j]) * (y[i] - y[j]);
+                alt[i][j] = alt[j][i] = abs(z[i] - z[j]);
+                dis[i][j] = dis[j][i] = sqrt(tmp);
+            }
+        }
+
+        //init
+        res = 0;//从0开始迭代
+        do
+        {
+            resC = res;
+            res = primEX(dis, n, res);
+        }while(fabs(res - resC) > 1e-5);
+
+        printf("%.3lf\n", res);
+    }
+    return 0;
+}
+
+double primEX(double mat[MAXN][MAXN],const long &n, double rv)
+{
+    double hs = 0, rs = 0;
+    long i, j, pos;
+    memset(minFrom, 0, sizeof(minFrom));
+    for(i = 1; i < n; i ++)
+        minEle[i] = 1.0 * alt[0][i] - rv * mat[0][i];
+    minFrom[0] = -1;
+    for(i = 1; i < n; i ++)
+    {
+        pos = 0;
+        for(j = 1; j < n; j ++)
+            if(minFrom[j] >= 0 && ( pos == 0 || minEle[j] < minEle[pos]))
+                pos = j;
+        rs += mat[minFrom[pos]][pos];
+        hs += alt[minFrom[pos]][pos];
+        minFrom[pos] = -1;
+        for(j = 1; j < n; j ++)
+            if(minFrom[j] >= 0 && minEle[j] > 1.0 * alt[pos][j] - rv * mat[pos][j])
+                minEle[j] = 1.0 * alt[pos][j] - rv * mat[pos][j], minFrom[j] = pos;
+    }
+
+    return hs / rs;
+}
+```

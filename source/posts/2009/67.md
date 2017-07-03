@@ -1,0 +1,146 @@
+---
+title: POJ PKU 3277 City Horizon 解题报告
+tags:
+  - acm
+  - pku
+  - poj
+id: 67
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2009-11-12 17:23:39
+---
+
+题目链接:[http://acm.pku.edu.cn/JudgeOnline/problem?id=3277](http://acm.pku.edu.cn/JudgeOnline/problem?id=3277)
+
+线段树+离散化
+
+ACM预选赛过去了,可是我们队什么都没拿到,这给我们的打击是相当大的,这也很大程度上体现了我们的不足
+
+一直没能静下心,来,今天决定不能再这么悲伤下去,我要奋斗,继续学习,就从之前的断点线段树开始
+
+开始只是为练习线段树,开始写的没有离散化,然后很悲惨的TLE了
+
+本来我的离散比较不擅长,碰到离散我就觉得很抽象,但是这里离散用的确实很经典
+
+题目大意是给出N个建筑物的开始和结束地点,还有高度,算出重合的总面积
+
+由于是立体图化成了平面图,所以建筑的区域会重叠
+
+看到题目的数据范围很大,不可能暴力.想到线段树,因为线段树的特点是能批量的修改数据
+
+同时树状数组也可以,但是这里的数据范围过大,建立树状数组直接MLE到天上去了,所以就是线段树
+
+
+
+这里还有一个重要的思路是把区域离散化,改用另一个索引记录区段,再按这个索引建树,这可以很大减少时间复杂度和空间复杂度
+
+(哦yeah,第一次我就没离散化就TLE掉了,残念)
+
+本来二分也想直接用SLT库的,可是忘记怎么用了,就老老实实自己写吧
+
+贴代码如下:
+
+```cpp
+#include<iostream>
+#include<algorithm>
+using  namespace std;
+#define MAXN 40005
+long index[MAXN * 3],num = 0;
+struct Node
+{
+    long l,r,h;
+};
+bool cmp(Node a, Node b)
+{
+    return a.h < b.h;
+}
+Node old[MAXN],newN[MAXN * 10];//其中二叉树(newN)从1开始计数
+void buildTree(long s,long e,long pos);
+void addHeight(long s,long e,long h,long pos);
+long binarySearch(long value,long s[] , long max);
+__int64 getValue(Node s[] , long pos);
+int main()
+{
+    long n,i;
+    scanf("%ld",&n);
+    for(i = 0 ; i < n ; i ++)
+    {
+        scanf("%ld %ld %ld",&old[i].l,&old[i].r,&old[i].h);
+        index[num ++] = old[i].l;
+        index[num ++] = old[i].r;
+    }
+    sort(index , index + num);
+    num = 1;//合并区间
+    for(i = 1 ; i < 2 * n ; i ++)
+        if(index[i] != index[i - 1])
+            index[num ++] = index[i];
+
+    //按索引的下标建树
+    buildTree(0,num - 1,1);
+
+    sort(old , old + n , cmp);//按高度排序,方便覆盖低的高度
+    for(i = 0 ; i < n ; i ++)
+        addHeight(binarySearch(old[i].l , index , num) , binarySearch(old[i].r , index , num) , old[i].h , 1);
+
+    cout<<getValue(newN ,1)<<endl;
+
+    return 0;
+}
+
+void buildTree(long s,long e,long pos)
+{
+    newN[pos].l = s;
+    newN[pos].r = e;
+    newN[pos].h = 0;
+    if(e > s + 1)
+    {
+        buildTree(s , (s + e) >> 1 , 2 * pos);
+        buildTree((s + e) >> 1 , e , 2 * pos + 1);
+    }
+}
+void addHeight(long s,long e,long h,long pos)
+{
+    if(newN[pos].l == s && newN[pos].r == e)
+        newN[pos].h = h;//由于之前的排序这里只会被更大的值替换
+    else
+    {
+        if(newN[pos].h)
+            newN[2 * pos].h = newN[2 * pos + 1].h = newN[pos].h , newN[pos].h = 0;//同上
+        long mid = (newN[pos].l + newN[pos].r) >> 1;
+        if(e <= mid)
+            addHeight(s , e , h , 2 * pos);
+        else if(s >= mid)
+            addHeight(s , e , h , 2 * pos + 1);
+        else
+        {
+            addHeight(s , mid , h , 2 * pos);
+            addHeight(mid , e , h , 2 * pos + 1);
+        }
+    }
+}
+long binarySearch(long value,long s[] , long max)
+{
+    long low = 0, high = max - 1;
+    long mid;
+    while(low <= high)
+    {
+        mid = (low + high) >> 1;
+        if(value == s[mid])
+            return mid;
+        if(value > s[mid])
+            low = mid + 1;
+        else
+            high = mid - 1;
+    }
+    return 0;
+}
+__int64 getValue(Node s[] , long pos)
+{
+    if(s[pos].h)
+        return (__int64)(index[s[pos].r] - index[s[pos].l]) * s[pos].h;
+    if(s[pos].r - s[pos].l > 1)//等于1则是最后一个节点,无字节点,诺写>=1可能溢出
+        return getValue(s, 2 * pos) + getValue(s , 2 * pos + 1);
+    return 0;
+}
+```

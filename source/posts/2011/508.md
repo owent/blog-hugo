@@ -1,0 +1,257 @@
+---
+title: C++ 新特性学习（一） -- 概述+智能指针（smart_ptr）
+tags:
+  - BOOST
+  - c
+  - c++0x/11
+  - c++11
+  - smart_ptr
+  - STL
+  - tr1
+  - 智能指针
+id: 508
+categories:
+  - Article
+  - Blablabla
+date: 2011-10-14 04:12:48
+---
+
+**C++ 0x/11 终于通过了,真是个很爽的消息。于是乎我决定对新的东西系统学习一下。**
+
+首先当然要从tr1开始，智能指针实际上我已经用过很多次了，但是为了完整起见，还是写出来记录一下。
+
+当然，从简单到复杂，现在接触的部分不是很复杂，不过暂时够用了。
+
+首先是C++0x/11的新东东：auto关键字，decltype关键字和lambda表达式
+
+**auto**关键字和decltype关键字都是类型推导，不同的是auto是在申明时推导类似C#里的var，而decltype只是对值，表达式等的类型推导。
+
+auto a = 0; //这是正确的
+
+auto a; // 这是错误的，因为在申明时无法推导类型
+
+	a = 0;
+
+对于**decltype**有如下规则
+
+1.  如果表达式e是一个变量，那么就是这个变量的类型。
+2.  如果表达式e是一个函数，那么就是这个函数返回值的类型。
+3.  如果不符合1和2，如果e是左值，类型为T，那么decltype(e)是T&amp;；如果是右值，则是T。
+
+下一项，**lambda表达式**
+
+lambda表达式主要用于简化匿名函数的写法，方便堆代码用的。（C++终于支持匿名函数了）
+
+标准形式是 [外部变量](参数)-&gt;返回值 {函数体}
+
+当然“-&gt;返回值”可以省去，这时候会有返回值类型推导
+
+对于引用的外部变量的形式，见下表（参考维基百科的）
+
+  capture  |  description  |
+-----------|---------------|
+[] 	       | 无任何外部变量  |
+[x, &y] 	 | x以传值方式导入，y以引用方式导入  |
+[&] 	     | 所有变量都以引用方式导入 |
+[=] 	     | 所有变量都以传值方式导入 |
+[&, x] 	   | 除x以传值方式导入外，其他变量以引用方式导入 |
+[=, &z] 	 | 除z以引用方式导入外，其他变量以传值方式导入 |
+
+继续继续，贴这三个部分的测试代码：
+
+```cpp
+#include <string>
+#include <iostream>
+#include <algorithm>
+
+int main() {
+      std::string vec = "314159265359";
+      /**
+       * decltype 类型推导
+       * 如果表达式e是一个变量，那么就是这个变量的类型。
+       * 如果表达式e是一个函数，那么就是这个函数返回值的类型。
+       * 如果不符合1和2，如果e是左值，类型为T，那么decltype(e)是T&；如果是右值，则是T。
+       */
+     int a;
+     double b;
+     typedef decltype (a * b) type_ab; // 表达式类型，类型是double
+     typedef decltype ((a)) type_a; // 左值，类型是int&
+     /**
+      * auto 类型推导
+      * 类似C#里的var，在声明时推导类型
+      */
+     for(auto i = 0; i < vec.size(); i ++) {
+         std::cout<< vec[i];
+     }
+     std::cout<< std::endl;
+     /**
+      * lambda表达式
+      * 标准形式： [capture](parameters)->return_type {body}
+      * 其中“->return_type ”是可选的，仅当要指定返回值的时候使用
+      */
+     int count = 0, sum = 0;
+     std::sort(vec.begin(), vec.end(), [&count](const char& l, const char& r) -> bool {
+         count ++;
+         return r > l;
+     });
+     std::for_each(vec.begin(), vec.end(), [&](const char& v){
+         sum += v - '0';
+     });
+     std::cout<< "排序操作次数 => "<< count<< std::endl<<
+         "总和 => "<< sum<< std::endl;
+     return 0;
+}
+
+// 最后，三项综合，就出现了这种奇葩的函数模板
+// 这一段来自维基百科，就懒得自己试了
+template< typename LHS, typename RHS>
+   auto AddingFunc(const LHS &lhs, const RHS &rhs) -> decltype(lhs+rhs) {return lhs + rhs;}
+```
+
+然后接下来是**智能指针**，先贴一段东东：
+
+```cpp
+#if defined(_MSC_VER) && (_MSC_VER >= 1020)
+# pragma once
+#endif
+
+// ============================================================
+// 公共包含部分
+// 自动导入TR1库
+// ============================================================
+
+/**
+* 导入智能指针（smart_ptr）
+* 如果是G++且支持c++0x草案1（tr1版本）的smart_ptr[GCC版本高于4.0]
+* 则会启用GNU-C++的智能指针
+*
+* 如果是VC++且支持c++0x草案1（tr1版本）的smart_ptr[VC++版本高于9.0 SP1]
+* 则会启用VC++的智能指针
+*
+* 否则启用boost中的smart_ptr库（如果是这种情况需要加入boost库）
+*/
+
+// VC9.0 SP1以上分支判断
+#if defined(_MSC_VER) && (_MSC_VER == 1500 && defined (_HAS_TR1) || _MSC_VER > 1500)
+    // 采用VC std::tr1库
+    #include <memory>
+#elif defined(__GNUC__) && __GNUC__ >= 4
+    // 采用G++ std::tr1库
+    #ifndef __GXX_EXPERIMENTAL_CXX0X__
+        #include <tr1/memory>
+        namespace std {
+            using tr1::bad_weak_ptr;
+            using tr1::const_pointer_cast;
+            using tr1::dynamic_pointer_cast;
+            using tr1::enable_shared_from_this;
+            using tr1::get_deleter;
+            using tr1::shared_ptr;
+            using tr1::static_pointer_cast;
+            using tr1::swap;
+            using tr1::weak_ptr;
+        }
+    #else
+        #include <memory>
+    #endif
+#else
+    // 采用boost tr1库
+    #include <boost/tr1/memory.hpp>
+    namespace std {
+        using tr1::bad_weak_ptr;
+        using tr1::const_pointer_cast;
+        using tr1::dynamic_pointer_cast;
+        using tr1::enable_shared_from_this;
+        using tr1::get_deleter;
+        using tr1::shared_ptr;
+        using tr1::static_pointer_cast;
+        using tr1::swap;
+        using tr1::weak_ptr;
+    }
+#endif
+```
+
+这段代码是什么呢？只是一个例子，自动导入**smart_ptr库**。当然，其他的tr1的库的导入也可以用这种方法。这段代码支持GNU-C++、VC++，如果电脑里的C++版本不够则会导入BOOST里的智能指针库，这时候要安装BOOST库，贴完这一段，就可以使用神奇的std::shared_point了。
+
+智能指针实现了在C++下的自动内存管理，同时使智能指针的用法和普通指针没有太大的区别，最重要的是它的效率并不弱于裸指针。
+
+据说2009年的boost的智能指针性能消耗大约在5%，这个很可以有。
+
+它里面采用了引用计数器，如果计数为0，则被认为是不能再被仍和变量访问到，就会被自动delete。
+
+其中std::shared_ptr是智能指针，一下是最简单的用法
+
+```cpp
+std::shared_ptr<int> a = std::shared_ptr<int>(new int()),
+    b = std::shared_ptr<int>(new int());
+scanf("%d %d", a.get(), b.get());
+printf("%d\n", *a + *b);
+```
+
+你不需要在函数结束后delete资源，一切都是自动的。
+
+另外智能指针上还有个重要的东西叫std::weak_ptr，这是智能指针的一个监视器，内部不会改变引用技术，但是可以用于获取智能指针，当资源正常时lock函数会返回智能指针，当资源被释放了后会产生空指针。主要用途是避免访问已经释放了的资源导致的Run Time Error的好东东。
+
+另外，**使用智能指针必须注意的两点：**
+
+1. 避免引用成环
+> 引用成环会导致引用计数永不为0，造成内存泄漏，比如在类a，b，c里，各有一个成员变量p，使得a.p = &b, b.p = &c, c.p = &a; 那么即便没有方法可以访问这几个类后，计数也不会为0，就会永驻内存。或者最简单的自环，a.p = &a; 引用技术至少为1。
+```cpp
+struct foo {
+    typedef std::shared_ptr<foo> type_ptr;
+    type_ptr p;
+};
+// 这个函数执行一次浪费一个sizeof(std::shared_ptr<foo>)的内存
+void fun () {
+    foo::type_ptr p = foo::type_ptr(new foo());
+    p->p = p;
+}
+```
+具体数值视系统位数而定。
+
+2. 一个指针智只能被一个智能指针维护
+> 如果一个地址同时被两个或两个以上智能指针维护会出现什么事？当某一个智能指针引用技术为0的时候，资源会被释放，而另一个就像使用了一个指向已释放资源的指针，什么后果就不用多说了吧。
+```cpp
+int* p = new int();
+std::shared_ptr<int> a = std::shared_ptr<int>(p),
+b = std::shared_ptr<int>(p);
+scanf("%d %d", a.get(), b.get());
+printf("%d\n", *a + *b);
+```
+如果你执行上面的代码，你就会爽到了。但是这个还不明显，也容易避免，我举个更明显的例子。
+```cpp
+class foo {
+public:
+    typedef std::shared_ptr<foo> type_ptr;
+    //Blablabla.
+
+    type_ptr what_are_you_want_to_do() {
+        // 一堆不知道干嘛的代码后
+        return type_ptr(this);
+    }
+};
+
+int main() {
+    foo::type_ptr p = foo::type_ptr(new foo());
+    p->what_are_you_want_to_do();
+    return 0;
+}
+```
+运行一下，你又爽到了。但是某些情况下我们需要返回自己的智能指针怎么办呢，又有个新玩意，std::enable_shared_from_this<> ，只要继承它，就有一个成员方法shared_from_this用于返回自身的智能指针。其内部使用一个weak_ptr维护，这就是weak_ptr的一个重要使用了。
+```cpp
+class foo: public std::enable_shared_from_this<foo> {
+public:
+    typedef std::shared_ptr<foo> type_ptr;
+    //Blablabla.
+
+    type_ptr what_are_you_want_to_do() {
+        // 一堆不知道干嘛的代码后
+        return shared_from_this();
+    }
+};
+```
+
+然后，对于智能指针的类型转换，需要用到std::const_pointer_cast，std::dynamic_pointer_cast，using std::static_pointer_cast，强制类型转换是不行滴，一定要有类型检查。
+
+最后，智能指针的记录先到这里，以后有用到新的东西再记上来。
+
+Well done.

@@ -1,0 +1,112 @@
+---
+title: POJ PKU 3631 Cuckoo Hashing 解题报告
+tags:
+  - acm
+  - pku
+  - poj
+id: 58
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-02-24 10:14:57
+---
+
+题目链接：[http://acm.pku.edu.cn/JudgeOnline/problem?id=3631](http://acm.pku.edu.cn/JudgeOnline/problem?id=3631)
+
+我讨厌这么长的题目
+
+这题是模拟那个Hash算法，有点像我之前转载的那篇文章里提到的Hash
+
+[打造最快的Hash表(转) [以暴雪的游戏的Hash为例]](http://www.owent.net/?p=87) 这里是用两个Hash函数算出两个Hash值h1和h2，如果h1位置已经被占用就检查h2位置，如果都被占用就把原来的替换掉再给原来的字符串重新计算映射。这样下去可能出现死循环。会出现死循环就输出
+
+rehash necessary
+
+所有字符串都能被正常映射就输出
+
+successful hashing
+
+这题用DFS模拟就OK了
+
+代码：
+
+```cpp
+#include <iostream>
+#include <cstring>
+#include <cstdio>
+#include <map>
+using namespace std;
+#define MAXN 10005
+
+struct hashv
+{
+    int h1,h2;
+};
+
+hashv D[MAXN];
+int T[MAXN];
+bool inLoop[MAXN];
+
+bool DFS(int pos);
+
+int main()
+{
+    int t, m, n, i;
+    scanf("%d", &t);
+    while(t --)
+    {
+        memset(T, 0, sizeof(T));
+        scanf("%d %d", &m, &n);
+        for(i = 1; i <= m; i ++)
+            scanf("%d %d", &D[i].h1, &D[i].h2);
+
+        for(i = 1; i <= m; i ++)
+        {
+            memset(inLoop, false, sizeof(inLoop));
+            if(!DFS(i))
+            {
+                printf("rehash necessary\n");
+                break;
+            }
+        }
+        if(i > m)
+            printf("successful hashing\n");
+    }
+    return 0;
+}
+
+bool DFS(int pos)
+{
+    if( T[ D[pos].h1 ] == 0)
+    {
+        T[ D[pos].h1 ] = pos;
+        return true;
+    }
+    else if( T[ D[pos].h2 ] == 0)
+    {
+        T[ D[pos].h2 ] = pos;
+        return true;
+    }
+    else
+    {
+        if( !inLoop[ D[pos].h1 ] )
+        {
+            inLoop[ D[pos].h1 ] = true;
+            int tmp = T[ D[pos].h1 ];
+            T[ D[pos].h1 ] = pos;
+            if( DFS(tmp) )
+                return true;
+            T[ D[pos].h1 ] = tmp;
+        }
+        if(!inLoop[ D[pos].h2 ])
+        {
+            inLoop[ D[pos].h2 ] = true;
+            int tmp = T[ D[pos].h2 ];
+            T[ D[pos].h2 ] = pos;
+            if( DFS(tmp) )
+                return true;
+            T[ D[pos].h1 ] = tmp;
+        }
+    }
+    return false;
+}
+```

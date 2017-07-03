@@ -1,0 +1,90 @@
+---
+title: JQuery扩展插件--提示信息
+tags:
+  - Javascript
+  - jQuery
+  - 插件
+id: 128
+categories:
+  - Article
+  - Web
+  - Work
+date: 2010-11-19 15:20:12
+---
+
+学校做项目顺便写的，还是有点用的。
+
+```js
+/***
+ * JQuery扩展插件--提示信息
+ *
+ * 本函数用于创建提示信息
+ *
+ * Example
+ * <code>
+ *      var t = $.noticeMessage(msg, a, b);
+ * </code>
+ *
+ *
+ * function noticeMessage([msg, a,b])
+ * @Param  {
+ *      msg:    信息内容(默认: Notice Message!)
+ *      a:      配置选项({expire: 过期时间（默认5秒）, time: 过渡时间, from: {起始CSS样式}, to:{最终CSS样式}})
+ *      b:      回调函数
+ * }
+ * @Return {jQuery(msgDiv): 产生的信息DOM组件的jQuery容器}
+ *
+ *
+ * Example:
+ * <code>
+ *      var t = $.noticeMessage("Hello World!");
+ * </code>
+ *
+ *
+ * @Author      OWenT
+ * @Version     1.0
+ * @Link        http://www.owent.net
+ */
+jQuery.extend({
+    noticeMessage: function (msg, a, b) {
+        msg = msg || "Notice Message!";
+        var option = { "expire": 5000, "time": 500,
+            "from": { "background-color": "LightGreen", "opacity": "0", "position": "fixed", "bottom": "0px", "z-index": "1000",
+                "font-size": "24px", "color": "DarkGreen", "padding": "3px", "font-weight": "bold"
+            },
+            "to": { "opacity": "1", "bottom": "+5px" }
+        };
+        var callback = function () { };
+        if (a && jQuery.isFunction(a))
+            callback = a;
+        else {
+            a = a || {};
+            jQuery.extend(option, a);
+            callback = b || function () { };
+        }
+
+        var msgDiv = document.createElement("div");
+
+        jQuery(msgDiv).css(option.from).html(msg);
+        jQuery(document.body).append(msgDiv);
+        jQuery(msgDiv).stop().animate(option.to, option.time, callback);
+        if (option.expire > 0) {
+            setTimeout(function () {
+                if (msgDiv) {
+                    jQuery(msgDiv).stop().animate({ "opacity": "0", "bottom": "-5px" }, option.time,
+                        function () { callback(); jQuery(this).remove(); });
+                }
+            }, option.expire);
+        }
+        return jQuery(msgDiv);
+    }
+});
+```
+
+写在最后补充一下，这个动机基本没什么用了
+
+以后会抽业余时间写个Metro风格的网页库
+
+https://github.com/owt5008137/SimpleMetro
+
+这个目前已经有东西完胜上面的代码了，就此别过

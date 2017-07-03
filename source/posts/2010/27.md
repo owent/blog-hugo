@@ -1,0 +1,95 @@
+---
+title: USACO 2008 March Gold Cow Jogging 解题报告
+tags:
+  - acm
+id: 27
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-06-02 17:31:57
+---
+
+题目链接：[http://202.120.106.94/onlinejudge/problemshow.php?pro_id=143](http://202.120.106.94/onlinejudge/problemshow.php?pro_id=143)
+
+这道题嘛，怎么说呢，好吧中等题
+
+要求算出下山的前k短路的路长度
+
+由于一定是下山所以可以用邻接表记录路径，然后用一个优先队列记录已有的到n的路长度
+
+但是优先队列中计算下一个值得时候只要计算前k个数值就可以了，超过k的显然可以抛弃
+
+另外用STL的priority_queue的时候要注意他是按由小到大排序的，可以这么写来由大到小排序
+
+priority_queue&lt;long, vector&lt;long&gt;, std::greater&lt;long&gt; &gt;que;
+
+主体思想是：令第i个牧场到第j个牧场的路长为len，则第j个牧场到达的路长的优先队列记录就增加（第i个牧场的优先队列每个元素的值+len）
+
+最终代码如下：
+
+```cpp
+#include <iostream>
+#include <cstdio>
+#include <cstring>
+#include <queue>
+using namespace std;
+
+struct target
+{
+    int tar;
+    long len;
+};
+struct node
+{
+    queue<target>to;
+    priority_queue<long, vector<long>, std::greater<long> >ls;
+};
+
+node rcd[1005];
+void dp(int pos, int k);
+int main()
+{
+    int n, m, k, i, a;
+    scanf("%d %d %d", &n, &m, &k);
+    for(i = 0; i < m; i ++)
+    {
+        target tmp;
+        scanf("%d %d %ld", &a, &tmp.tar, &tmp.len);
+        rcd[a].to.push(tmp);
+    }
+    rcd[n].ls.push(0);
+    for(i = n; i > 1; i --)
+        dp(i, k);
+
+    while(k --)
+    {
+        if(rcd[1].ls.size() > 0)
+        {
+            printf("%ld\n", rcd[1].ls.top());
+            rcd[1].ls.pop();
+        }
+        else
+            printf("-1\n");
+    }
+    return 0;
+}
+
+void dp(int pos, int k)
+{
+    queue<target> tmp;
+    long tmpLen;
+    target tmpTar;
+    while(rcd[pos].ls.size() > 0 && k --)
+    {
+        tmp = rcd[pos].to;
+        tmpLen = rcd[pos].ls.top();
+        rcd[pos].ls.pop();
+        while(tmp.size() > 0)
+        {
+            tmpTar = tmp.front();
+            tmp.pop();
+            rcd[tmpTar.tar].ls.push(tmpTar.len + tmpLen);
+        }
+    }
+}
+```

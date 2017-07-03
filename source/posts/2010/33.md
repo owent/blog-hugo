@@ -1,0 +1,125 @@
+---
+title: HDU HDOJ 3400 Line belt 解题报告
+tags:
+  - acm
+  - hdoj
+  - hdu
+id: 33
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-05-03 11:17:15
+---
+
+题目链接：[http://acm.hdu.edu.cn/showproblem.php?pid=3400](http://acm.hdu.edu.cn/showproblem.php?pid=3400)
+
+这题就是一道简单的两重三分
+
+首先设e点为从ab上离开的点，f为从cd上进入的点
+
+显然对固定点e,f从距c的距离的长度是一个单调函数或者先减后增的函数，这里可以三分算出最优解。这里是第一个三分
+
+然后对e点的最优解易证也存在这个性质，所以再来一个三分，就能解除最优解
+
+代码如下：
+
+```cpp
+#include <iostream>
+#include <cstdio>
+#include <cstring>
+#include <algorithm>
+#include <cmath>
+using namespace std;
+
+const double EPS = 1e-10;
+
+typedef struct
+{
+    double x,y;
+}point;
+
+double sulAB(point a, point b, point c, point d, double p, double q, double r);
+double sulCD(point e, point c, point d, double q, double r);
+double getSulCD(double l,const point &e,const point &c,const point &d,const double &q,const double &r);
+double getSulAB(double l,const point &a,const point &b, const point &c,const point &d
+    , const double &p,const double &q,const double &r);
+double getDis(point a, point b)
+{
+    return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
+}
+int main()
+{
+    long t,p,q,r;
+    double res;
+    point a,b,c,d;
+    scanf("%ld", &t);
+    while(t --)
+    {
+        scanf("%lf %lf %lf %lf", &a.x, &a.y, &b.x, &b.y);
+        scanf("%lf %lf %lf %lf", &c.x, &c.y, &d.x, &d.y);
+        scanf("%ld %ld %ld", &p, &q, &r);
+        res = sulAB(a, b, c, d, p, q, r);
+        printf("%.2lf\n", res);
+    }
+    return 0;
+}
+
+double sulAB(point a, point b, point c, point d, double p, double q, double r)
+{
+    double l,rr,m,mm;
+    double tmp1, tmp2;
+    l = 0;
+    rr = 1.0;
+    while(l + EPS < rr)
+    {
+        m = (l + rr) / 2;
+        mm = (m + rr) / 2;
+        tmp1 = getSulAB(m, a, b, c, d, p, q, r);
+        tmp2 = getSulAB(mm, a, b, c, d, p, q, r);
+        if(tmp1 < tmp2)
+            rr = mm;
+        else
+            l = m;
+    }
+
+    return getSulAB(l, a, b, c, d, p, q, r);
+}
+
+double sulCD(point e, point c, point d, double q, double r)
+{
+    double l,rr,m,mm;
+    double tmp1, tmp2;
+    l = 0;
+    rr = 1.0;
+    while(l + EPS < rr)
+    {
+        m = (l + rr) / 2;
+        mm = (m + rr) / 2;
+        tmp1 = getSulCD(m, e, c, d, q, r);
+        tmp2 = getSulCD(mm, e, c, d, q, r);
+        if(tmp1 < tmp2)
+            rr = mm;
+        else
+            l = m;
+    }
+
+    return getSulCD(l, e, c, d, q, r);
+}
+
+double getSulCD(double l,const point &e,const point &c,const point &d,const double &q,const double &r)
+{
+    point p;
+    p.x = c.x + (d.x - c.x) * l;
+    p.y = c.y + (d.y - c.y) * l;
+    return getDis(e, p) / r + getDis(p, d) / q;
+}
+
+double getSulAB(double l,const point &a,const point &b, const point &c,const point &d
+    , const double &p,const double &q,const double &r)
+{
+    point pp;
+    pp.x = a.x + (b.x - a.x) * l;
+    pp.y = a.y + (b.y - a.y) * l;
+    return getDis(a, pp) / p + sulCD(pp, c, d, q, r);
+}
+```

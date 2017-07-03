@@ -1,0 +1,151 @@
+---
+title: PKU POJ 2976 Dropping tests 解题报告
+tags:
+  - acm
+  - pku
+  - poj
+id: 43
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-04-09 17:04:09
+---
+
+
+题目链接：&nbsp;[http://acm.pku.edu.cn/JudgeOnline/problem?id=2976](http://acm.pku.edu.cn/JudgeOnline/problem?id=2976)
+
+0-1分数规划
+
+最优比例生成树
+
+迭代法
+
+证明：（前几次都是看别人的，这次自己证明）
+
+对于集合s，令l* = max{ a(x) / b(x) } = a(x*) / b(x*).l*为所求的最优解，x*为对应的集合
+
+注：b(x)必须恒大于0
+
+然后令z(l) = min{ l &times; b(x) - a(x) }
+
+证明单调性：
+
+首先若l1 &gt; l2
+
+z(l1) = min { l1 &times; b(x) - a(x) } = l1&nbsp;&times; b(x1) - a(x1) &gt; l2&nbsp;&times; b(x1) - a(x1) &ge; min{ l2 &times; b(x) - a(x)&nbsp;} = z(l2)
+
+=&gt; &nbsp; &nbsp; z(l)是关于l的单调递增函数
+
+再证l = l*时，z(l) = 0
+
+若有x&#39;使得l*&nbsp;&times; b(x&#39;) - a(x&#39;) &le; 0
+
+=&gt; &nbsp;a(x&#39;) / b(x&#39;) &le; l* &nbsp; &nbsp; &nbsp; =&gt; &nbsp; &nbsp; l*&nbsp;&times; b(x&#39;) - a(x&#39;) &ge; 0
+
+=&gt; &nbsp;l*&nbsp;&times; b(x&#39;) - a(x&#39;) = 0 &nbsp; &nbsp;即 x&#39; = x*
+
+再证z(l) = 0时l = l*
+
+若z(l&#39;) = 0, l&#39; &le; max{a(x) / b(x)} = a(x*) / b(x*) &nbsp; &nbsp; =&gt; &nbsp; &nbsp; &nbsp;b(x*) &times; l&#39; - a(x*) &le; 0
+
+=&gt; &nbsp;l&#39; = l*
+
+最终结果是
+
+z(l) &lt; 0 when l &lt; l*
+
+z(l) = 0 when l = l*
+
+z(l) &gt; 0 when l &gt; l*
+
+从这里我们已经可以用二分l的值的方法计算答案了
+
+但是我们要更快，证明迭代法正确性
+
+z(l) = min{l &times; b(x) - a(x)}
+
+若l1 &ne; l*
+
+z(l1) = min { l1 &times; b(x) - a(x) } = l1 &times; b(x1) - a(x1)&nbsp;
+
+令l2 = a(x1) /&nbsp;b(x1) &nbsp; &nbsp; &nbsp;=&gt; b(x1) &times; l2 - a(x1) = 0
+
+若z(l1) &lt; 0 ,则 &nbsp; l2 &gt; l1,同时l* &gt; l1
+
+又min{ l* &times; b(x) - a(x) } = 0 &lt; l* &times; b(x1) - a(x1) &nbsp; =&gt; &nbsp;l* &gt; l2
+
+由此可得 &nbsp; l1 &lt; l2 &lt; l*
+
+z(l1) &lt; 0时同理可得
+
+最终结论
+
+l1 &lt; l2 &lt; l*
+
+由此，每次我们计算出l2，必然比l1接近l*，当靠近到可以忽略精度的位置时，就可以停止了
+
+开始敲代码：
+
+```cpp
+/**
+* URL: http://acm.pku.edu.cn/JudgeOnline/problem?id=2976
+* Author: OWenT
+* Blog: http://www.owent.net
+* 0-1分数规划 + 最优比例生成树 + 迭代法
+*/
+
+#include <iostream>
+#include <cstdio>
+#include <cstring>
+#include <cmath>
+#include <algorithm>
+using namespace std;
+
+typedef struct
+{
+    long a,b;
+}node;
+
+node score[1005];
+double res = 0, tmp = 100;
+
+double iter(const long &k, const long &n);
+bool cmp(node a, node b)
+{
+    return res * a.b - a.a < res * b.b - b.a;
+}
+
+int main()
+{
+    long n, k, i;
+    while(cin>> n>> k, n != 0 || k != 0)
+    {
+        memset(score, 0, sizeof(score));
+        for(i = 0; i < n; i ++)
+            cin>> score[i].a;
+        for(i = 0; i < n; i ++)
+            cin>> score[i].b;
+        k = n - k;//去除k个就是取n-k个使得l* = max { a(x) / b(x) }
+        res = 0;
+        tmp = 100;
+        while(fabs(res - tmp) > 1e-6)
+        {
+            tmp = res;
+            res = iter(k, n);
+        }
+
+        printf("%.0lf\n", res * 100);
+    }
+    return 0;
+}
+
+double iter(const long &k, const long &n)
+{
+    long i;
+    double tmpRA = 0, tmpRB = 0;
+    sort(score, score + n, cmp);
+    for(i = 0; i < k; i ++)
+        tmpRA += score[i].a, tmpRB += score[i].b;
+    return tmpRA / tmpRB;
+}
+```

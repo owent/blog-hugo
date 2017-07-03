@@ -1,0 +1,98 @@
+---
+title: 简易四则运算(ACM个人模板)
+tags:
+  - acm
+  - template
+id: 17
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-08-10 18:40:31
+---
+
+```cpp
+/**
+ * 简易四则运算（栈实现）
+ * #include <stack>
+ * #include <cstring>
+ */
+std::stack<char> opr;
+std::stack<double> num;
+char oprPRI[256];
+//初始化调用
+void initCalc()
+{
+    //优先级设置
+    char oprMap[7][2] = { {'+', 1}, {'-', 1}, {'*', 2}, {'/', 2}, {'^', 3}, {'(', 100}, {')', 0} };
+    for(int i = 0; i < 7; i ++)
+        oprPRI[oprMap[i][0]] = oprMap[i][1];
+}
+bool checkNum(char c)
+{
+    return c == '.' || (c >= '0' && c <= '9');
+}
+double calcOpr(double l, double r, char opr)
+{
+    switch(opr)
+    {
+        case '+': return l + r;
+        case '-': return l - r;
+        case '*': return l * r;
+        case '/': return l / r;
+        case '^': return ::pow(l, r);
+    }
+    return 0.0;
+}
+void calcStack()
+{
+    double cl, cr;
+    cr = num.top();
+    num.pop();
+    cl = num.top();
+    num.pop();
+    num.push(::calcOpr(cl, cr, opr.top()));
+    opr.pop();
+}
+double calc(const char str[])
+{
+    while(!opr.empty())
+        opr.pop();
+    while(!num.empty())
+        num.pop();
+    int i = 0, len = strlen(str);
+    num.push(0.0);
+    opr.push('(');
+    while(i < len)
+    {
+        if(::checkNum(str[i]))
+        {
+            double l;
+            ::sscanf(str + i, "%lf", &l);
+            while(::checkNum(str[i]))
+            i ++;
+            num.push(l);
+        }
+        else
+        {
+            char c = str[i ++];
+            if(c == ')')
+            {
+                while(opr.top() != '(')
+                    calcStack();
+                opr.pop();
+            }
+            else if(oprPRI[c] > oprPRI[opr.top()])
+                opr.push(c);
+            else
+            {
+                while(opr.top() != '(' && oprPRI[c] <= oprPRI[opr.top()])
+                    calcStack();
+                opr.push(c);
+            }
+        }
+    }
+    while(opr.size() > 1)
+        calcStack();
+    return num.top();
+}
+```

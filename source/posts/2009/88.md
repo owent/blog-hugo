@@ -1,0 +1,116 @@
+---
+title: POJ 2606 Rabbit hunt 2780 Linearity 1118 Lining Up 解题报告
+tags:
+  - acm
+  - pku
+  - poj
+id: 88
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2009-07-20 14:50:15
+---
+
+POJ打破传统,以前是做一题送一题,现在是做一题送两题,那么我们就不用客气了
+
+言归正传   题号:[2606   Rabbit hunt](http://acm.pku.edu.cn/JudgeOnline/problem?id=2606) [2780   Linearity](http://acm.pku.edu.cn/JudgeOnline/problem?id=2780) [1118   Lining Up](http://acm.pku.edu.cn/JudgeOnline/problem?id=1118)
+
+大致题意是输入N个点.计算能穿过最多的点的直线,并输出最大点的个数
+
+最初的想法很简单
+
+枚举没两个点连成的直线,然后枚举每个点,计算通过这条直线的点的个数,但是这个方法的复杂度为O(n^3)
+
+例:(2606代码)
+
+```cpp
+
+#include<iostream>
+using namespace std;
+long x[300],y[300];
+int main()
+{
+    int n,i,j,k,counter,max;
+    cin>>n;
+    max = 0;
+    for(i = 0 ; i < n ; i++)
+        cin>>x[i]>>y[i];
+    for(i = 0 ; i < n ; i ++)
+        for(j = i + 1 ; j < n ; j ++)
+        {
+            counter = 0;
+            for(k = j + 1; k < n ; k++)
+                if((y[k] - y[i]) * (x[j] - x[i]) == (y[j] - y[i]) * (x[k] - x[i]))
+                    counter ++;
+            if(max < counter)
+                max = counter;
+        };
+    cout<<max + 2;
+    return 0;
+}
+
+我们也可以这样,
+1.选出一个点,计算所有与这个点相连的直线斜率
+2.然后对斜率排序
+3.依次处理斜率,斜率相同则通过该直线的点数量+1,否则重置通过数量为2(两点确定一条直线)
+4.重置前与已记录的最大值比较,记录最大值
+这样的复杂度就变成了O(n*n*log(n))了
+例:(1118代码)
+
+
+#include<iostream>
+using namespace std;
+struct point
+{
+    float x,y;
+};
+struct node
+{
+    float k;
+};
+int cmp(const void * a, const void * b)
+{
+    return((*(float*)a-*(float*)b>0)?1:-1);
+}
+int main()
+{
+    node numK[1005 * 1005 / 2];
+    int n , maxNum = 2 , tmpNum = 0;
+    while(scanf("%d",&n),n)
+    {
+        point pt[1005];
+        for(int i = 0 ; i < n ; i ++)
+            scanf("%f %f",&pt[i].x,&pt[i].y);
+        for(int i = 0 ; i <  n ; i ++)
+        {
+            int pos = 0;
+            for(int j = i + 1 ; j < n ; j ++)
+                if(pt[i].x != pt[j].x)
+                    numK[pos ++].k = (pt[j].y - pt[i].y) / (pt[j].x - pt[i].x);
+                else
+                    numK[pos ++].k = 100000;
+
+            qsort(numK,pos,sizeof(numK[0]),cmp);
+            int tmpNum = 2;
+            for(int j = 1 ; j < pos ; j ++)
+            {
+                if(numK[j].k == numK[j - 1].k)
+                    tmpNum ++;
+                else
+                {
+                    if(tmpNum > maxNum)
+                        maxNum = tmpNum;
+                    tmpNum = 2;
+                }
+            }
+            if(tmpNum > maxNum)
+                maxNum = tmpNum;
+        }
+
+
+        printf("%d\n",maxNum);
+        maxNum = 2;
+    }
+    return 0;
+}
+```

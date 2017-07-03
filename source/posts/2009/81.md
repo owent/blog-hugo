@@ -1,0 +1,80 @@
+---
+title: 连接最多点直线 (OWenT 个人模板)
+tags:
+  - acm
+  - template
+id: 81
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2009-08-14 11:30:49
+---
+
+```cpp
+//n每个用例的点个数
+//MAXN为最大点个数
+//PTYPE为坐标值类型
+#include<iostream>
+#include<cmath>
+using namespace std;
+
+#define MAXN 1005
+#define EPS 1e-10
+typedef double PTYPE;
+
+struct point
+{
+    PTYPE x,y;
+};
+struct node
+{
+    PTYPE k;
+};
+int cmp(const void * a, const void * b)
+{
+    return((*(PTYPE*)a-*(PTYPE*)b>0)?1:-1);
+}
+node numK[MAXN * MAXN / 2];
+point pt[MAXN];
+int main()
+{
+
+    int n , maxNum = 1 , tmpNum = 0;
+    while(scanf("%d",&n),n)
+    {
+        for(int i = 0 ; i < n ; i ++)
+            scanf("%lf %lf",&pt[i].x,&pt[i].y);
+        for(int i = 0 ; i <  n ; i ++)
+        {
+            int pos = 0;
+            for(int j = i + 1 ; j < n ; j ++)
+                if((pt[i].x - pt[j].x) > EPS)
+                    numK[pos ++].k = (pt[j].y - pt[i].y) / (pt[j].x - pt[i].x);
+                else
+                    numK[pos ++].k = 100000;
+
+            qsort(numK,pos,sizeof(numK[0]),cmp);
+            int tmpNum = 2;
+            for(int j = 1 ; j < pos ; j ++)
+            {
+                if(numK[j].k == numK[j - 1].k)
+                    tmpNum ++;
+                else
+                {
+                    if(tmpNum > maxNum)
+                        maxNum = tmpNum;
+                    tmpNum = 2;
+                }
+            }
+            if(tmpNum > maxNum)
+                maxNum = tmpNum;
+        }
+
+
+        printf("%d\n",maxNum);
+        maxNum = 1;
+    }
+    return 0;
+}
+```
+

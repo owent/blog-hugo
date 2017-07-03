@@ -1,0 +1,77 @@
+---
+title: 模式匹配(kmp)个人模板
+tags:
+  - acm
+  - template
+id: 92
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2009-07-06 20:34:01
+---
+
+```cpp
+/**
+ * KMP模式匹配
+ * 算法复杂度O(m+n)
+ * ACM 模板 
+ *
+ * @Author OWenT
+ * @link http://www.owent.net
+ */
+
+// 最大字符串长度
+const int maxLen = 10000;
+// 前一个匹配位置,多次匹配注意要重新初始化
+// 注：preMatch[i]表示0~preMatch[i-1]能和?~i匹配
+int preMatch[maxLen]={0};
+
+/**
+ * kmp匹配算法
+ * @param char[] source 查找源
+ * @param char[] checked 查找目标
+ * @return int 根据以下两个分支返回值分别表示不同的含义
+ */
+int kmp_match(char source[],char checked[]) {
+    int i = 0, j = 0;
+    memset(preMatch, 0, sizeof(preMatch));
+
+    if(!checked[i]) // 被匹配串为空串，直接返回 0
+        return 0;
+
+    ++ i;
+    while(checked[i]) {
+        for(j = preMatch[i - 1]; checked[i] != checked[j] && j; j = preMatch[j - 1]);
+        preMatch[i] = (checked[i] == checked[j])? j + 1 : 0 ;
+        ++ i;
+    }
+    //计算匹配子串个数(子串间无重叠)(与以下一起二选一)
+    int num = 0;//计数变量
+    for(i = j = 0; source[i]; ++ i) {
+        if(checked[j] == source[i])
+            ++ j;
+        else if(j)
+            -- i, j = preMatch[j - 1];
+
+        if(!checked[j])
+            ++ num, j = 0;//如果要子串间重叠 则此句中j = 0 改成 j = preMatch[j - 1]
+    }
+    return num;
+
+    //计算首个匹配子串位置(与以上一起二选一)
+    for(i = j = 0; checked[j] && source[i]; ++ i) {
+        if(checked[j] == source[i])
+            ++ j;
+        else if(j)
+            -- i, j = preMatch[j - 1];
+    }
+
+    //返回匹配的串的第一个字符出现位置(从1开始计数,0表示无匹配)
+    if(!checked[j])
+        return i - j + 1;
+    else
+        return 0;
+
+    return 0;
+}
+```

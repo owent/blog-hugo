@@ -1,0 +1,195 @@
+---
+title: POJ PKU 2826 An Easy Problem?! 解题报告
+tags:
+  - acm
+  - pku
+  - poj
+id: 19
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-08-07 08:54:04
+---
+
+题目链接：
+[http://acm.pku.edu.cn/JudgeOnline/problem?id=2826](http://acm.pku.edu.cn/JudgeOnline/problem?id=2826)
+
+大致意思是给你两条线段，问组成的开口向上的V形区域能盛多少雨水。雨水是垂直落下的。
+
+显然线段不相交，或者平行，重合，或者有一条斜率为0时结果为0.00
+
+然后还有一种情况结果为0的，就是高的那条线段被低的挡住了。
+
+判断覆盖可以从最高点较低的线段的最高点引一条向y轴正向的线段，线段最高点坐标大于10000（题目说的坐标绝对值不大于10000），然后判断线段是否和原来两条线段都相交，是则输出0.00
+
+最后还要注意精度，我是结果加上eps才过的，面积计算使用的是海伦公式。
+
+提供几组数据
+
+Input：
+```
+0 0 100 100
+0 0 100 99
+
+0 0 100 100
+0 0 101 99
+
+0 0 1 1
+0 0 2 2
+
+0 0 -100 100
+0 0 100 99
+
+0 0 1 1
+1 1 2 2
+```
+
+Output:
+```
+0.00
+
+99.00
+
+0.00
+
+9850.50
+
+0.00
+```
+
+代码如下：
+
+```cpp
+#include <iostream>
+#include <cstdio>
+#include <cmath>
+
+const double eps = 1e-8;
+struct point
+{
+    int x, y;
+
+    point(){}
+    point(int _x, int _y):x(_x),y(_y){};
+
+    static int xmult(const point &p1, const point &p2, const point & p0)
+    {
+        return (p1.x - p0.x) * (p2.y - p0.y) - (p2.x - p0.x) * (p1.y - p0.y);
+    }
+    bool operator > (const point &_p) const
+    {
+        return y > _p.y;
+    }
+};
+
+struct segment
+{
+    point s, e;
+
+    segment(){}
+    segment(const point &_s, const point &_e):s(_s),e(_e){}
+
+    double operator *(const segment &_Off) const
+    {
+        return (e.x - s.x) * (_Off.e.y - _Off.s.y) - (e.y - s.y) * (_Off.e.x - _Off.s.x);
+    }
+    bool cross(const segment &_Off) const
+    {
+        return (
+            (std::max(s.x, e.x) >= std::min(_Off.s.x, _Off.e.x)) &&
+            (std::max(_Off.s.x, _Off.e.x) >= std::min(s.x, e.x)) &&
+            (std::max(s.y, e.y) >= std::min(_Off.s.y, _Off.e.y)) &&
+            (std::max(_Off.s.y, _Off.e.y) >= std::min(s.y, e.y)) &&
+            ((segment(_Off.s, s) * _Off) * (_Off * segment(_Off.s, e)) >= 0.0) &&
+            ((segment(s, _Off.s) * (*this)) * ((*this) * segment(s, _Off.e)) >= 0.0)
+            );
+    }
+
+    bool par(const segment &_s) const
+    {
+        return (e.y - s.y) * (_s.e.x - _s.s.x) - (e.x - s.x) * (_s.e.y - _s.s.y) == 0;
+    }
+
+    bool her()
+    {
+        return s.y == e.y;
+    }
+};
+
+std::pair<double, double> cross(const segment &a, const segment &b)
+{
+    double a1 = a.s.y - a.e.y;
+    double b1 = a.e.x - a.s.x;
+    double c1 = a.s.x * a.e.y - a.e.x * a.s.y;
+    double a2 = b.s.y - b.e.y;
+    double b2 = b.e.x - b.s.x;
+    double c2 = b.s.x * b.e.y - b.e.x * b.s.y;
+    return std::make_pair((c1 * b2 - c2 * b1) / (a2 * b1 - a1 * b2)
+            , (c1 * a2 - c2 * a1) / (b2 * a1 - b1 * a2));
+}
+
+double dis(std::pair<double, double> a, std::pair<double, double> b)
+{
+    return std::sqrt((a.first - b.first) * (a.first - b.first) + (a.second - b.second) * (a.second - b.second));
+}
+double area(double a, double b, double c)
+{
+    double s = (a + b + c) / 2;
+    return std::sqrt(s * (s - a) * (s - b) * (s - c));
+}
+std::pair<double, double> getpt(std::pair<double, double> x, const point &pt, double y)
+{
+    double py = pt.y - x.second;
+    double px = pt.x - x.first;
+    if(std::fabs(py) < eps)
+        return x;
+    return std::make_pair(x.first + (y - x.second) * px / py, y);
+}
+
+int main()
+{
+    segment a, b;
+    point ap, bp, mxp, mnp;
+    int i, t;
+    std::scanf("%d", &t);
+    while(t --)
+    {
+        std::scanf("%d %d %d %d %d %d %d %d"
+            , &a.s.x, &a.s.y, &a.e.x, &a.e.y
+            , &b.s.x, &b.s.y, &b.e.x, &b.e.y);
+        if(a.her() || b.her() || a.cross(b) == false || a.par(b))
+        {
+            std::printf("0.00\n");
+            continue;
+        }
+        ap = (a.s > a.e)? a.s: a.e;
+        bp = (b.s > b.e)? b.s: b.e;
+
+        std::pair<double, double> pt1, pt2, pt0 = ::cross(a, b);
+
+        if((ap.x - pt0.first) * (bp.x - pt0.first) > eps)
+        {
+            mnp = (ap > bp)?bp: ap;
+            if(segment(mnp, point(mnp.x, 30000)).cross(a) && segment(mnp, point(mnp.x, 30000)).cross(b))
+            {
+                std::printf("0.00\n");
+                continue;
+            }
+        }
+
+        if(ap > bp)
+        {
+            pt1 = std::make_pair(bp.x, bp.y);
+            pt2 = ::getpt(pt0, ap, pt1.second);
+        }
+        else
+        {
+            pt1 = std::make_pair(ap.x, ap.y);
+            pt2 = ::getpt(pt0, bp, pt1.second);
+        }
+
+        std::printf("%.2lf\n", ::area(::dis(pt0, pt1), ::dis(pt0, pt2), ::dis(pt2, pt1)) + eps);
+    }
+    return 0;
+}
+```

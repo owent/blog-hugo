@@ -1,0 +1,166 @@
+---
+title: Southeastern European 2008 Sky Code 解题报告
+tags:
+  - acm
+id: 34
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-04-29 12:08:10
+---
+
+又是我们的OJ
+
+题目链接：
+
+[http://www.cn210.com/onlinejudge/problemshow.php?pro_id=92](http://www.cn210.com/onlinejudge/problemshow.php?pro_id=92)
+
+## Description
+
+tancu likes space travels but he is a poor software developer and will never be able to buy his own spacecraft. That is why he is preparing to steal the spacecraft of Petru. There is only one problem - Petru has locked the spacecraft with a sophisticated cryptosystem based on the ID numbers of the stars from the Milky Way Galaxy. For breaking the system Stancu has to check each subset of four stars such that the only common divisor of their numbers is 1\. Nasty, isn&#39;t it? Fortunately, Stancu has succeeded to limit the number of the interesting stars to N but, any way, the possible subsets of four stars can be too many. Help him to find their number and to decide if there is a chance to break the system.</div>
+
+## Input
+
+For each test case on the first line the number N of interesting stars is given (1 &le; N &le; 10000). The second line of the test case contains the list of ID numbers of the interesting stars, separated by spaces. Each ID is a positive integer which is no greater than 10000\. The input data terminate with the end of file.
+
+## Output
+
+For each test case the program should print one line with the number of subsets with the asked property.</div>
+
+## Sample Input
+
+```
+4
+2 3 4 5
+4
+2 4 6 8
+7
+2 3 4 5 7 6 8
+```
+
+## Sample Output
+```
+1
+0
+34
+```
+
+这题是数学题，要用到组合公式和容斥原理
+
+要求最大公约数为1的4个数字的组合数量，由于有C(n,4)种取法，数量非常巨大不能枚举
+
+其实所求的组合的个数等于所有的组合减去最大公约数大于1的组合
+
+然后对于每个数比如2能整除a个数,3能整除b个数,6能整除c个数
+
+显然结果是C(4,a) + C(4,b) - C(4,c)
+
+类似的，最终结果是，对于所有的n（n满足是几个不同素数的积）
+
+能被奇数个数整除的n的组合数减去能被偶数个数整除的n的组合数既是公约数大于1的组合的数量
+
+即，令k(n)为能整除n的数的个数,p(n)是n的质因子个数，共有s个数
+
+res = C(4,s) -&nbsp;&Sigma;C(4,k(n))(-1)^p(n)
+
+需要注意的地方有二点：
+
+第一，复杂度必须控制在n * sqrt(n),否则会超时
+
+第二，可以取出所有类似4这样等于素数的多次方的数的判定，以节省时间
+
+代码如下：
+
+```cpp
+#include <cstdio>
+#include <iostream>
+#include <cstring>
+//#include <ctime>
+using namespace std;
+
+//Prime_Template_Var_Begin
+const long MAXP = 10000;
+long prime[MAXP] = {0},num_prime = 0;
+int isNotPrime[MAXP] = {1, 1};
+//Prime_Template_Var_End
+int icCount[10005] = {0};
+long long C4[10005] = {0};
+long countNum[10005];
+int main()
+{
+    //freopen("d:\\b.in", "r", stdin);
+    //clock_t tim_rcd = clock();
+
+    long n, i, j, maxnum;
+    long count;
+    long long psn, res;
+    //Prime_Begin
+    for(i = 2 ; i <  MAXP ; i ++)
+    {
+        if(! isNotPrime[i])
+            prime[num_prime ++]=i;
+        for(j = 0 ; j < num_prime && i * prime[j] <  MAXP ; j ++)
+        {
+            isNotPrime[i * prime[j]] = 1;
+            if( !(i % prime[j]))
+                break;
+        }
+    }
+    //Prime_End
+    //Par_Count_Begin
+    for(i = 0; i < num_prime; i ++)
+    {
+        icCount[ prime[i] ] = 1;
+        for(j = 2; j < 10005 && j * prime[i] < 10005; j ++)
+        {
+            if(j % prime[i] && icCount[j])
+                icCount[j * prime[i]] = icCount[j] + 1;
+        }
+    }
+    for(j = 2; j < 10005; j ++)
+        if(icCount[j])
+            icCount[j] = (icCount[j] % 2)? 1: -1;
+    //Par_Count_End
+    //Count_C4_Begin
+    for(i = 4; i < 10005; i ++)
+        C4[i] = ((long long)((i) * (i - 1) / 2) * (long long)(i - 2) / 3) * (long long)(i - 3) / 4;
+    //Count_C4_End
+    while(scanf("%ld", &n) != EOF)
+    {
+        maxnum = 0;
+        memset(countNum, 0, sizeof(countNum));
+        for(i = 0; i < n; i ++)
+        {
+            scanf("%ld", &count);
+            maxnum = (maxnum > count)? maxnum: count;
+            countNum[count] ++;
+            for(j = 2; j * j <= count; j ++)
+            {
+                if(count % j == 0)
+                {
+                    countNum[j] ++;
+                    if(j * j != count)
+                        countNum[count / j] ++;
+                }
+            }
+        }
+        if(n < 4)
+        {
+            printf("0\n");
+            continue;
+        }
+        psn = 0;
+        for(i = 2; i <= maxnum; i ++)
+        {
+            if(!icCount[i])
+                continue;
+            psn += icCount[i] * C4[countNum[i]];
+        }
+        res = C4[n];
+        printf("%lld\n", res - psn);
+    }
+
+    //cout<< (clock() - tim_rcd) * 1000 / CLK_TCK << endl;
+    return 0;
+}
+```

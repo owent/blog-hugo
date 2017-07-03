@@ -1,0 +1,110 @@
+---
+title: C++ 新特性学习（七） — 右值引用
+tags:
+  - c++0x/11
+  - c++11
+  - 右值引用
+id: 603
+categories:
+  - Article
+  - Blablabla
+  - Work
+date: 2012-05-31 04:50:21
+---
+
+C++在效率上有个硬伤。我们知道C#和Java对于类传递都是以引用的方式，而C++默认都是传值。在传值过程中就经常会进行复制构造，这完全没必要而且浪费CPU，为了解决这种问题，于是乎C++11 增加了一个新的非常数引用（reference）类型，称为右值引用（R-value reference）。我就专门看了一下关于右值引用的东西。
+右值引用在GCC 4.3之后开始支持，VS 2010（VC 10.0）已经支持，再前一点的VC版本没试过所以不知道。
+右值引用的申明标记为T &&，主要用于处理临时变量，比如函数返回的变量（暂时想不出其他例子，忽略返回值优化吧，(命名)返回值优化参见http://efnetcpp.org/wiki/Return_value_optimization，再说返回值优化能力有限是吧，比要求如单返回语句、不能使用异常等等），避免复制构造。同时在析构的时候就不会析构这个临时变量，从而提升效率。
+上代码：
+
+```cpp
+class foo {
+public:
+    int m;
+    foo(){ puts("directly"); }
+    foo(const foo&){ puts("copy"); }
+    foo(int i){ puts("int"); m = i; }
+};
+
+foo foo_func1(int flag)
+{
+    if(flag == 1)
+        return foo();
+    if(flag == 2)
+        return foo(1);
+
+    // 此处返回值优化就是个渣渣
+    foo retv;
+    return retv;
+}
+
+foo&& foo_func2(int flag)
+{
+    if(flag == 1)
+        return foo();
+    if(flag == 2)
+        return foo(1);
+
+    // 返回值优化就这么跪了
+    foo retv;
+    return std::move(retv);
+}
+
+foo rr1 = foo_func1(0); // 1
+foo&& rr2 = foo_func2(0); // 2
+```
+
+对于1，如果没有右值引用，首先rr1调用foo的复制构造函数，然后析构返回的fs对象。
+对于2，有右值引用，返回的foo对象直接传给rr2，少了一步复制构造和释放foo对象的操作。
+
+基本原理就是这样，经实测，右值引用在字符串操作上可以带来近30%的效率提升。
+
+另外，介绍两个和右值引用相关的函数
+
+## std::move 提取右值引用
+```cpp
+template<class _Ty> inline
+    typename _Ty &&
+        move(_Ty&& _Arg) _NOEXCEPT
+    {	// forward _Arg as movable
+        return ((typename _Ty &&)_Arg);
+    }
+```
+
+这个函数用于显示告诉编译器，我要拿到右值，很多情况下函数有重载的时候，会优先使用传值的形式，使用这个函数可以指定取回右值引用，这样可以阻止临时对象的析构和复制构造
+## std:: forward 引用参数转发
+```cpp
+template<class _Ty> inline
+_Ty&& forward(typename remove_reference<_Ty>::type& _Arg) {	// forward an lvalue
+    return (static_cast<_Ty&&>(_Arg));
+}
+
+template<class _Ty> inline
+_Ty&& forward(typename remove_reference<_Ty>::type&& _Arg) _NOEXCEPT {	// forward anything
+    static_assert(!is_lvalue_reference<_Ty>::value, "bad forward call");
+    return (static_cast<_Ty&&>(_Arg));
+}
+
+// 其中移除引用的代码如下
+// TEMPLATE remove_reference
+template<class _Ty>
+struct remove_reference	{ // remove reference
+    typedef _Ty type;
+};
+
+template<class _Ty>
+struct remove_reference<_Ty&> { // remove reference
+    typedef _Ty type;
+};
+
+template<class _Ty>
+struct remove_reference<_Ty&&> { // remove rvalue reference
+    typedef _Ty type;
+};
+```
+
+很多情况下，我们会直使用模板进行操作，当_Ty为左值引用类型时，u将被转换为_Ty类型的左值，否则u将被转换为_Ty类型右值，据说是拿来做保留左右值属性的完美转发的。
+
+所谓**完美转发**（详见提案[N1385](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2002/n1385.htm)），就是模板函数接收到什么类型，就转发给其调用的函数什么类型，详见：[http://blog.csdn.net/pongba/article/details/1697636](http://blog.csdn.net/pongba/article/details/1697636)
+
+漫漫长路，下一站，原子操作和多进程编程

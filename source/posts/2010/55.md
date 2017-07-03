@@ -1,0 +1,68 @@
+---
+title: HDU 3336 Count the string 解题报告
+tags:
+  - acm
+  - hdoj
+  - hdu
+id: 55
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-03-15 11:12:56
+---
+
+题目：
+http://acm.hdu.edu.cn/showproblem.php?pid=3336
+
+水题一道，主要是测试数据很水
+
+不解释，贴代码：
+
+```cpp
+#include <iostream>
+#include <cstdio>
+#include <vector>
+#include <cstring>
+using namespace std;
+
+char str[200005];
+vector<long>glo_Pos;
+int main()
+{
+    int t;
+    long output,i,n,j;
+    scanf("%d",&t);
+    while(t --)
+    {
+        output = 0;
+        glo_Pos.clear();
+        scanf("%ld %s", &n, str);
+
+        for(i = 0; i < n; i ++)
+        {
+            if(str[i] == str[0])
+            {
+                glo_Pos.push_back(i);
+                output ++;
+            }
+        }
+        output = output % 10007;
+        for(i = 1; i < n; i ++)
+        {
+            for(j = 0; j < glo_Pos.size();j ++)
+            {
+                if(str[i] == str[glo_Pos[j] + i])
+                    output = (output + 1) % 10007;
+                else
+                {
+                    glo_Pos.erase(glo_Pos.begin() + j);
+                    j --;
+                }
+            }
+        }
+
+        printf("%ld\n", output);
+    }
+    return 0;
+}
+```

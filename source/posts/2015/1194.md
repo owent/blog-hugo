@@ -1,0 +1,59 @@
+---
+title: libcopp更新 (merge boost 1.59 context)
+tags:
+  - BOOST
+  - thread
+id: 1194
+categories:
+  - Article
+  - Blablabla
+  - Work
+date: 2015-08-17 11:43:45
+---
+
+libcopp更新 (merge boost 1.59 context)
+======
+
+<!-- toc -->
+
+之前由于兴趣写了一个[协程框架](https://www.owent.net/?p=1000)，目前这个框架已经投入项目中使用。
+
+这个框架的上下文部分是使用了[boost.context](http://www.boost.org/doc/libs/1_59_0/libs/context)，但是从开始写[libcopp](https://github.com/owt5008137/libcopp)到现在，boost.context也更新了几个版本。而之前几次merge基本都是简单地跟进了*make_fcontext*和*jump_fcontext*两个函数，这次就再稍微翻了一遍其他部分的代码。
+
+boost.context的变化
+------
+
+首先是它在非windows栈分配的时候，增加了valgrind的适配。不过boost.context里的不同平台的栈缓冲区其实结构差不多，但是boost的实现里给复制粘贴了很多遍，所以我就干脆把这些地方合并啦。减少了一些重复代码。
+
+从1.58开始，boost.context增加了一个东东叫**execute_context**。看了下定位基本就是和我的[libcopp](https://github.com/owt5008137/libcopp)里的**copp**部分（也就是不包括**cotask**）一样。但是它实现地比较简单，不像**copp**，**execute_context**的执行回调直接使用了*boost::function<T>*,而**copp**里另外定义了一个*runner*。
+
+不过从实现上来说，**boost.context**做了一个优化，就是把*runner*的*boost::function<T>*直接放进了分配的栈里，减少了一次内存分配的操作，这么做的缺点就是，每个**execute_context**的创建，都必须复制调仿函数，如果仿函数复制会造成其他复制开销的话，那也是不可避免的。而**copp**的设计则是每个**coroutine_context_container**。都需要指定*runner*，而这些*runner*是可以被多个**coroutine_context_container**共享的。
+
+在我们目前项目的使用上，会针对不同的消息类型定义一个处理的task。每次收到消息都会创建一个协程任务（对应有一个**coroutine_context_container**），但是处理的调用对象（就是task的action）对于某一种特定消息来说是唯一的。可以直接预创建，而不是每次收到消息的时候重新创建。所以**copp**的方式显然更适合我们的需求。
+
+另外**execute_context**和**copp**一样，提供了获取当前执行对象的功能。并且实现方法都一样，是使用了thread local storage。不过有一点不同的是，**boost.context**直接使用了c++11的关键字，而我的**libcopp**中是会根据环境选择的。因为在使用过程中，我们发现有些平台或者环境不支持线程本地存储，比如Android。所以在这些平台中，**boost.context**的**execute_context**会不可用，而**libcopp**只是不能多线程运行。
+
+最后就是**execute_context**增加了对Windows Fiber（纤程）的支持。在开启纤程的情况下，完全使用了另一套做法。由于短期内我没有这方面的需求，而且Windows vc下目前使用原来的方式也没什么问题。所以短期内不会merge这部分内容。（另外只是代码里看到了，貌似没看到什么地方会加上开启纤程支持的宏定义）
+
+> **PS**: boost的汇编里默默地把一个系统宏换成了带BOOST_前缀的宏，然后由环境检测工具来判断是否追加这个宏。差点漏掉的说。
+
+变更列表
+------
+[libcopp](https://github.com/owt5008137/libcopp)的近期的变动如下：
+1. 跟进上下文初始化和切换的汇编代码更新
+2. 跟进增加了pe下的gnu as支持的上下文汇编支持（但是貌似不太正常）
+3. 跟进增加了**valgrind**支持
+4. 平台和工具链判定逻辑优化，目前采用和boost一样的层级
+5. 合并工具的符号替换增加BOOST_EXPORT符号
+6. this_xxx接口返回普通指针而非智能指针
+> 因为在实际使用过程中发现在保护性结束协程任务的过程中，可能会先释放智能指针，再回调析构。这种情况下，this_xxx接口调用获取智能指针的时候会导致失败而崩溃。
+
+后续计划
+------
+1. 考虑直接使用boost.context的汇编部分的接口
+> 这么做得考虑好几个问题：一是先想办法解决如何编译选项一致的问题，因为环境的不同，boost会给出不同的红定义来控制一些行为（比如是否支持valgrind、是否支持），并且必须保持和我的库一致才行；第二就是必须要能够剥离boost的头文件，只依赖库文件。boost的头文件太多太庞大了。
+
+2. 抽空也支持Windows纤程
+3. 增加一些防止接口被勿用的保护
+
+> Written with [StackEdit](https://stackedit.io/).

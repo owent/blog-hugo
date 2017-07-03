@@ -1,0 +1,135 @@
+---
+title: HDU HDOJ 3398 String 解题报告
+tags:
+  - acm
+  - hdoj
+  - hdu
+id: 31
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-05-05 16:51:22
+---
+
+题目链接：[http://acm.hdu.edu.cn/showproblem.php?pid=3398](http://acm.hdu.edu.cn/showproblem.php?pid=3398)
+
+题目要我们计算1，0的排列方式总数，并且对任意长的字符串，1的数量大于等于0的数量
+
+我们可以把题目转化为从（0，0）点到（m，n）点的方法总数，且路径不经过y=x-1这条直线
+
+然后我们可以把从（-1，-1）到（m，n）的所有路径按以y=x-1翻转，所得到的路径显然就是经过y=x-1的所有方案
+
+所以最终结论就是C(n+m,n) - C(m+n,m - 1)，结果再mod一个20100501就可以了
+
+结论出来但是我这里还WA了很久，因为为了避免减法对mod的影响，我开始把公式化简成了
+
+C(n+m,n) - C(m+n,m - 1) = （m+n）！* (n+1-m) / (（n+1）! * m!)
+
+结果无情的WA掉，而用不化简的组合的减法反而AC，我就莫名了。
+
+最后求教我们的大牛：神奇的ben1222。他帮我看了很久最后发现我的a^b % c的运算中有溢出，但是不化简的式子华丽的没被测试数据发现。然后...
+
+贴代码:
+
+```cpp
+#include <cstdio>
+#include <cstring>
+#include <iostream>
+#include <cmath>
+using namespace std;
+
+const long md = 20100501;
+
+/**
+ * a的b次方Mod c
+ * 参数为整数
+ * 使用时注意修改类型
+ */
+long PowerMod(long long a,long b,long c)
+{
+    long long tmpInt = 1;
+    while (b > 0)
+    {
+        if (b & 1)
+            tmpInt = (tmpInt * a) % c;
+        a = (a * a) % c;
+        b >>= 1;
+    }
+    return tmpInt;
+}
+
+/**
+ * 线性筛法求素数表
+ * 复杂度: O(n)
+ */
+const long MAXP = 2000005;
+long prime[MAXP] = {0},num_prime = 0;
+int isNotPrime[MAXP] = {1, 1};
+void GetPrime_Init()//初始化调用
+{
+    long i, j;
+    for(i = 2 ; i <  MAXP ; i ++)
+    {
+        if(! isNotPrime[i])
+            prime[num_prime ++] = i;
+        for(j = 0 ; j < num_prime && i * prime[j] <  MAXP ; j ++)
+        {
+            isNotPrime[i * prime[j]] = 1;
+            if( !(i % prime[j]))
+                break;
+        }
+    }
+}
+
+/**
+ * 排列组合数（素数表示法）
+ */
+// 全排列
+// 参数: A(n), *p 传出数的数组表示指针
+// 返回值：结果包含的素数个数
+long Arrangement(long n, long p[])
+{
+    long t, i;
+    for(i = 0; i < num_prime && prime[i] <= n; i ++)
+    {
+        t = n;
+        while(t)
+            *(p + i) += t / prime[i], t /= prime[i];
+    }
+    return i;
+}
+
+long numRec[3][MAXP / 10];
+//long numRec[MAXP / 10];
+int main()
+{
+    long t,n,m,r,i;
+    long tmp;
+    long long res;
+    GetPrime_Init();
+    scanf("%ld", &t);
+    while(t --)
+    {
+        cin>> n>> m;
+        res = 1;
+        memset(numRec, 0, sizeof(numRec));
+        r = Arrangement(m + n, numRec[0]);
+        Arrangement(n + 1, numRec[1]);
+        Arrangement(m, numRec[2]);
+        //res = (((m + n)! * (n + 1 - m)) / ((n + 1)! * m!)) % md;
+        tmp = n + 1 - m;
+        for(i = 0; tmp > 1 && i < num_prime && prime[i] <= tmp; i ++)
+            while(tmp > 1 && tmp % prime[i] == 0)
+                numRec[0][i] ++, tmp /= prime[i];
+
+        for(i = 0; i <= r; i ++)
+            res = (res * PowerMod(prime[i], numRec[0][i] - numRec[1][i] - numRec[2][i], md)) % md;
+
+
+        printf("%lld\n", res);
+    }
+    return 0;
+}
+```
+
+PS:我们神奇的ben1222的博客是WordPress的诶，忍不住贴一下：http://www.ben1222.com/

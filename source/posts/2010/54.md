@@ -1,0 +1,248 @@
+---
+title: Hash模板 个人模板
+tags:
+  - acm
+  - template
+id: 54
+categories:
+  - Article
+  - My ACM-ICPC Career
+date: 2010-03-15 12:58:47
+---
+
+```cpp
+/**
+ * Hash模板
+ * Based: 0
+ * template<unsigned long _SZ,class _T, unsigned long *pFun(_T _Off)>
+ * class _My_Hash_ToInt
+ * 传入数据大小_SZ,传入类型_T,Hash函数
+ * 传入类型_T必须重载 = 和 == 符号
+ * 收录了ELFHash函数
+ * 主要是为了判重的简化些的模板
+ * Hash算法性能比较见 http://www.cnblogs.com/lonelycatcher/archive/2011/08/23/2150587.html
+ */
+
+const long hashsize = 51071; //Hash表大小(注意修改)
+// 各种Hash算法
+unsigned int SDBMHash(char *str)
+{
+    unsigned int hash = hashsize;
+
+    while (*str)
+    {
+        // equivalent to: hash = 65599*hash + (*str++);
+        hash = (*str++) + (hash << 6) + (hash << 16) - hash;
+    }
+
+    return (hash & 0x7FFFFFFF);
+}
+
+// RS Hash Function
+unsigned int RSHash(char *str)
+{
+    unsigned int b = 378551;
+    unsigned int a = 63689;
+    unsigned int hash = hashsize;
+
+    while (*str)
+    {
+        hash = hash * a + (*str++);
+        a *= b;
+    }
+
+    return (hash & 0x7FFFFFFF);
+}
+
+// JS Hash Function
+unsigned int JSHash(char *str)
+{
+    unsigned int hash = 1315423911;
+
+    while (*str)
+    {
+        hash ^= ((hash << 5) + (*str++) + (hash >> 2));
+    }
+
+    return (hash & 0x7FFFFFFF);
+}
+
+// P. J. Weinberger Hash Function
+unsigned int PJWHash(char *str)
+{
+    unsigned int BitsInUnignedInt = (unsigned int)(sizeof(unsigned int) * 8);
+    unsigned int ThreeQuarters    = (unsigned int)((BitsInUnignedInt  * 3) / 4);
+    unsigned int OneEighth        = (unsigned int)(BitsInUnignedInt / 8);
+    unsigned int HighBits         = (unsigned int)(0xFFFFFFFF) << (BitsInUnignedInt - OneEighth);
+    unsigned int hash             = hashsize;
+    unsigned int test             = 0;
+
+    while (*str)
+    {
+        hash = (hash << OneEighth) + (*str++);
+        if ((test = hash & HighBits) != 0)
+        {
+            hash = ((hash ^ (test >> ThreeQuarters)) & (~HighBits));
+        }
+    }
+
+    return (hash & 0x7FFFFFFF);
+}
+
+// ELF Hash Function
+unsigned int ELFHash(char *str)
+{
+    unsigned int hash = hashsize;
+    unsigned int x    = 0;
+
+    while (*str)
+    {
+        hash = (hash << 4) + (*str++);
+        if ((x = hash & 0xF0000000L) != 0)
+        {
+            hash ^= (x >> 24);
+            hash &= ~x;
+        }
+    }
+
+    return (hash & 0x7FFFFFFF);
+}
+
+// BKDR Hash Function
+unsigned int BKDRHash(char *str)
+{
+    unsigned int seed = 131; // 31 131 1313 13131 131313 etc..
+    unsigned int hash = hashsize;
+
+    while (*str)
+    {
+        hash = hash * seed + (*str++);
+    }
+
+    return (hash & 0x7FFFFFFF);
+}
+
+// DJB Hash Function
+unsigned int DJBHash(char *str)
+{
+    unsigned int hash = 5381;
+
+    while (*str)
+    {
+        hash += (hash << 5) + (*str++);
+    }
+
+    return (hash & 0x7FFFFFFF);
+}
+
+// AP Hash Function
+unsigned int APHash(char *str)
+{
+    unsigned int hash = hashsize;
+    int i;
+
+    for (i=0; *str; i++)
+    {
+        if ((i & 1) == 0)
+        {
+            hash ^= ((hash << 7) ^ (*str++) ^ (hash >> 3));
+        }
+        else
+        {
+            hash ^= (~((hash << 11) ^ (*str++) ^ (hash >> 5)));
+        }
+    }
+
+    return (hash & 0x7FFFFFFF);
+}
+
+// 程序模板
+template<typename _T>
+class _My_Hash_ToInt_Data
+{
+public:
+    _My_Hash_ToInt_Data()
+    {
+        times = 0;
+        next = -1;
+    }
+    _T data;
+    long times;
+    long next;
+};
+template<long _SZ,class _T, unsigned long pFun(_T& _Off)>
+class _My_Hash_ToInt
+{
+public:
+    _My_Hash_ToInt()
+    {
+        memset(hash, -1, sizeof(hash));
+        length = 0;
+    };
+    ~_My_Hash_ToInt(){};
+    long find(_T _Off)
+    {
+        long pos = hash[pFun(_Off)];
+        while(pos >= 0)
+        {
+            if(data[pos].data == _Off)
+                return pos;
+            else
+                pos = data[pos].next;
+        }
+        return -1;
+    }
+    long insert(_T _Off)
+    {
+        long oldPos = pFun(_Off);
+        long pos = hash[oldPos];
+        while(pos >= 0)
+        {
+            if(data[pos].data == _Off)
+            {
+                data[pos].times ++;
+                return pos;
+            }
+            else
+                pos = data[pos].next;
+        }
+        data[length].data = _Off;
+        data[length].times = 1;
+        data[length].next = hash[oldPos];
+        hash[oldPos] = length ;
+        return length ++;
+    }
+    void clear()
+    {
+        length = 0;
+        memset(hash, -1, sizeof(hash));
+        memset(data, -1, sizeof(data));
+    }
+    //Member
+    long length;
+    _My_Hash_ToInt_Data<_T> data[_SZ];
+    long hash[hashsize];
+};
+
+//节点类（注意修改）
+class node
+{
+public:
+    char str[60];
+    bool operator == (node &strin)
+    {
+        return !strcmp(str, strin.str);
+    }
+    node& operator = (node &strin)
+    {
+        strcpy(str, strin.str);
+        return (*this);
+    }
+};
+//扩展Hash函数（注意修改）
+unsigned long ELFHashEx(node &strIn)
+{
+    return ELFHash(strIn.str);
+}
+_My_Hash_ToInt<10005, node, ELFHashEx>hash;//Hash类例子
+```
