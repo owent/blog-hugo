@@ -17,11 +17,11 @@ dataDir:                    "data"
 defaultExtension:           "html"
 defaultLayout:              "post"
 # Missing translations will default to this content language
-defaultContentLanguage:     "zh-CN"
+defaultContentLanguage:     "zh-cn"
 # Renders the default content language in subdir, e.g. /en/. The root directory / will redirect to /en/
 defaultContentLanguageInSubdir: false
 # The below example will disable all page types and will render nothing.
-disableKinds:               false
+disableKinds:               ["taxonomyTerm"]
 disableLiveReload:          false
 # Enable GitInfo feature
 enableGitInfo:              false
@@ -39,7 +39,7 @@ footnoteReturnLinkContents: ""
 
 # google analytics tracking id
 googleAnalytics:            ""
-languageCode:               "zh-CN"
+languageCode:               "zh-cn"
 layoutDir:                  "layouts"
 # Enable Logging
 log:                        false
@@ -71,7 +71,7 @@ pygmentsStyle:              "monokai"
 # true: use pygments-css or false: color-codes directly
 pygmentsUseClasses:         false
 # maximum number of items in the RSS feed
-rssLimit:                   15
+rssLimit:                   100
 # default sitemap configuration map
 sitemap:                     sitemap.xml
 # filesystem path to read files relative from
@@ -81,7 +81,7 @@ staticDir:                  "static"
 stepAnalysis:               false
 # theme to use (located by default in /themes/THEMENAME/)
 themesDir:                  "themes"
-theme:                      "hugo-xmin"
+theme:                      "distinctionpp"
 title:                      "I'm OWenT"
 # if true, use /filename.html instead of /filename/
 uglyURLs:                   true
@@ -95,25 +95,60 @@ verbose:                    false
 verboseLog:                 false
 # watch filesystem for changes and recreate as needed
 watch:                      true
+ignoreFiles:
+  - "README\\.md$"
 
 # custom options
 
 params:
   description: "Chanllege Everything"
   author: "OWenT"
-  GitHubUser: "owt5008137"
-  SidebarRecentLimit: 5
+  githubuser: "owt5008137"
+  favicon: /favicon.ico
+  search:
+    url: //google.com/search
+    keywork: q
+  bootstrap:
+    js: //cdn.bootcss.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js
+    css: //cdn.bootcss.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css
+  highlightjs:
+    style: "default"      # style name
+    langs: ['capnproto', 'cmake', 'd', 'dos', 'erlang', 'go', 'less', 'lua', 'php', 'powershell', 'protobuf', 'profile', 'typescript', 'vim']
+    selector: 'pre>code'
+    version: '9.12.0'
+    url:                  # 
+      js: "//cdn.bootcss.com/highlight.js/%VERSION%/highlight.min.js"
+      style: "//cdn.bootcss.com/highlight.js/%VERSION%/styles/%STYLE%.min.css"
+      lang: "//cdn.bootcss.com/highlight.js/%VERSION%/languages/%LANG%.min.js"
+    options:              # options of highlight.js see http://highlightjs.readthedocs.io/en/latest/api.html#configure-options
+      tabReplace: '    '
+      useBR: false
+      #classPrefix: 'hljs-'
+      languages: {}   # language alias
+
+menu:
+  main:
+    - Name: "Home"
+      Weight: 1
+      Identifier: "home"
+      URL: "/"
+    - Name: "Archive"
+      Weight: 2
+      Identifier: "archive"
+      URL: "/archive"
+    - Name: "About"
+      Weight: 3
+      Identifier: "about"
+      URL: "/about/"
 
 author:
     name: "OWenT"
     email: "admin@owent.net"
 
-ignoreFiles:
-  - "README\\.md$"
-
 taxonomies:
-  category: "categories"
   tag: "tags"
+  category: "categories"
+  archive: "archive"
 
 blackfriday:
   taskLists: true
@@ -134,6 +169,4 @@ blackfriday:
     - hardLineBreak
     - footnotes
   extensionsmask:
-
-copyright: "本作品由 [owent](//www.owent.net) 创作，采用[知识共享署名-非商业性使用-相同方式共享 4.0 国际许可协议](//creativecommons.org/licenses/by-nc-sa/4.0/)进行许可。"
 ---
