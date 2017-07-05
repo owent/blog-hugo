@@ -1,12 +1,12 @@
 ---
-baseURL: "https://owent.net/"
+baseURL: "//owent.net"
 
 # include content marked as draft
 buildDrafts:                false
 # include content with publishdate in the future
 buildFuture:                false
 # include content already expired
-buildExpired:               false
+buildExpired:               true
 # enable this to make all relative URLs relative to content root. Note that this does not affect absolute URLs.
 relativeURLs:               true
 canonifyURLs:               true
@@ -37,8 +37,6 @@ enableMissingTranslationPlaceholders: false
 footnoteAnchorPrefix:       ""
 footnoteReturnLinkContents: ""
 
-# google analytics tracking id
-googleAnalytics:            ""
 languageCode:               "zh-cn"
 layoutDir:                  "layouts"
 # Enable Logging
@@ -111,6 +109,9 @@ params:
   bootstrap:
     js: //cdn.bootcss.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js
     css: //cdn.bootcss.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css
+    tether: 
+      js: //cdn.bootcss.com/tether/1.4.0/js/tether.min.js
+      css: //cdn.bootcss.com/tether/1.4.0/css/tether.min.css
   highlightjs:
     style: "default"      # style name
     langs: ['capnproto', 'cmake', 'd', 'dos', 'erlang', 'go', 'less', 'lua', 'php', 'powershell', 'protobuf', 'profile', 'typescript', 'vim']
@@ -125,6 +126,9 @@ params:
       useBR: false
       #classPrefix: 'hljs-'
       languages: {}   # language alias
+  jquery:
+    js: //cdn.bootcss.com/jquery/3.2.1/jquery.min.js
+    migrate: //cdn.bootcss.com/jquery-migrate/1.4.1/jquery-migrate.min.js
 
 menu:
   main:
@@ -149,6 +153,9 @@ taxonomies:
   tag: "tags"
   category: "categories"
   archive: "archive"
+
+DisqusShortname: owent
+googleAnalytics: "UA-19298704-1"
 
 blackfriday:
   taskLists: true
