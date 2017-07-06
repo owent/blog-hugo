@@ -21,7 +21,7 @@ defaultContentLanguage:     "zh-cn"
 # Renders the default content language in subdir, e.g. /en/. The root directory / will redirect to /en/
 defaultContentLanguageInSubdir: false
 # The below example will disable all page types and will render nothing.
-disableKinds:               ["taxonomyTerm"]
+disableKinds:               []
 disableLiveReload:          false
 # Enable GitInfo feature
 enableGitInfo:              false
