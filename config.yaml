@@ -81,10 +81,6 @@ stepAnalysis:               false
 themesDir:                  "themes"
 theme:                      "distinctionpp"
 title:                      "I'm OWenT"
-# if true, use /filename.html instead of /filename/
-uglyURLs:                   true
-# Do not make the url/path to lowercase
-disablePathToLower:         true
 # if true, auto-detect Chinese/Japanese/Korean Languages in the content. (.Summary and .WordCount can work properly in CJKLanguage)
 hasCJKLanguage:             true
 # verbose output
@@ -136,10 +132,10 @@ menu:
       Weight: 1
       Identifier: "home"
       URL: "/"
-    - Name: "Archive"
+    - Name: "Archives"
       Weight: 2
-      Identifier: "archive"
-      URL: "/archive"
+      Identifier: "archives"
+      URL: "/archives"
     - Name: "About"
       Weight: 3
       Identifier: "about"
@@ -152,7 +148,6 @@ author:
 taxonomies:
   tag: "tags"
   category: "categories"
-  archive: "archive"
 
 DisqusShortname: owent
 googleAnalytics: "UA-19298704-1"
