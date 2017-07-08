@@ -54,7 +54,7 @@ noTimes:                    false
 paginate:                   10
 paginatePath:               "page"
 permalinks:
-  post: /:year/:id.html
+  post: /:year/:id
 
 # Pluralize titles in lists using inflect
 pluralizeListTitles:        true
