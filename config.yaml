@@ -103,34 +103,44 @@ params:
     url: //google.com/search
     keywork: q
   bootstrap:
-    js: //cdn.bootcss.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js
-    css: //cdn.bootcss.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css
+    # js: //cdn.bootcss.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js
+    js: //maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js
+    # css: //cdn.bootcss.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css
+    css: //maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css
     tether: 
-      js: //cdn.bootcss.com/tether/1.4.0/js/tether.min.js
-      css: //cdn.bootcss.com/tether/1.4.0/css/tether.min.css
+      # js: //cdn.bootcss.com/tether/1.4.0/js/tether.min.js
+      js: //cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js
+      # css: //cdn.bootcss.com/tether/1.4.0/css/tether.min.css
+      css: //cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/css/tether.min.css
   highlightjs:
     style: "default"      # style name
     langs: ['capnproto', 'cmake', 'd', 'dos', 'erlang', 'go', 'less', 'lua', 'php', 'powershell', 'protobuf', 'profile', 'typescript', 'vim']
     selector: 'pre>code'
     version: '9.12.0'
     url:                  # 
-      js: "//cdn.bootcss.com/highlight.js/%VERSION%/highlight.min.js"
-      style: "//cdn.bootcss.com/highlight.js/%VERSION%/styles/%STYLE%.min.css"
-      lang: "//cdn.bootcss.com/highlight.js/%VERSION%/languages/%LANG%.min.js"
+      # js: "//cdn.bootcss.com/highlight.js/%VERSION%/highlight.min.js"
+      js: //cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/highlight.min.js
+      # style: "//cdn.bootcss.com/highlight.js/%VERSION%/styles/%STYLE%.min.css"
+      style: //cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/styles/%STYLE%.min.css
+      # lang: "//cdn.bootcss.com/highlight.js/%VERSION%/languages/%LANG%.min.js"
+      lang: //cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/languages/%LANG%.min.js
     options:              # options of highlight.js see http://highlightjs.readthedocs.io/en/latest/api.html#configure-options
       tabReplace: '    '
       useBR: false
       #classPrefix: 'hljs-'
       languages: {}   # language alias
   katex:
-    js: //cdn.bootcss.com/KaTeX/0.7.1/katex.min.js
-    css: //cdn.bootcss.com/KaTeX/0.7.1/katex.min.css
-    autorender: //cdn.bootcss.com/KaTeX/0.7.1/contrib/auto-render.min.js
+    js: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.js
+    css: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css
+    autorender: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/contrib/auto-render.min.js
   mathjax:
-    js: //cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML
+    # js: //cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML
+    # js: //cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML
   jquery:
-    js: //cdn.bootcss.com/jquery/3.2.1/jquery.min.js
-    migrate: //cdn.bootcss.com/jquery-migrate/1.4.1/jquery-migrate.min.js
+    # js: //cdn.bootcss.com/jquery/3.2.1/jquery.min.js
+    js: //code.jquery.com/jquery-3.2.1.min.js
+    # migrate: //cdn.bootcss.com/jquery-migrate/1.4.1/jquery-migrate.min.js
+    migrate: //code.jquery.com/jquery-migrate-1.4.1.min.js
 
 menu:
   main:
