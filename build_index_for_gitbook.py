@@ -20,7 +20,7 @@ REPLACE_PATTERN = re.compile('([\\[\\]\\(\\)])')
 
 def walk_dir(parent_dir, *, ident=''):
     print('[INFO] Analysis for directory {0}'.format(parent_dir))
-    all_files = glob.glob(os.path.join(parent_dir, '*'), recursive=False)
+    all_files = glob.glob(os.path.join(parent_dir, '*'))
     if all_files is None or len(all_files) == 0:
         return
     all_files.sort(reverse=True)
@@ -65,6 +65,8 @@ def walk_dir(parent_dir, *, ident=''):
 
 
 if __name__ == "__main__":
-    for root_dir in glob.glob(os.path.join('source', 'posts', '*')):
+    dirs = glob.glob(os.path.join('source', 'post', '*'))
+    dirs.sort(reverse=True)
+    for root_dir in dirs:
         if os.path.isdir(root_dir):
             walk_dir(root_dir, ident='')

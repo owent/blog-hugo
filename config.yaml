@@ -54,7 +54,7 @@ noTimes:                    false
 paginate:                   10
 paginatePath:               "page"
 permalinks:
-  post: /:year/:id
+  post: /:year/:filename.html
 
 # Pluralize titles in lists using inflect
 pluralizeListTitles:        true
@@ -73,14 +73,16 @@ rssLimit:                   100
 # default sitemap configuration map
 sitemap:                     sitemap.xml
 # filesystem path to read files relative from
-source:                     "posts"
-staticDir:                  "static"
+source:                     ""
+staticDir:                  "source/post"
 # display memory and timing of different steps of the program
 stepAnalysis:               false
 # theme to use (located by default in /themes/THEMENAME/)
 themesDir:                  "themes"
 theme:                      "distinctionpp"
 title:                      "I'm OWenT"
+# if true, use /filename.html instead of /filename/
+uglyURLs:                   true
 # if true, auto-detect Chinese/Japanese/Korean Languages in the content. (.Summary and .WordCount can work properly in CJKLanguage)
 hasCJKLanguage:             true
 # verbose output
@@ -99,6 +101,7 @@ params:
   author: "OWenT"
   githubuser: "owt5008137"
   favicon: /favicon.ico
+  ugly: ".html"
   search:
     url: //google.com/search
     keywork: q
@@ -113,7 +116,7 @@ params:
       # css: //cdn.bootcss.com/tether/1.4.0/css/tether.min.css
       css: //cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/css/tether.min.css
   highlightjs:
-    style: "default"      # style name
+    style: "vs2015"      # style name
     langs: ['capnproto', 'cmake', 'd', 'dos', 'erlang', 'go', 'less', 'lua', 'php', 'powershell', 'protobuf', 'profile', 'typescript', 'vim']
     selector: 'pre>code'
     version: '9.12.0'
@@ -151,11 +154,11 @@ menu:
     - Name: "Archives"
       Weight: 2
       Identifier: "archives"
-      URL: "/archives"
+      URL: "/archives.html"
     - Name: "About"
       Weight: 3
       Identifier: "about"
-      URL: "/about/"
+      URL: "/about.html"
 
 author:
     name: "OWenT"
