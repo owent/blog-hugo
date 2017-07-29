@@ -51,7 +51,7 @@ newContentEditor:           ""
 noChmod:                    false
 # Don't sync modification time of files
 noTimes:                    false
-paginate:                   10
+paginate:                   20
 paginatePath:               "page"
 permalinks:
   post: /:year/:filename
