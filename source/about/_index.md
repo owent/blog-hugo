@@ -16,7 +16,7 @@ date: 2009-09-01
 * 2011.06-2012.06: 腾讯科技\(上海\)有限公司 - 北极光工作室后台组 - 实习
 * 2012.06-2014.10: 腾讯科技\(上海\)有限公司 - 北极光工作室后台组 - 成员
 * 2014.10-2016.10: 上海莫游网络科技有限公司 - 联合创始人、CTO
-* 2016.10-至今: 上海格奕网络科技有限公司 - 后端技术负责人
+* 2016.10-2017.07: 上海格奕网络科技有限公司 - 后端技术负责人
 
 # 项目经历
 
@@ -28,7 +28,7 @@ date: 2009-09-01
 > * 游戏服务器架构设计和开发，系统方案设计和部分实现
 >   * 跨平台转表工具及加载
 >     * 系统支持 linux、macOS、Windows、Android、iOS
->     * 语言支持: c++、lua和c\#\(unity+mono,.net core, .net framework\)
+>     * 语言支持: c++、lua和c\#\(unity+mono,.net core, .net framework\)、javascript、python等
 >   * 自研协程系统和相应的调度器和RPC系统及协程栈池
 >   * 自研redis cluster高可用接入方案
 >   * 各项服务器系统接入的Unity 3D适配
@@ -47,14 +47,16 @@ date: 2009-09-01
 >   * 包含不停服更新、加密和反作弊、断线重连、（灰度）多平台更新策略等
 >   * 跨平台转表工具及加载
 >     * 系统支持: linux、macOS、Windows、Android和iOS
->     * 语言支持: lua和c++
+>     * 语言支持: lua、c++、javascript、python等
 >   * 自研协程系统和响应的调度器和RPC系统
 >   * 自研redis cluster高可用接入方案
+>   * 实现不停服更新
 > * 内部devops工具、发布工具和运维系统的开发和维护（包含自研开发发布工具、jenkins、仓库管理、运维系统等）
 > * 客户端底层模块的设计、性能分析和优化（如：自适应LRU内存缓存系统、资源加密方案、基于bsdiff的差分更新等）
 > * 服务器部分逻辑和性能分析及优化
 > * 程序组项目进度管理，质量控制和团队管理
 > * 产品方向性讨论、系统设计和功能设计
+> * 程序组人才培养
 > * 周边工具的开发与维护
 
 ## 2011年06月 — 2014年10月：腾讯科技（上海）有限公司
@@ -80,7 +82,7 @@ date: 2009-09-01
 * Github-主站: [https://github.com/owt5008137](https://github.com/owt5008137)
 * Github-个人Utility工具集: [https://github.com/owent-utils](https://github.com/owent-utils)
 * Github-参与的开源项目: [https://github.com/owent-contrib](https://github.com/owent-contrib)
-* Excel转表工具集（Excel -&gt; Protobuf、Lua、Msgpack、Json、Xml）
+* Excel转表工具集（Excel -&gt; Protobuf、Lua、Msgpack、Json、Xml\Javascript）
 
 > xresloader – [https://github.com/xresloader](https://github.com/xresloader)
 >
@@ -113,17 +115,14 @@ date: 2009-09-01
 >
 > Clang+LLVM+Libc++: [https://github.com/owent-utils/bash-shell/tree/master/LLVM%26Clang%20Installer](https://github.com/owent-utils/bash-shell/tree/master/LLVM%26Clang Installer)
 
-* WordPress代码高亮插件: WP-Code-Highlight.js
-
-> 仓库地址: [https://github.com/owt5008137/WP-Code-Highlight.js](https://github.com/owt5008137/WP-Code-Highlight.js)
->
-> WordPress官方下载地址: [https://wordpress.org/plugins/wp-code-highlightjs/](https://wordpress.org/plugins/wp-code-highlightjs/)
-
 * 极简单且带扩展语法的ini读取工具: [libiniloader – https://github.com/owt5008137/libiniloader](https://github.com/owt5008137/libiniloader)
 * 命令绑定和程序选项解决方案: [CmdOption – https://github.com/owt5008137/CmdOption](https://github.com/owt5008137/CmdOption)
 * redis高可用解决方案: hiredis-happ – [https://github.com/owt5008137/hiredis-happ](https://github.com/owt5008137/hiredis-happ)
 
 > 首先支持redis cluster集群，支持自动重试、断线重连、按需连接
+
+* WordPress代码高亮插件: [WP-Code-Highlight.js](https://wordpress.org/plugins/wp-code-highlightjs/) - https://github.com/owt5008137/WP-Code-Highlight.js
+* 静态化博客系统主题 [hexo-theme-distinctionpp](https://github.com/owt5008137/hexo-theme-distinctionpp)、[hugo-theme-distinctionpp](https://github.com/owt5008137/hugo-theme-distinctionpp)
 
 其他的开源仓库没有严格控制代码质量，有些只是自己平常使用，还有些个人的代码记录，所以都不列举了
 
