@@ -12,7 +12,7 @@ date: 2009-09-01
 
 # 工作学习经历
 
-* 2008.09-2012.06: 华东理工大学 - **计算机科学与技术**专业 - **本科**
+* 2008.09-2012.06: 华东理工大学 - 计算机科学与技术 - 本科
 * 2011.06-2012.06: 腾讯科技\(上海\)有限公司 - 北极光工作室后台组 - 实习
 * 2012.06-2014.10: 腾讯科技\(上海\)有限公司 - 北极光工作室后台组 - 成员
 * 2014.10-2016.10: 上海莫游网络科技有限公司 - 联合创始人、CTO
@@ -31,9 +31,11 @@ date: 2009-09-01
 >     * 语言支持: c++、lua和c\#\(unity+mono,.net core, .net framework\)、javascript、python等
 >   * 自研协程系统和相应的调度器和RPC系统及协程栈池
 >   * 自研redis cluster高可用接入方案
->   * 各项服务器系统接入的Unity 3D适配
+>   * 各项服务器系统接入的Unity 3D适配（atframework的网关层接入、断线重连、客户端加密和密钥交换和网络层优化，转表工具支持）
+>   * 服务器框架的跨语言支持（实现了纯C binding和C# binding）
 > * 内部devops工具、发布工具的开发和维护（包含自研开发发布工具、jenkins等）
-> * 客户端部分底层模块的适配和优化
+> * 客户端部分底层模块的适配和优化(主要是接入Protobuf v3的动态Message的非反射实现)
+> * 客户端脚本化打包流程和持续集成
 > * 服务器部分逻辑和性能分析及优化
 > * 程序组项目团队管理和质量控制
 > * 周边工具的开发与维护
@@ -82,16 +84,14 @@ date: 2009-09-01
 * Github-主站: [https://github.com/owt5008137](https://github.com/owt5008137)
 * Github-个人Utility工具集: [https://github.com/owent-utils](https://github.com/owent-utils)
 * Github-参与的开源项目: [https://github.com/owent-contrib](https://github.com/owent-contrib)
-* Excel转表工具集（Excel -&gt; Protobuf、Lua、Msgpack、Json、Xml\Javascript）
+* Excel转表工具集（Excel -&gt; Protobuf、Lua、Msgpack、Json、Xml\Javascript）: https://github.com/xresloader
 
-> xresloader – [https://github.com/xresloader](https://github.com/xresloader)
->
 > 1. 转表核心引擎: [xresloader](https://github.com/xresloader/xresloader)
 > 2. 批量转表规范: [xresconv-conf](https://github.com/xresloader/xresconv-conf)
 > 3. 跨平台批量转表CLI工具: [xresconv-cli](https://github.com/xresloader/xresconv-cli)
 > 4. 跨平台批量转表GUI工具: [xresconv-gui](https://github.com/xresloader/xresconv-gui)
 
-* 高性能、全异步、跨平台、去中心化游戏服务器框架\([atframework](https://atframe.work/)\): [https://github.com/atframework](https://github.com/atframework)
+* 高性能、全异步、跨平台、去中心化游戏服务器框架\([atframework](https://atframe.work/)\): https://github.com/atframework
 
 > * [Utility](https://github.com/atframework/atframe_utils)
 > * [libatbus - 高性能进程间通信和管理](https://github.com/atframework/libatbus) 
@@ -107,21 +107,12 @@ date: 2009-09-01
 >   * 示例的协程RPC和任务管理
 > * [AtgwInnerCli-CSharp - atgateway的C\#适配](https://github.com/atframework/AtgwInnerCli-CSharp)（纯C客户端API的包装，可用于Unity 3D）
 
-* 高性能、跨平台C++协程框架: [libcopp – https://github.com/owt5008137/libcopp](https://github.com/owt5008137/libcopp)
-* cmake 的一些扩展模块和C++版本适配方案: [https://github.com/owent-utils/cmake](https://github.com/owent-utils/cmake)
-* 编译器构建脚本
-
-> GCC:  [https://github.com/owent-utils/bash-shell/tree/master/GCC%20Installer](https://github.com/owent-utils/bash-shell/tree/master/GCC Installer)
->
-> Clang+LLVM+Libc++: [https://github.com/owent-utils/bash-shell/tree/master/LLVM%26Clang%20Installer](https://github.com/owent-utils/bash-shell/tree/master/LLVM%26Clang Installer)
-
-* 极简单且带扩展语法的ini读取工具: [libiniloader – https://github.com/owt5008137/libiniloader](https://github.com/owt5008137/libiniloader)
-* 命令绑定和程序选项解决方案: [CmdOption – https://github.com/owt5008137/CmdOption](https://github.com/owt5008137/CmdOption)
-* redis高可用解决方案: hiredis-happ – [https://github.com/owt5008137/hiredis-happ](https://github.com/owt5008137/hiredis-happ)
-
-> 首先支持redis cluster集群，支持自动重试、断线重连、按需连接
-
-* WordPress代码高亮插件: [WP-Code-Highlight.js](https://wordpress.org/plugins/wp-code-highlightjs/) - https://github.com/owt5008137/WP-Code-Highlight.js
+* Redis高可用解决方案:  [hiredis-happ](https://github.com/owt5008137/hiredis-happ)\(首先支持redis cluster集群，支持自动重试、断线重连、按需连接\)
+* 高性能、跨平台C++协程框架: [libcopp](https://github.com/owt5008137/libcopp)
+* cmake 的一些扩展模块和C++版本适配方案: [owent-utils/cmake](https://github.com/owent-utils/cmake)
+* 编译器构建脚本(最新版本 [GCC](https://github.com/owent-utils/bash-shell/tree/master/GCC%20Installer)和[Clang+LLVM+Libc++](https://github.com/owent-utils/bash-shell/tree/master/LLVM%26Clang%20Installer))
+* 极简单且带扩展语法的ini读取工具: [libiniloader](https://github.com/owt5008137/libiniloader)
+* WordPress代码高亮插件: [WP-Code-Highlight.js](https://wordpress.org/plugins/wp-code-highlightjs/)
 * 静态化博客系统主题 [hexo-theme-distinctionpp](https://github.com/owt5008137/hexo-theme-distinctionpp)、[hugo-theme-distinctionpp](https://github.com/owt5008137/hugo-theme-distinctionpp)
 
 其他的开源仓库没有严格控制代码质量，有些只是自己平常使用，还有些个人的代码记录，所以都不列举了
@@ -134,12 +125,16 @@ date: 2009-09-01
 4. 2012年09月 华东理工大学，校一等奖学金
 5. 2014年8月 腾讯科技（上海）有限公司，年中考评：5星（优秀）
 
+--- 
 # 技术栈/关键字
 
-```
-编程语言: bash,cmake,c/c++(11/14/17),lua,python,javascript,typescript,c#,html,java,less,sass,php,sql,markdown
-库: jemalloc/ptmalloc/tcmalloc,libuv/libevent,boost,bootstrap,jquery,v8,.net,angularjs,vue.js,nodejs,websocket,qt
-应用和框架: redis,msgpack,protobuf,flatbuffers,ci,jenkins,travis,appveyor,unity,cocos2d-x,cap’n proto,gRPC,mono/.net core
-主题: 计算机算法,分布式系统,游戏服务器架构设计和开发,linux环境编程,操作系统,编译原理,设计模式,协程,vscode插件开发,wordpress插件及主题开发
-工具: git,svn,p4,pandoc,graphviz,valgrind,gdb/lldb,perf,gperf,binutils/readelf/tcpdump等,mingw,msys,wsl,qemu,kvm,docker
-```
+编程语言: c/c++(11/14/17),bash,cmake,lua,python,javascript,typescript,c#,html,java,less,sass,php,sql,markdown 
+
+库: jemalloc/ptmalloc/tcmalloc,libuv/libevent,boost,bootstrap,jquery,v8,.net,angularjs,vue.js,nodejs,websocket,qt 
+
+框架和服务: redis,msgpack,protobuf,flatbuffers,ci,jenkins,travis,appveyor,unity,cocos2d-x,cap’n proto,gRPC,mono/.net core 
+
+主题: 计算机算法,分布式系统,游戏服务器架构设计和开发,linux环境编程,操作系统,编译原理,设计模式,协程,coroutine,vscode插件开发,wordpress插件及主题开发 
+
+工具: git,svn,p4,pandoc,graphviz,valgrind,gdb/lldb,perf,gperf,binutils/readelf/tcpdump等,mingw,msys,wsl,qemu,kvm,docker 
+
