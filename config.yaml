@@ -108,15 +108,15 @@ params:
     sitename: q1
     siteprefix: "site:"
   bootstrap:
-    # js: //cdn.bootcss.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js
-    js: //maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js
-    # css: //cdn.bootcss.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css
-    css: //maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css
+    # js: //cdn.bootcss.com/bootstrap/4.0.0-beta.3/js/bootstrap.min.js
+    js: //maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/js/bootstrap.min.js
+    # css: //cdn.bootcss.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css
+    css: //maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css
     tether: 
-      # js: //cdn.bootcss.com/tether/1.4.0/js/tether.min.js
-      js: //cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js
-      # css: //cdn.bootcss.com/tether/1.4.0/css/tether.min.css
-      css: //cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/css/tether.min.css
+      # js: //cdn.bootcss.com/tether/1.4.3/js/tether.min.js
+      js: //cdnjs.cloudflare.com/ajax/libs/tether/1.4.3/js/tether.min.js
+      # css: //cdn.bootcss.com/tether/1.4.3/css/tether.min.css
+      css: //cdnjs.cloudflare.com/ajax/libs/tether/1.4.3/css/tether.min.css
   highlightjs:
     style: "vs2015"      # style name
     langs: ['capnproto', 'cmake', 'd', 'dos', 'erlang', 'go', 'less', 'lua', 'php', 'powershell', 'protobuf', 'profile', 'typescript', 'vim']
@@ -135,12 +135,12 @@ params:
       #classPrefix: 'hljs-'
       languages: {}   # language alias
   katex:
-    js: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.js
-    css: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css
-    autorender: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/contrib/auto-render.min.js
+    js: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.8.3/katex.min.js
+    css: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.8.3/katex.min.css
+    autorender: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.8.3/contrib/auto-render.min.js
   mathjax:
-    # js: //cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML
-    # js: //cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML
+    # js: //cdn.bootcss.com/mathjax/2.7.2/MathJax.js?config=TeX-AMS-MML_HTMLorMML
+    # js: //cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-AMS-MML_HTMLorMML
   jquery:
     # js: //cdn.bootcss.com/jquery/3.2.1/jquery.min.js
     js: //code.jquery.com/jquery-3.2.1.min.js
