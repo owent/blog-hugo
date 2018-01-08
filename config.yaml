@@ -112,11 +112,8 @@ params:
     js: //maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/js/bootstrap.min.js
     # css: //cdn.bootcss.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css
     css: //maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css
-    tether: 
-      # js: //cdn.bootcss.com/tether/1.4.3/js/tether.min.js
-      js: //cdnjs.cloudflare.com/ajax/libs/tether/1.4.3/js/tether.min.js
-      # css: //cdn.bootcss.com/tether/1.4.3/css/tether.min.css
-      css: //cdnjs.cloudflare.com/ajax/libs/tether/1.4.3/css/tether.min.css
+    popper:
+      js: //cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js
   highlightjs:
     style: "vs2015"      # style name
     langs: ['capnproto', 'cmake', 'd', 'dos', 'erlang', 'go', 'less', 'lua', 'php', 'powershell', 'protobuf', 'profile', 'typescript', 'vim']
@@ -142,9 +139,7 @@ params:
     # js: //cdn.bootcss.com/mathjax/2.7.2/MathJax.js?config=TeX-AMS-MML_HTMLorMML
     # js: //cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-AMS-MML_HTMLorMML
   jquery:
-    # js: //cdn.bootcss.com/jquery/3.2.1/jquery.min.js
-    js: //code.jquery.com/jquery-3.2.1.min.js
-    # migrate: //cdn.bootcss.com/jquery-migrate/1.4.1/jquery-migrate.min.js
+    js: //code.jquery.com/jquery-3.2.1.slim.min.js
     migrate: //code.jquery.com/jquery-migrate-1.4.1.min.js
 
 menu:
