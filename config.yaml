@@ -4,7 +4,7 @@ baseURL: "//owent.net"
 # include content marked as draft
 buildDrafts:                false
 # include content with publishdate in the future
-buildFuture:                false
+buildFuture:                true
 # include content already expired
 buildExpired:               true
 # enable this to make all relative URLs relative to content root. Note that this does not affect absolute URLs.
