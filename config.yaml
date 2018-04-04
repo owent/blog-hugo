@@ -108,15 +108,15 @@ params:
     sitename: q1
     siteprefix: "site:"
   bootstrap:
-    # js: //cdn.bootcss.com/bootstrap/4.0.0-beta.3/js/bootstrap.min.js
-    js: //maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/js/bootstrap.min.js
-    # css: //cdn.bootcss.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css
-    css: //maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css
+    # js: //cdn.bootcss.com/bootstrap/4.0.0/js/bootstrap.min.js
+    js: //maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js
+    # css: //cdn.bootcss.com/bootstrap/4.0.0/css/bootstrap.min.css
+    css: //maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css
     popper:
-      js: //cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js
+      js: //cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.2/umd/popper.min.js
   highlightjs:
     style: "vs2015"      # style name
-    langs: ['capnproto', 'cmake', 'd', 'dos', 'erlang', 'go', 'less', 'lua', 'php', 'powershell', 'protobuf', 'profile', 'typescript', 'vim']
+    langs: ['capnproto', 'cmake', 'd', 'dos', 'erlang', 'go', 'less', 'lua', 'php', 'powershell', 'protobuf', 'profile', 'typescript', 'vim', 'rust' ]
     selector: 'pre>code'
     version: '9.12.0'
     url:                  # 
@@ -132,15 +132,15 @@ params:
       #classPrefix: 'hljs-'
       languages: {}   # language alias
   katex:
-    js: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.8.3/katex.min.js
-    css: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.8.3/katex.min.css
-    autorender: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.8.3/contrib/auto-render.min.js
+    js: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.js
+    css: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.css
+    autorender: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/contrib/auto-render.min.js
   mathjax:
-    # js: //cdn.bootcss.com/mathjax/2.7.2/MathJax.js?config=TeX-AMS-MML_HTMLorMML
-    # js: //cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-AMS-MML_HTMLorMML
+    # js: //cdn.bootcss.com/mathjax/2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML
+    # js: //cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML
   jquery:
-    js: //code.jquery.com/jquery-3.2.1.slim.min.js
-    migrate: //code.jquery.com/jquery-migrate-1.4.1.min.js
+    js: //code.jquery.com/jquery-3.3.1.slim.min.js
+    migrate: //code.jquery.com/jquery-migrate-3.0.1.min.js
 
 menu:
   main:
