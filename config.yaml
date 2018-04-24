@@ -108,12 +108,12 @@ params:
     sitename: q1
     siteprefix: "site:"
   bootstrap:
-    # js: //cdn.bootcss.com/bootstrap/4.0.0/js/bootstrap.min.js
-    js: //maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js
-    # css: //cdn.bootcss.com/bootstrap/4.0.0/css/bootstrap.min.css
-    css: //maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css
+    # js: //cdn.bootcss.com/bootstrap/4.1.0/js/bootstrap.min.js
+    js: //maxcdn.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js
+    # css: //cdn.bootcss.com/bootstrap/4.1.0/css/bootstrap.min.css
+    css: //maxcdn.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css
     popper:
-      js: //cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.2/umd/popper.min.js
+      js: //cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js
   highlightjs:
     style: "vs2015"      # style name
     langs: ['capnproto', 'cmake', 'd', 'dos', 'erlang', 'go', 'less', 'lua', 'php', 'powershell', 'protobuf', 'profile', 'typescript', 'vim', 'rust' ]
