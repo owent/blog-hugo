@@ -108,10 +108,10 @@ params:
     sitename: q1
     siteprefix: "site:"
   bootstrap:
-    # js: //cdn.bootcss.com/bootstrap/4.1.0/js/bootstrap.min.js
-    js: //maxcdn.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js
-    # css: //cdn.bootcss.com/bootstrap/4.1.0/css/bootstrap.min.css
-    css: //maxcdn.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css
+    # js: //cdn.bootcss.com/bootstrap/4.1.1/js/bootstrap.min.js
+    js: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.1/js/bootstrap.min.js
+    # css: //cdn.bootcss.com/bootstrap/4.1.1/css/bootstrap.min.css
+    css: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.1/css/bootstrap.min.css
     popper:
       js: //cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js
   highlightjs:
@@ -139,8 +139,8 @@ params:
     # js: //cdn.bootcss.com/mathjax/2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML
     # js: //cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML
   jquery:
-    js: //code.jquery.com/jquery-3.3.1.slim.min.js
-    migrate: //code.jquery.com/jquery-migrate-3.0.1.min.js
+    js: //cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.slim.min.js
+    migrate: //cdnjs.cloudflare.com/ajax/libs/jquery-migrate/3.0.1/jquery-migrate.min.js
 
 menu:
   main:
