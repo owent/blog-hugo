@@ -19,7 +19,6 @@ date: 2009-09-01
 * 2011.06-2012.06: 腾讯科技\(上海\)有限公司 - 北极光工作室后台组 - 实习
 * 2008.09-2012.06: 华东理工大学 - 计算机科学与技术 - 本科
 
-
 # 主要开源活动
 
 * Github-主站: [https://github.com/owt5008137](https://github.com/owt5008137)
@@ -56,7 +55,7 @@ date: 2009-09-01
 * WordPress代码高亮插件: [WP-Code-Highlight.js](https://wordpress.org/plugins/wp-code-highlightjs/)
 * 静态化博客系统主题 [hexo-theme-distinctionpp](https://github.com/owt5008137/hexo-theme-distinctionpp)、[hugo-theme-distinctionpp](https://github.com/owt5008137/hugo-theme-distinctionpp)
 
-其他的开源仓库没有严格控制代码质量，有些只是自己平常使用，还有些个人的代码记录，所以都不列举了
+生命不息，折腾不止，平常写的小玩具和小工具就不列举了。
 
 # 项目经历
 
