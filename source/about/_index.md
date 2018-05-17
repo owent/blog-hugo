@@ -5,18 +5,58 @@ type: "page"
 date: 2009-09-01
 ---
 
-| 欧文韬 | TEL. 18601690140 |
-| --- | --- |
-| 性别： 男 | E-Mail\(主\): [admin@owent.net](mailto:admin@owent.net) |
+| 欧文韬                                       | TEL. 18601690140                                                |
+| -------------------------------------------- | --------------------------------------------------------------- |
+| 性别： 男                                    | E-Mail\(主\): [admin@owent.net](mailto:admin@owent.net)         |
 | Blog: [https://owent.net](https://owent.net) | E-Mail\(备\): [owt5008137@live.com](mailto:owt5008137@live.com) |
 
 # 工作学习经历
 
-* 2008.09-2012.06: 华东理工大学 - 计算机科学与技术 - 本科
-* 2011.06-2012.06: 腾讯科技\(上海\)有限公司 - 北极光工作室后台组 - 实习
-* 2012.06-2014.10: 腾讯科技\(上海\)有限公司 - 北极光工作室后台组 - 成员
-* 2014.10-2016.10: 上海莫游网络科技有限公司 - 联合创始人、CTO
+* 2017.09-至今: 腾讯科技\(上海\)有限公司 - 北极光工作室后台组
 * 2016.10-2017.07: 上海格奕网络科技有限公司 - 后端技术负责人
+* 2014.10-2016.10: 上海莫游网络科技有限公司 - 联合创始人、CTO
+* 2012.06-2014.10: 腾讯科技\(上海\)有限公司 - 北极光工作室后台组
+* 2011.06-2012.06: 腾讯科技\(上海\)有限公司 - 北极光工作室后台组 - 实习
+* 2008.09-2012.06: 华东理工大学 - 计算机科学与技术 - 本科
+
+
+# 主要开源活动
+
+* Github-主站: [https://github.com/owt5008137](https://github.com/owt5008137)
+* Github-个人Utility工具集: [https://github.com/owent-utils](https://github.com/owent-utils)
+* Github-参与的开源项目: [https://github.com/owent-contrib](https://github.com/owent-contrib)
+* Excel转表工具集（Excel -&gt; Protobuf、Lua、Msgpack、Json、Xml\Javascript）: https://github.com/xresloader
+
+> 1. 转表核心引擎: [xresloader](https://github.com/xresloader/xresloader)
+> 2. 批量转表规范: [xresconv-conf](https://github.com/xresloader/xresconv-conf)
+> 3. 跨平台批量转表CLI工具: [xresconv-cli](https://github.com/xresloader/xresconv-cli)
+> 4. 跨平台批量转表GUI工具: [xresconv-gui](https://github.com/xresloader/xresconv-gui)
+
+* 高性能、全异步、跨平台、去中心化游戏服务器框架\([atframework](https://atframe.work/)\): https://github.com/atframework
+
+> * [Utility](https://github.com/atframework/atframe_utils)
+> * [libatbus - 高性能进程间通信和管理](https://github.com/atframework/libatbus) 
+>   * 单进程单线程+TCP通道: 2800+K/QPS和600+MB/s吞吐量
+>   * 单进程单线程+共享内存通道: 5000+K/QPS和1.5+GB/s吞吐量
+>   * 无锁队列支持多（进程/线程）写单（线程）读
+> * [libatapp - 服务器应用框架](https://github.com/atframework/libatapp)
+> * [atsf4g-co - 完整游戏服务器解决方案](https://github.com/atframework/atsf4g-co)
+>   * 包含服务器代理进程atproxy（使用etcd实现去中心化）
+>   * 包含客户端网关层进程atgateway
+>     * 自有协议、动态密钥加密、断线重连管理、网络优化、资源控制、纯C客户端API
+>   * 示例的echosvr、loginsvr和gamesvr
+>   * 示例的协程RPC和任务管理
+> * [AtgwInnerCli-CSharp - atgateway的C\#适配](https://github.com/atframework/AtgwInnerCli-CSharp)（纯C客户端API的包装，可用于Unity 3D）
+
+* Redis高可用解决方案:  [hiredis-happ](https://github.com/owt5008137/hiredis-happ)\(首先支持redis cluster集群，支持自动重试、断线重连、按需连接\)
+* 高性能、跨平台C++协程框架: [libcopp](https://github.com/owt5008137/libcopp)
+* cmake 的一些扩展模块和C++版本适配方案: [owent-utils/cmake](https://github.com/owent-utils/cmake)
+* 编译器构建脚本(最新版本 [GCC](https://github.com/owent-utils/bash-shell/tree/master/GCC%20Installer)和[Clang+LLVM+Libc++](https://github.com/owent-utils/bash-shell/tree/master/LLVM%26Clang%20Installer))
+* 极简单且带扩展语法的ini读取工具: [libiniloader](https://github.com/owt5008137/libiniloader)
+* WordPress代码高亮插件: [WP-Code-Highlight.js](https://wordpress.org/plugins/wp-code-highlightjs/)
+* 静态化博客系统主题 [hexo-theme-distinctionpp](https://github.com/owt5008137/hexo-theme-distinctionpp)、[hugo-theme-distinctionpp](https://github.com/owt5008137/hugo-theme-distinctionpp)
+
+其他的开源仓库没有严格控制代码质量，有些只是自己平常使用，还有些个人的代码记录，所以都不列举了
 
 # 项目经历
 
@@ -79,44 +119,6 @@ date: 2009-09-01
 * 集成GIS与OSG的虚拟应急救援系统关键技术研究和实现 - 国家级大学生创新项目，项目编号：101025126，项目组组长
 * 基于WebService的高校教学科研管理平台设计与开发 - 校USRP项目，项目编号：20100732，项目组组长
 
-# 主要开源活动
-
-* Github-主站: [https://github.com/owt5008137](https://github.com/owt5008137)
-* Github-个人Utility工具集: [https://github.com/owent-utils](https://github.com/owent-utils)
-* Github-参与的开源项目: [https://github.com/owent-contrib](https://github.com/owent-contrib)
-* Excel转表工具集（Excel -&gt; Protobuf、Lua、Msgpack、Json、Xml\Javascript）: https://github.com/xresloader
-
-> 1. 转表核心引擎: [xresloader](https://github.com/xresloader/xresloader)
-> 2. 批量转表规范: [xresconv-conf](https://github.com/xresloader/xresconv-conf)
-> 3. 跨平台批量转表CLI工具: [xresconv-cli](https://github.com/xresloader/xresconv-cli)
-> 4. 跨平台批量转表GUI工具: [xresconv-gui](https://github.com/xresloader/xresconv-gui)
-
-* 高性能、全异步、跨平台、去中心化游戏服务器框架\([atframework](https://atframe.work/)\): https://github.com/atframework
-
-> * [Utility](https://github.com/atframework/atframe_utils)
-> * [libatbus - 高性能进程间通信和管理](https://github.com/atframework/libatbus) 
->   * 单进程单线程+TCP通道: 2800+K/QPS和600+MB/s吞吐量
->   * 单进程单线程+共享内存通道: 5000+K/QPS和1.5+GB/s吞吐量
->   * 无锁队列支持多（进程/线程）写单（线程）读
-> * [libatapp - 服务器应用框架](https://github.com/atframework/libatapp)
-> * [atsf4g-co - 完整游戏服务器解决方案](https://github.com/atframework/atsf4g-co)
->   * 包含服务器代理进程atproxy（使用etcd实现去中心化）
->   * 包含客户端网关层进程atgateway
->     * 自有协议、动态密钥加密、断线重连管理、网络优化、资源控制、纯C客户端API
->   * 示例的echosvr、loginsvr和gamesvr
->   * 示例的协程RPC和任务管理
-> * [AtgwInnerCli-CSharp - atgateway的C\#适配](https://github.com/atframework/AtgwInnerCli-CSharp)（纯C客户端API的包装，可用于Unity 3D）
-
-* Redis高可用解决方案:  [hiredis-happ](https://github.com/owt5008137/hiredis-happ)\(首先支持redis cluster集群，支持自动重试、断线重连、按需连接\)
-* 高性能、跨平台C++协程框架: [libcopp](https://github.com/owt5008137/libcopp)
-* cmake 的一些扩展模块和C++版本适配方案: [owent-utils/cmake](https://github.com/owent-utils/cmake)
-* 编译器构建脚本(最新版本 [GCC](https://github.com/owent-utils/bash-shell/tree/master/GCC%20Installer)和[Clang+LLVM+Libc++](https://github.com/owent-utils/bash-shell/tree/master/LLVM%26Clang%20Installer))
-* 极简单且带扩展语法的ini读取工具: [libiniloader](https://github.com/owt5008137/libiniloader)
-* WordPress代码高亮插件: [WP-Code-Highlight.js](https://wordpress.org/plugins/wp-code-highlightjs/)
-* 静态化博客系统主题 [hexo-theme-distinctionpp](https://github.com/owt5008137/hexo-theme-distinctionpp)、[hugo-theme-distinctionpp](https://github.com/owt5008137/hugo-theme-distinctionpp)
-
-其他的开源仓库没有严格控制代码质量，有些只是自己平常使用，还有些个人的代码记录，所以都不列举了
-
 # 获奖经历
 
 1. 2009年12月 华东理工大学，国家励志奖学金
@@ -128,7 +130,7 @@ date: 2009-09-01
 --- 
 # 技术栈/关键字
 
-编程语言: c/c++(11/14/17),bash,cmake,lua,python,javascript,typescript,c#,html,java,less,sass,php,sql,markdown 
+编程语言: c/c++(11/14/17/2a),bash,cmake,lua,python,javascript,typescript,c#,html,java,less,sass,php,sql,markdown 
 
 库: jemalloc/ptmalloc/tcmalloc,libuv/libevent,boost,bootstrap,jquery,v8,.net,angularjs,vue.js,nodejs,websocket,qt 
 
