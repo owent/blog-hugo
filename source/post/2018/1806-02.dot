@@ -1,0 +1,70 @@
+digraph new_libcopp_rel {
+  rankdir=LR;
+  nodesep=.05;
+
+  charset="utf-8";
+  // bgcolor="transparent";
+  overlap=ipsep;
+  dpi="192";
+  fontsize="16";
+  fontname="Noto Sans, DejaVu Sans Mono, Noto Sans Mono CJK SC";
+  node [shape = "record", fontsize="16", fontname="Noto Sans, DejaVu Sans Mono, Noto Sans Mono CJK SC"];
+  edge [fontsize="16", fontname="Noto Sans, DejaVu Sans Mono, Noto Sans Mono CJK SC"];
+
+  subgraph cluster_stack_buffer {
+    label="stack buffer";
+    node [width=0.7,height=10, fontsize=28];
+    stack_buffer [label = "<f0>4|<f1>3|<f2>2|<f3>1|<f4>0|<f5>c|a|l|l| |s|t|a|c|k"];
+  }
+
+  node [width=1.5, height=.1];
+  task_pointer[label="{<n> |task pointer for convert from coroutine context to cotask|<p> }"];
+
+
+
+//  subgraph cluster_coroutine_container {
+    // label="coroutine container object";
+    coroutine_container [label="{<n> |coroutine container|<p> }"];
+    coroutine_context [label="coroutine context"];
+    private_data [label="{<n> |private data|<p> }", style="dashed"];
+    coroutine_runner[shape="ellipse", label="coroutine runner"];
+    allocator[label="allocator"];
+    fcontext;
+    stack[label="{<n> |stack|<p> }"];
+
+    coroutine_container -> coroutine_context;
+    coroutine_container -> allocator;
+    coroutine_context -> fcontext;
+    coroutine_context -> stack;
+    coroutine_context -> private_data;
+    allocator -> stack[style = "dashed", label = "create"];
+    coroutine_container -> coroutine_runner[style = "dashed", label = "pointer"];
+  //}
+
+  subgraph cluster_task_action {
+    label="coroutine action object";
+    task_action [label="{<n> |task action|<p> }"];
+  }
+
+  
+  subgraph cluster_task {
+    label="coroutine task object";
+    cotask[label="{<n> |cotask|<p> }"];
+  }
+
+  allocator_outter[label="outter allocator(maybe stack poll)"];
+
+  stack_buffer:f0 -> private_data:n;
+  stack_buffer:f1 -> task_pointer:n;
+  stack_buffer:f2 -> coroutine_container:n;
+  stack_buffer:f3 -> task_action:n;
+  stack_buffer:f4 -> cotask:n;
+
+
+  allocator_outter->allocator[style = "dashed", label = "move"];
+  coroutine_container -> cotask[style = "dashed", label = "pointer"];
+  task_action -> cotask [dir="back", style = "dashed", label = "pointer"];
+  task_action -> coroutine_runner[dir="back", style = "dashed", label = "binding"];
+
+  // stack:p -> stack_buffer:f5;
+}

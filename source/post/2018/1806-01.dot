@@ -1,0 +1,53 @@
+digraph old_libcopp_rel {
+  charset="utf-8";
+  // bgcolor="transparent";
+  overlap=ipsep;
+  dpi="192";
+  fontsize="16";
+  fontname="Noto Sans, DejaVu Sans Mono, Noto Sans Mono CJK SC";
+  node [shape = "box", fontsize="16", fontname="Noto Sans, DejaVu Sans Mono, Noto Sans Mono CJK SC"];
+  edge [fontsize="16", fontname="Noto Sans, DejaVu Sans Mono, Noto Sans Mono CJK SC"];
+
+  subgraph cluster_coroutine_container {
+    label="coroutine container object";
+    coroutine_container[shape="ellipse", label="coroutine container"];
+    fcontext;
+    coroutine_context [label="coroutine context"];
+    private_data [label="private data", style="dashed"];
+    allocator[label="allocator"];
+
+    coroutine_container -> coroutine_context;
+    coroutine_container -> allocator;
+    coroutine_context -> fcontext;
+    coroutine_context -> stack;
+    coroutine_context -> private_data;
+    allocator -> stack[style = "dashed", label = "create"];
+  }
+
+  subgraph cluster_task_action {
+    label="coroutine action object";
+    task_action[shape="ellipse", label="task action"];
+    coroutine_runnable_base[label="coroutine runnable"];
+    task_action ->coroutine_runnable_base;
+  }
+
+  subgraph cluster_task {
+    label="coroutine task object";
+    cotask[shape="ellipse"];
+  }
+
+  cotask -> coroutine_container;
+  cotask -> task_action ;
+  coroutine_container -> coroutine_runnable_base[style = "dashed", label = "pointer"];
+
+  subgraph cluster_stack_buffer {
+    label="stack buffer";
+    nodesep=.05;
+    rankdir=LR;
+    node [shape=record,width=.1,height=.1];
+
+    stack_buffer [shape="record", label = "c|a|l|l| |s|t|a|c|<f0>k"];
+  }
+
+  stack -> stack_buffer:f0;
+}
