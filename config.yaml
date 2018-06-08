@@ -141,6 +141,8 @@ params:
   jquery:
     js: //cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.slim.min.js
     migrate: //cdnjs.cloudflare.com/ajax/libs/jquery-migrate/3.0.1/jquery-migrate.min.js
+  chartjs:
+    js: //cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js
 
 menu:
   main:
