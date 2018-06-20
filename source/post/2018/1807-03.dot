@@ -1,0 +1,61 @@
+digraph opt_router_save {
+  rankdir=LR;
+  charset="utf-8";
+  bgcolor="transparent";
+  dpi="192";
+  fontsize="16";
+  fontname="Noto Sans, DejaVu Sans Mono, Noto Sans Mono CJK SC";
+  node [shape = "box", fontsize="16", fontname="Noto Sans, DejaVu Sans Mono, Noto Sans Mono CJK SC"];
+  edge [fontsize="16", fontname="Noto Sans, DejaVu Sans Mono, Noto Sans Mono CJK SC"];
+
+  subgraph cluster_tick_4 {
+    margin=32;
+    label="Tick 4";
+
+    t4_task_1[label="task 1(saved)"];
+    t4_task_2[label="task 2(be merged and be saved by task 3)"];
+    t4_task_3[label="task 3(saved)"];
+    t4_task_4[label="task 4(doing something)"];
+    t4_task_1 -> t4_task_2 -> t4_task_3 -> t4_task_4;
+  }
+
+  subgraph cluster_tick_3 {
+    margin=32;
+    label="Tick 3";
+
+    t3_task_1[label="task 1(saved)"];
+    t3_task_2[label="task 2(retry and wait for task 3)"];
+    t3_task_3[label="task 3(saving)"];
+    t3_task_4[label="task 4(doing something)"];
+    t3_task_1 -> t3_task_2 -> t3_task_3 -> t3_task_4;
+    t3_task_2 -> t3_task_3[style="dashed"];
+  }
+
+  subgraph cluster_tick_2 {
+    margin=32;
+    label="Tick 2";
+
+    t2_task_1[label="task 1(saving)"];
+    t2_task_2[label="ask for saving and wait for task 1"];
+    t2_task_3[label="ask for saving and wait for task 1"];
+    t2_task_4[label="task 4(doing something)"];
+    t2_task_1 -> t2_task_2 -> t2_task_3 -> t2_task_4;
+    t2_task_2 -> t2_task_1[style="dashed"];
+    t2_task_3 -> t2_task_1[style="dashed"];
+  }
+
+  subgraph cluster_tick_1 {
+    margin=32;
+    label="Tick 1";
+
+    t1_task_1[label="task 1(saving)"];
+    t1_task_2[label="task 2(doing something)"];
+    t1_task_3[label="task 3(doing something)"];
+    t1_task_4[label="task 4(doing something)"];
+    t1_task_1 -> t1_task_2 -> t1_task_3 -> t1_task_4;
+    t1_saving[shape="ellipse", label="saving"];
+    t1_saving -> t1_task_1 [style="dashed"];
+  }
+
+
+}

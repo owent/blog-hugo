@@ -3,7 +3,7 @@ digraph new_libcopp_rel {
   nodesep=.05;
 
   charset="utf-8";
-  // bgcolor="transparent";
+  bgcolor="transparent";
   overlap=ipsep;
   dpi="192";
   fontsize="16";
