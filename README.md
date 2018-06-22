@@ -11,6 +11,19 @@ Notice
 ------
 Some old articles are written by staticeditor and now in gitbook. Anything that only supported by stackeditor will be unavailable.(Such as \[TOC\] is used to generate a content table before and is unavailabled now). Those symbols are not removed in gitbook and only have a little effect on layout.
 
+```bash
+# We use Graphviz to generate graph and use OptiPNG to make png files smaller,
+# install
+choco install --yes Graphviz OptiPNG
+pacman -S mingw-w64-x86_64-graphviz mingw-w64-x86_64-optipng
+sudo apt install -y graphviz optipng
+sudo yum install -y graphviz optipng
+
+# run
+dot -Tpng -O 1807-02.dot 
+optipng -o6 1807-02.dot.png
+```
+
 {% include "./LICENSE.md" %}
 
 ## Plugins for hexo
