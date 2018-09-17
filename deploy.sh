@@ -5,6 +5,7 @@ cd "$(dirname $0)";
 which hugo;
 
 if [ 0 -eq $? ]; then
+    sh ./pull-subtree.sh;
     hugo;
 
     if [ 0 -ne $? ]; then

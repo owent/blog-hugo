@@ -1,0 +1,5 @@
+{
+    "editor.fontFamily": "Noto Sans Mono CJK SC, Noto Mono, DejaVu Sans Mono, YaHei Consolas Hybrid,Source Code Pro,Microsoft YaHei,Consolas,serif",
+    "http.proxy": "http://127.0.0.1:12759",
+    "http.proxyStrictSSL": false
+}
