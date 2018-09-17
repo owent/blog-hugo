@@ -1,0 +1,19 @@
+<footer id="footer">
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      <strong id="footer-left">{{if $.Site.Copyright }}{{ $.Site.Copyright }}{{ else }}
+          &copy; {{ $.Site.LastChange.Format "2006" }}
+          {{if and .Author .Author.DisplayName }}{{ $.Author.DisplayName | safeHTML}}
+          {{else if and $.Site.Params .Site.Params.Author }}{{ $.Site.Params.Author | safeHTML}}
+          {{else if and $.Site.Author .Site.Author.Name }}{{ $.Site.Author.Name | safeHTML}}
+          {{end}}
+      {{end}}
+      </strong>
+      <strong id="footer-right">
+        {{ i18n "powered_by" }} <a href="https://gohugo.io/" target="_blank">Hugo</a>,
+        {{ i18n "theme" }} <a href="https://github.com/owt5008137/hugo-theme-distinctionpp" target="_blank">distinctionpp</a>
+      </strong>
+      <span class="clearfix"></span>
+    </div>
+  </div>
+</footer>

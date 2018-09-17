@@ -1,0 +1,13 @@
+{{ define "main-content" }}
+<article id="{{ .Type }}-{{ .UniqueID }}" class="article-panel article article-type-{{ .Type }}" itemscope itemprop="blogPost">
+  <div class="article-panel-inner article-inner">
+    <div class="article-inner">
+{{ $site := .Site }}
+{{ $data := .Data }}
+{{ range $key, $value := .Data.Terms.Alphabetical }}
+<a href="{{ $site.BaseURL }}/{{ $data.Plural }}/{{ $value.Name | urlize }}">{{ $value.Name }}</a><sup class="tagcount">{{ $value.Count }}</sup>
+{{ end }}
+    </div>
+  </div>
+</article>
+{{ end }}

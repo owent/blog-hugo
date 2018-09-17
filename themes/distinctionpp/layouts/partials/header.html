@@ -1,0 +1,41 @@
+<header id="header">
+  <div id="banner"></div>
+  <div id="header-outer">
+    <div id="header-title">
+      <h1 id="site-title">
+        <a href="{{ $.Site.BaseURL }}" id="logo">{{- $.Site.Title -}}</a>
+      </h1>
+      {{ if $.Site.Params.Description }}
+      <h2 id="site-description">{{- $.Site.Params.Description -}}</h2>
+      {{ end }}
+    </div>
+    <div id="header-inner">
+      <nav id="main-nav" class="navbar navbar-expand-md navbar-dark">
+        <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#main-nav-links" aria-controls="main-nav-links" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <a id="main-nav-brand" class="navbar-brand collapse" href="#">#</a>
+        <div class="collapse navbar-collapse" id="main-nav-links">
+          <ul class="navbar-nav mr-auto">
+            {{ if $.Site.Menus.main }}
+              {{ range $.Site.Menus.main }}
+                <li class="nav-item"><a class="nav-link" href="{{ .URL }}" title='{{ .Name }}'>{{ .Name }}</a></li>
+              {{ end }}
+            {{ else }}
+                <li class="nav-item"><a class="nav-link" href="{{ $.Site.BaseURL }}" title='{{ i18n "home" }}'>{{ i18n "home" }}</a></li>
+                <li class="nav-item"><a class="nav-link" href='{{ $.Site.BaseURL }}/archives/' title='{{ i18n "archives" }}'>{{ i18n "archives" }}</a></li>
+            {{ end }}
+            <li class="nav-item"><a id="nav-rss-link" class="nav-link" href="{{ $.Site.RSSLink }}" title='{{ i18n "rssFeed" }}'>{{ i18n "rssFeed" }}</a></li>
+          </ul>
+          {{ with $.Site.Params.Search }}
+          <form class="form-inline" method="get" accept-charset="UTF-8" action='{{ index . "url" | default "//google.com/search" | safeHTMLAttr }}'>
+            <input type="hidden" name='{{ index . "sitename" | default "sitesearch" | safeHTMLAttr}}' value='{{ index . "siteprefix" | default "" | safeHTMLAttr }}{{ replaceRE "^[^:/]*:?//([^/:]+).*" "$1" $.Site.BaseURL | safeHTMLAttr }}' />
+            <input class="form-control" type="text" placeholder='{{ i18n "search" }}' name='{{ index . "keywork" | default "q" | safeHTMLAttr }}' />
+            <button class="btn btn-outline-secondary my-2 my-sm-0" type="submit">{{ i18n "search" }}</button>
+          </form>
+          {{ end }}
+        </div>
+      </nav>
+    </div>
+  </div>
+</header>

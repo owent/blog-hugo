@@ -1,0 +1,7 @@
+{{ if .Params.categories }}
+  <ol>
+    {{ range .Params.categories }}
+    <li><a href='{{ "categories/" | absLangURL }}{{ . | lower | urlize }}{{ with $.Site.Params.ugly }}{{ . }}{{ end }}'>{{ . | safeHTML }}</a></li>
+    {{ end }}
+  </ol>
+{{ end }}

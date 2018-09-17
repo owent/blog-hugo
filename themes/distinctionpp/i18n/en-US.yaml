@@ -1,0 +1,44 @@
+- id: home
+  translation: "Home"
+- id: categories
+  translation: "Categories"
+- id: search
+  translation: "Search"
+- id: tags
+  translation: "Tags"
+- id: tagcloud
+  translation: "Tag Cloud"
+- id: tweets
+  translation: "Tweets"
+- id: prev
+  translation: "Previous"
+- id: next
+  translation: "Next"
+- id: comment
+  translation: "Comment"
+- id: archives
+  translation: "Archives"
+- id: page
+  translation: "Page"
+- id: recentPosts
+  translation: "Recently Posts"
+- id: newer
+  translation: "Newer"
+- id: older
+  translation: "Older"
+- id: share
+  translation: "Share"
+- id: powered_by
+  translation: "Powered by"
+- id: rssFeed
+  translation: "RSS Feed"
+- id: category
+  translation: "Category"
+- id: tag
+  translation: "Tag"
+- id: readMore
+  translation: "Read More"
+- id: menu
+  translation: "Menu"
+- id: theme
+  translation: "Theme"

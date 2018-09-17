@@ -1,0 +1,134 @@
+html,
+body,
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: $font-content;
+}
+
+pre, code {
+    font-family: $font-code;
+}
+
+h1, h2, h3, h4, h5, h6{
+    font-family: $font-title;
+}
+
+img {
+  max-width: 60%;
+  margin: 0 auto;
+  display: inherit;
+}
+
+canvas {
+  max-width: 60%;
+  margin: auto;
+}
+
+#container:before {
+  display: none;
+}
+
+#main {
+  padding: 2rem;
+  margin: 0 auto;
+}
+
+#main-content {
+  background-blend-mode: normal;
+}
+
+#main {
+    $background-c1: rgb(160,160,160);
+    $background-c2: rgb(176,176,176);
+    $background-c3: rgb(144,144,144);
+    $background-c4: rgb(128,128,128);
+    $background-c5: rgb(192,192,192);
+    background: -webkit-repeating-radial-gradient(circle, transparent, transparent 3em, $background-c1 1em, transparent 6em, $background-c2 6.5em), -webkit-repeating-radial-gradient(ellipse farthest-corner, transparent 1em, $background-c3 1em, transparent 5em, $background-c3 2em), -webkit-repeating-radial-gradient(circle, transparent, transparent 3em, $background-c4 1em, transparent 2em, $background-c4 4em), -webkit-repeating-radial-gradient(circle, transparent 3em, $background-c4 1em, transparent 2em, $background-c4 4em), $background-c5;
+    background: repeating-radial-gradient(circle, transparent, transparent 3em, $background-c1 1em, transparent 6em, $background-c2 6.5em), repeating-radial-gradient(ellipse farthest-corner, transparent 1em, $background-c3 1em, transparent 5em, $background-c3 2em), repeating-radial-gradient(circle, transparent, transparent 3em, $background-c4 1em, transparent 2em, $background-c4 4em), repeating-radial-gradient(circle, transparent 3em, $background-c4 1em, transparent 2em, $background-c4 4em), $background-c5;
+    background-blend-mode: multiply;
+    background-size: 10em 10em;
+    background-position: 0 0, 5em 5em, 15em 50em;
+}
+
+blockquote {
+    margin: 0 0 2rem;
+    padding: 0 0.75rem;
+    color: #656565;
+    border-left: 0.2rem solid #c5c5c5;
+    page-break-inside: avoid;
+}
+
+table {
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 1rem;
+
+  border: $table-border-width solid $table-border-color;
+  th,
+  td {
+    padding: $table-cell-padding;
+    vertical-align: top;
+    border: $table-border-width solid $table-border-color;
+  }
+
+  thead th {
+    vertical-align: bottom;
+    border-bottom: (2 * $table-border-width) solid $table-border-color;
+  }
+
+  tbody + tbody {
+    border-top: (2 * $table-border-width) solid $table-border-color;
+  }
+
+  .table {
+    background-color: $article-background;
+  }
+
+  tbody tr:nth-of-type(odd) {
+    background-color: $table-bg-accent;
+  }
+
+  tbody tr:hover {
+    background-color: $table-bg-hover;
+  }
+}
+
+.error-404 {
+  font-size: 0.7rem;
+  color: #3c3c3c;
+
+  p:first-child {
+    text-align: center;
+    font-family: cursive;
+    font-size: 7.5rem;
+    font-weight: bold;
+    line-height: 5rem;
+    letter-spacing: 0.25rem;
+    color: #fff;
+
+    span {
+      cursor: pointer;
+      text-shadow: 0 0 0.1rem #686868,0 0.05rem 0.05rem #ddd,0 0.1rem 0.05rem #d6d6d6,0 0.15rem 0.05rem #ccc,0 0.2rem 0.05rem #c5c5c5,0 0.25rem 0.05rem #c1c1c1,0 0.3rem 0.05rem #bbb,0 0.35rem 0.05rem #777,0 0.4rem 0.15rem rgba(100,100,100,0.4),0 0.45rem 0.25rem rgba(100,100,100,0.1),0 0.5rem 0.35rem rgba(100,100,100,0.15),0 0.55rem 0.45rem rgba(100,100,100,0.2),0 0.6rem 0.55rem rgba(100,100,100,0.25),0 0.65rem 0.75rem rgba(100,100,100,0.3);
+      @include transition(all .1s linear);
+    }
+    span:hover {
+      text-shadow:0 0 0.1rem #686868,0 0.05rem 0.05rem #fff,0 0.1rem 0.05rem #fff,0 0.15rem 0.05rem #fff,0 0.2rem 0.05rem #fff,0 0.25rem 0.05rem #fff,0 0.3rem 0.05rem #fff,0 0.35rem 0.05rem #777,0 0.4rem 0.15rem #fff,0 0.45rem 0.25rem #fff,0 0.5rem 0.35rem #fff,0 0.55rem 0.45rem #fff,0 0.6rem 0.55rem #fff,0 0.65rem 0.75rem #fff;
+    }
+  }
+
+  p:not(:first-child) {
+    text-align:center;
+    color:#666;
+    font-family:cursive;
+    font-size: 1rem;
+    text-shadow:0 0.05rem 0 #fff;
+    letter-spacing:0.05rem;
+    line-height: 2rem;
+    margin-top: 2.5rem;
+  }
+}

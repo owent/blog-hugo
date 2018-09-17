@@ -1,0 +1,21 @@
+{{ if or .Next .Prev }}
+<hr />
+<nav id="article-nav">
+  <ul class="pagination">
+  {{ if .Prev }}
+    <li class="page-item">
+      <a class="page-link" id="article-nav-newer" class="article-nav-link-wrap" href='{{ .Prev.Permalink }}'>
+        {{ i18n "older" }}<strong>{{ .Prev.Title }}</strong>
+      </a>
+    </li>
+  {{ end }}
+  {{ if .Next }}
+    <li class="page-item">
+      <a class="page-link" id="article-nav-older" class="article-nav-link-wrap" href='{{ .Next.Permalink }}'>
+        {{ i18n "newer" }}<strong>{{ .Next.Title }}</strong>
+      </a>
+    </li>
+  {{ end }}
+  </ul>
+</nav>
+{{ end }}

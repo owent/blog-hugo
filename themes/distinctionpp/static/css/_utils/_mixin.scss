@@ -1,0 +1,112 @@
+@mixin break-inside($val) {
+    break-inside: $val;
+    page-break-inside: $val;
+    -moz-page-break-inside: $val;
+    -webkit-column-break-inside: $val;
+}
+
+@mixin columns($val) {
+    columns: $val;
+    -moz-columns: $val; /* Firefox */
+    -webkit-columns: $val; /* Safari 和 Chrome */
+}
+
+@mixin column-width($val) {
+    column-width: $val;
+    -moz-column-width: $val; /* Firefox */
+    -webkit-column-width: $val; /* Safari 和 Chrome */
+}
+
+@mixin column-rule($val) {
+    column-rule: $val;
+    -moz-column-rule: $val; /* Firefox */
+    -webkit-column-rule: $val; /* Safari 和 Chrome */
+}
+
+@mixin column-gap($val) {
+    column-gap: $val;
+    -moz-column-gap: $val; /* Firefox */
+    -webkit-column-gap: $val; /* Safari 和 Chrome */
+}
+
+@mixin column-count($val) {
+    column-count: $val;
+    -moz-column-count: $val; /* Firefox */
+    -webkit-column-count: $val; /* Safari 和 Chrome */
+}
+
+@mixin column-span($val) {
+    column-span: $val;
+    -moz-column-span: $val; /* Firefox */
+    -webkit-column-span: $val; /* Safari 和 Chrome */
+}
+
+@mixin clearfix() {
+  &::after {
+    display: block;
+    content: "";
+    clear: both;
+  }
+}
+
+@mixin invisible {
+  visibility: hidden !important;
+}
+
+@mixin border-radius($radius) {
+    border-radius: $radius;
+    -webkit-border-radius: $radius;
+    -moz-border-radius: $radius;
+}
+
+@mixin box-shadow($shadow...) {
+    box-shadow: $shadow;
+    -webkit-box-shadow: $shadow;
+    -moz-box-shadow: $shadow;
+}
+
+@mixin transition($transition...) {
+    @if length($transition) == 0 {
+      transition: $transition-base;
+    } @else {
+      transition: $transition;
+    }
+}
+
+
+@mixin form-control-validation($color) {
+  // Color the label and help text
+  .form-control-feedback,
+  .form-control-label,
+  .col-form-label,
+  .form-check-label,
+  .custom-control {
+    color: $color;
+  }
+
+  // Set the border and box shadow on specific inputs to match
+  .form-control {
+    border-color: $color;
+
+    &:focus {
+      @include box-shadow($input-box-shadow, 0 0 6px lighten($color, 20%));
+    }
+  }
+
+  // Set validation states also for addons
+  .input-group-addon {
+    color: $color;
+    border-color: $color;
+    background-color: lighten($color, 40%);
+  }
+}
+
+@mixin form-control-focus() {
+  &:focus {
+    color: $input-color-focus;
+    background-color: $input-bg-focus;
+    border-color: $input-border-focus;
+    outline: none;
+    @include box-shadow($input-box-shadow-focus);
+  }
+}

@@ -1,0 +1,8 @@
+<article id="{{ .Type }}-{{ .UniqueID }}" class="article-panel article article-type-{{ .Type }}" itemscope itemprop="blogPage">
+  <div class="article-panel-inner article-inner">
+    <div class="article-inner">
+      <header class="article-header">{{ partial "post/title.html" . }}</header><hr />
+      <div class="article-entry" itemprop="articleBody">{{ .Content }}</div>
+    </div>
+  </div>
+</article>

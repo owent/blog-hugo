@@ -1,0 +1,19 @@
+{{ if gt .Paginator.TotalPages 1  }}
+<hr />
+<nav id="page-nav">
+    <ul class="pagination">
+    {{ if .Paginator.HasPrev }}
+      <li class="page-item"><a class="page-link" href='{{ .Paginator.Prev.URL }}'>&laquo;{{ i18n "prev" }}</a></li>
+    {{ end }}
+    {{ $cur_page_no := .Paginator.PageNumber }}
+    {{ range .Paginator.Pagers }}
+      <li class='page-item{{ if eq .PageNumber $cur_page_no }} disabled{{ end }}'>
+        <a class="page-link" href='{{ .URL }}'>{{ .PageNumber }}</a>{{ if eq .PageNumber $cur_page_no }}<span class="sr-only">(current)</span>{{ end }}
+      </li>
+    {{ end }}
+    {{ if .Paginator.HasNext }}
+      <li class="page-item"><a class="page-link" href='{{ .Paginator.Next.URL }}'>{{ i18n "next" }}&raquo;</a></li>
+    {{ end }}
+</ul>
+</nav>
+{{ end }}

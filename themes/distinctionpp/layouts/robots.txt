@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: 404.html
+
+sitemap: sitemap.xml

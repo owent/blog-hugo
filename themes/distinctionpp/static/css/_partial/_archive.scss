@@ -1,0 +1,44 @@
+#archive-content, #index-content {
+    @include column-count(auto);
+    @include column-width(26rem);
+    @include column-gap(1rem);
+}
+
+.archive-article {
+    display: inline-block;
+    @include break-inside(avoid);
+
+    .archive-article-inner {
+        overflow: hidden;
+
+        .article-title {
+            word-wrap: break-word;
+        }
+    }
+}
+
+.widget-wrap {
+    border: $article-tag-border;
+    @include border-radius($border-radius-lg);
+    padding: 1rem;
+
+    .widget-title {
+        border-bottom: $article-toc-border;
+    }
+}
+
+.widget-list-inline {
+    ul, ol {
+        list-style: none;
+
+        li {
+            display: inline-block;
+            margin: 0 0.5rem;
+        }
+
+        li:not(:first-child)::before {
+            content: " | ";
+            color: $gray;
+        }
+    }
+}

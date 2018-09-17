@@ -1,0 +1,45 @@
+ul.article-tag-list {
+    font-size: 0.8rem;
+    display: inline-block;
+    margin-left: 0 !important;
+    .article-tag-list-item {
+        display: inline-block;
+        @include border-radius($border-radius);
+        /* border: $article-tag-border; */
+        margin: 0 0.25rem 0 0rem;
+        background-color: #ddd;
+        padding: 0 0.5rem;
+
+        a {
+            color: rgb(35, 134, 246);
+        }
+
+        a:hover {
+            text-decoration: none;
+        }
+    }
+
+    .article-tag-list-item:hover {
+        background-color: #ddf;
+    }
+}
+
+.article-tags {
+    >label {
+        color: gray;
+    }
+}
+
+ul.article-tagcloud-list {
+    font-size: 0.8rem;
+    display: inline-block;
+    margin-left: 0 !important;
+    .article-tagcloud-list-item {
+        display: inline-block;
+        margin: 0.15rem;
+        padding: 0 0.4rem;
+        a:hover {
+            text-decoration: none;
+        }
+    }
+}

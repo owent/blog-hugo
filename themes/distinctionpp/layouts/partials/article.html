@@ -1,0 +1,21 @@
+<article id="{{ .Type }}-{{ .UniqueID }}" class="article-panel article article-type-{{ .Type }}" itemscope itemprop="blogPost">
+  <div class="article-panel-inner article-inner">
+    <div class="article-inner">
+      <header class="article-header">{{ partial "post/title.html" . }}</header><hr />
+      {{ if .TableOfContents }}<div id="toc" class="well toc">{{ .TableOfContents }}</div><br />{{ end }}
+      <div class="article-entry" itemprop="articleBody">{{ .Content }}</div>
+      <hr />
+      <footer class="article-footer">
+        <div class="article-panel-footer article-meta article-footer">
+          <span class="article-meta-left">{{ partial "post/category.html" . }}</span>
+          <span class="article-meta-right">{{ partial "post/date.html" . }}</span>
+          <span class="clearfix"></span>
+        </div>
+        <!-- social share --><!-- <a data-url="<%- post.permalink %>" data-id="<%= post._id %>" class="article-share-link"><%= __('share') %></a> -->
+        {{ partial "post/tag.html" . }}
+      </footer>
+    </div>
+    {{ partial "post/nav.html" . }}
+    {{ partial "comments.html" . }}
+  </div>
+</article>

@@ -1,0 +1,116 @@
+{{ $default_bootstrap_js := "//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.1/js/bootstrap.min.js" }}
+{{ $default_bootstrap_popper_js := "//cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" }}
+{{ $default_highlightjs_js := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/highlight.min.js" }}
+{{ $default_highlightjs_css := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/styles/%STYLE%.min.css" }}
+{{ $default_highlightjs_lang := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/languages/%LANG%.min.js" }}
+{{ $default_gitment_js := "//imsun.github.io/gitment/dist/gitment.browser.js" }}
+{{ $default_gitment_css := "//imsun.github.io/gitment/style/default.css" }}
+{{ $default_mathjax_js := "//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML" }}
+{{ $default_katex_js := "///cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.js" }}
+{{ $default_katex_css := "//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.css" }}
+{{ $default_katex_autorender := "//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/contrib/auto-render.min.js" }}
+{{ $default_chartjs_js := "//cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js" }}
+{{ if $.Site.Params.bootstrap }}
+  {{ if $.Site.Params.bootstrap.popper }}
+  <script type="text/javascript" src='{{ $.Site.Params.bootstrap.popper.js | default $default_bootstrap_popper_js | safeURL }}' crossorigin="anonymous"></script>
+  {{ else }}
+  <script type="text/javascript" src='{{ $default_bootstrap_popper_js }}'></script>
+  {{ end }}
+<script type="text/javascript" src='{{ $.Site.Params.bootstrap.js | default $default_bootstrap_js | safeURL }}' crossorigin="anonymous"></script>
+{{ else }}
+<script type="text/javascript" src='{{ $default_bootstrap_popper_js }}' crossorigin="anonymous"></script>
+<script type="text/javascript" src='{{ $default_bootstrap_js }}' crossorigin="anonymous"></script>
+{{ end }}
+{{ with $.Site.Params.highlightjs }}
+<!-- highlight.js begin -->
+<script type="text/javascript" src='{{ replace (default $default_highlightjs_js .url.js) "%VERSION%" .version | safeURL  }}'></script>
+{{ range $lang := .langs }}
+<script type="text/javascript" src='{{ replace (replace (default $default_highlightjs_lang $.Site.Params.highlightjs.url.lang) "%VERSION%" $.Site.Params.highlightjs.version) "%LANG%" $lang | safeURL  }}'></script>{{ end }}
+<script type="text/javascript">
+jQuery(function (){
+    jQuery("head").append('<link rel="stylesheet" href="{{ replace (replace (default $default_highlightjs_css .url.style) "%VERSION%" .version) "%STYLE%" .style | safeURL  }}" />');
+    if (window.JSON) {
+        hljs.configure(JSON.parse({{ .options | jsonify }}));
+    } else {
+        hljs.configure(evel({{ .options | jsonify }}));
+    }
+    jQuery('{{ .selector | default "pre>code" }}').each(function(i, block) {
+        try {
+        hljs.highlightBlock(block);
+        } catch (e) {
+            if (window.console) {
+                console.log(e.toString() + "\r\nMaybe can not detect the language");
+            }
+        }
+    });
+});
+</script>
+<!-- highlight.js end -->
+{{ end }}{{ with $.Site.Params.gitment }}
+<!-- gitment begin -->
+<script type="text/javascript" src='{{ .js | default $default_gitment_js | safeURL }}'></script>
+<script type="text/javascript">
+jQuery(function(){
+    jQuery("head").append('<link rel="stylesheet" href="{{ .css | default $default_gitment_css | safeURL }}" />');
+    const gitment = new Gitment({
+    owner: '{{ .owner | safeJS }}',
+    repo: '{{ .repo | safeJS }}',
+    oauth: {
+        client_id: '{{ .oauth.client_id | safeJS }}',
+        client_secret: '{{ .oauth.client_secret | safeJS }}',
+    },
+    // ...
+    // For more available options, check out the documentation below
+    })
+
+    gitment.render(document.getElementById('gitment_thread'))
+});
+</script>
+<!-- gitment end -->
+{{ end }}{{ partial "google-analytics.html" . }}
+{{ with $.Site.Params.mathjax }}<!-- mathjax begin -->
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {
+    inlineMath: [['\\(','\\)']],
+    displayMath: [['$$','$$'], ['\[','\]']],
+    processEscapes: true,
+    processEnvironments: true,
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+    TeX: { 
+      equationNumbers: { autoNumber: "AMS" },
+      extensions: ["AMSmath.js", "AMSsymbols.js"] 
+    }
+  }
+});
+</script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Queue(function() {
+    // Fix <code> tags after MathJax finishes running. This is a
+    // hack to overcome a shortcoming of Markdown. Discussion at
+    // https://github.com/mojombo/jekyll/issues/199
+    jQuery(MathJax.Hub.getAllJax()).parent().addClass('has-jax');
+});
+</script>
+<script type="text/javascript" async src='{{ .js | default $default_mathjax_js | safeURL }}'></script>
+<!-- mathjax end -->{{ end }}
+{{ with $.Site.Params.katex }}<!-- katex begin -->
+<script type="text/javascript" src='{{ .js | default $default_katex_js | safeURL }}'></script>
+<script type="text/javascript" src='{{ .autorender | default $default_katex_autorender | safeURL }}'></script>
+<script type="text/javascript">
+jQuery(function(){
+    jQuery("head").append('<link rel="stylesheet" href="{{ .css | default $default_katex_css | safeURL }}" />');
+    renderMathInElement(document.body, {
+        delimiters: [
+            {left: "$$", right: "$$", display: true},
+            {left: "\\[", right: "\\]", display: true},
+            {left: "\\(", right: "\\)", display: false}
+        ],
+        ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+    });
+});
+</script>
+<!-- katex end -->{{ end }}
+{{ with $.Site.Params.chartjs }}<!-- chart.js begin -->
+<script type="text/javascript" src='{{ .js | default $default_chartjs_js | safeURL }}'></script>
+<!-- chart.js end -->{{ end }}

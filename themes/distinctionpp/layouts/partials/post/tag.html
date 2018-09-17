@@ -1,0 +1,9 @@
+{{ if .Params.tags }}
+<div class="article-tags">
+  <ul class="article-tag-list">
+    {{ range .Params.tags }}
+    <li class="article-tag-list-item"><a href='{{ "tags/" | absLangURL }}{{ . | lower | urlize }}{{ with $.Site.Params.ugly }}{{ . }}{{ end }}'>{{ . | safeHTML }}</a></li>
+    {{ end }}
+  </ul>
+</div>
+{{ end }}

@@ -1,0 +1,7 @@
+{{ partial "head.html" . }}
+<body><div id="container"><div id="wrap">
+{{ partial "header.html" . }}
+<div id="main"><section id="main-content">{{ block "main-content" . }}{{ end }}</section></div>
+{{ partial "footer.html" . }}
+</div>{{ partial "after-footer.html" . }}</div>
+</body></html>
