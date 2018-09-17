@@ -5,3 +5,4 @@ db.json
 /public
 .deploy*/
 /themes/hugo-xmin
+/.vscode/settings.json
