@@ -33,6 +33,7 @@ params:
   description: "Chanllege Everything"
   author: "OWenT"
   githubuser: "owt5008137"
+  sitesource: "https://github.com/owt5008137/hugo-theme-distinctionpp"
   favicon: /favicon.ico
   ugly: ".html"
   search:
@@ -41,10 +42,10 @@ params:
     sitename: q1
     siteprefix: "site:"
   bootstrap:
-    js: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.1/js/bootstrap.min.js
-    css: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.1/css/bootstrap.min.css
+    js: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/js/bootstrap.min.js
+    css: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.min.css
     popper:
-      js: //cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js
+      js: //cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.4/umd/popper.min.js
   highlightjs:
     style: "vs2015"      # style name
     langs: ['capnproto', 'cmake', 'd', 'dos', 'erlang', 'go', 'less', 'lua', 'php', 'powershell', 'protobuf', 'profile', 'typescript', 'vim']

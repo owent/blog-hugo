@@ -42,3 +42,7 @@
   translation: "菜单"
 - id: theme
   translation: "主题"
+- id: site_source
+  translation: "本站源码"
+- id: page_source
+  translation: "本页源码"

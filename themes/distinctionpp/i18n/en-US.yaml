@@ -42,3 +42,7 @@
   translation: "Menu"
 - id: theme
   translation: "Theme"
+- id: site_source
+  translation: "Site Source"
+- id: page_source
+  translation: "Page Source"
