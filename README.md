@@ -5,11 +5,11 @@ All contents are also published on https://owent.net
 
 About Me
 ------
-See [About](source/about/index.md)
+See [About](source/about/_index.md)
 
 Notice
 ------
-Some old articles are written by staticeditor and now in gitbook. Anything that only supported by stackeditor will be unavailable.(Such as \[TOC\] is used to generate a content table before and is unavailabled now). Those symbols are not removed in gitbook and only have a little effect on layout.
+新博客系统采用 [Hugo][3] ， 主题是自己开发的 [hugo-theme-distinctionpp][4] 。
 
 ```bash
 # We use Graphviz to generate graph and use OptiPNG to make png files smaller,
@@ -26,21 +26,6 @@ optipng -o6 1807-02.dot.png
 
 {% include "./LICENSE.md" %}
 
-## Plugins for hexo
-+ hexo-renderer-dot
-+ hexo-generator-feed
-+ hexo-generator-i18n
-+ hexo-generator-index
-+ hexo-generator-search
-+ hexo-generator-seo-friendly-sitemap
-+ hexo-generator-sitemap
-+ hexo-generator-tag
-+ hexo-generator-type
-+ hexo-pagination
-+ hexo-migrator-wordpress
-+ hexo-filter-highlight
-+ hexo-renderer-markdown-it
-+ hexo-math
 
 ## Search Engine Support
 + Google
@@ -89,3 +74,5 @@ optipng -o6 1807-02.dot.png
 
 [1]: https://www.mathjax.org/
 [2]: https://github.com/Khan/KaTeX
+[3]: https://gohugo.io/
+[4]: https://github.com/owt5008137/hugo-theme-distinctionpp

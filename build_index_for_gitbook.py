@@ -11,7 +11,7 @@ SUMMARY_FILE = open('SUMMARY.md', mode='w', encoding='utf8')
 
 SUMMARY_FILE.write('# Summary\n\n')
 
-SUMMARY_FILE.write('* [About Me](source/about/index.md)\n')
+SUMMARY_FILE.write('* [About Me](source/about/_index.md)\n')
 
 TITLE_PATTERN = re.compile('title: ([^\r\n]*)')
 ID_PATTERN = re.compile('id:\\s*(\\d*)')

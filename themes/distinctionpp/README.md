@@ -1,6 +1,6 @@
 # distinctionpp
 
-Distinctionpp theme for [Hexo].
+Distinctionpp theme for [Hugo][1].
 
 - [Preview](https://owent.net/)
 
@@ -142,3 +142,5 @@ Generate css files:
 ```bash
 sassc -t compressed -m static/css/style.scss static/css/style.css
 ```
+
+[1]: https://gohugo.io/

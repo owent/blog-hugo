@@ -48,7 +48,7 @@ date: 2009-09-01
 > * [AtgwInnerCli-CSharp - atgateway的C\#适配](https://github.com/atframework/AtgwInnerCli-CSharp)（纯C客户端API的包装，可用于Unity 3D）
 
 * Redis高可用解决方案:  [hiredis-happ](https://github.com/owt5008137/hiredis-happ)\(首先支持redis cluster集群，支持自动重试、断线重连、按需连接\)
-* 高性能、跨平台C++协程框架: [libcopp](https://github.com/owt5008137/libcopp)
+* 高性能、跨平台C++协程框架: [libcopp][1]
 * cmake 的一些扩展模块和C++版本适配方案: [owent-utils/cmake](https://github.com/owent-utils/cmake)
 * 编译器构建脚本(最新版本 [GCC](https://github.com/owent-utils/bash-shell/tree/master/GCC%20Installer)和[Clang+LLVM+Libc++](https://github.com/owent-utils/bash-shell/tree/master/LLVM%26Clang%20Installer))
 * 极简单且带扩展语法的ini读取工具: [libiniloader](https://github.com/owt5008137/libiniloader)
@@ -57,7 +57,19 @@ date: 2009-09-01
 
 生命不息，折腾不止，平常写的小玩具和小工具就不列举了。
 
-# 项目经历
+# 项目
+
+## 2017年09月 — 至今：腾讯科技（上海）有限公司
+
+* 疯狂动物成 - 手游 - 三消+养成
+
+> * 游戏服务器架构优化，系统方案设计和部分实现
+>   * 基于 [libcopp][1] 的RPC系统和相关的监控、容灾设计实现
+> * 基于ELK的开发测试环境监控平台
+> * 保证跨平台一致性的离线服务器完全副盘校验服务和多版本兼容策略
+> * 开发CI和CD流程优化
+> * 在开发测试环境搭建自动化潜在问题分析和报告的流程
+> * 基于Web和websocket的GM工具
 
 ## 2016年10月 — 2017年07月：上海格奕网络科技有限公司
 
@@ -129,13 +141,15 @@ date: 2009-09-01
 --- 
 # 技术栈/关键字
 
-编程语言: c/c++(11/14/17/2a),bash,cmake,lua,python,javascript,typescript,c#,html,java,less,sass,php,sql,markdown 
+编程语言: c/c++(11/14/17/2a),bash,cmake,lua,python,javascript,typescript,c#,html,java,less,sass,php,sql,markdown,rust 
 
-库: jemalloc/ptmalloc/tcmalloc,libuv/libevent,boost,bootstrap,jquery,v8,.net,angularjs,vue.js,nodejs,websocket,qt 
+库: jemalloc/ptmalloc/tcmalloc,libuv/libevent,boost,bootstrap,jquery,v8,.net,angularjs,vue.js,nodejs,webpack,websocket,qt 
 
-框架和服务: redis,msgpack,protobuf,flatbuffers,ci,jenkins,travis,appveyor,unity,cocos2d-x,cap’n proto,gRPC,mono/.net core 
+框架和服务: redis,msgpack,protobuf,flatbuffers,ci,jenkins,travis,appveyor,unity,cocos2d-x,cap’n proto,gRPC,mono/.net core, elasticsearch, logstash, kibana 
 
 主题: 计算机算法,分布式系统,游戏服务器架构设计和开发,linux环境编程,操作系统,编译原理,设计模式,协程,coroutine,vscode插件开发,wordpress插件及主题开发 
 
 工具: git,svn,p4,pandoc,graphviz,valgrind,gdb/lldb,perf,gperf,binutils/readelf/tcpdump等,mingw,msys,wsl,qemu,kvm,docker 
 
+
+[1]: https://github.com/owt5008137/libcopp
