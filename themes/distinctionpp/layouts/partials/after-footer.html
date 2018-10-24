@@ -10,6 +10,7 @@
 {{ $default_katex_css := "//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.css" }}
 {{ $default_katex_autorender := "//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/contrib/auto-render.min.js" }}
 {{ $default_chartjs_js := "//cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js" }}
+{{ $default_mermaid_js := "//cdnjs.cloudflare.com/ajax/libs/mermaid/8.0.0-rc.8/mermaid.min.js" }}
 {{ if $.Site.Params.bootstrap }}
   {{ if $.Site.Params.bootstrap.popper }}
   <script type="text/javascript" src='{{ $.Site.Params.bootstrap.popper.js | default $default_bootstrap_popper_js | safeURL }}' crossorigin="anonymous"></script>
@@ -114,3 +115,6 @@ jQuery(function(){
 {{ with $.Site.Params.chartjs }}<!-- chart.js begin -->
 <script type="text/javascript" src='{{ .js | default $default_chartjs_js | safeURL }}'></script>
 <!-- chart.js end -->{{ end }}
+{{ with $.Site.Params.mermaid }}<!-- mermaid begin -->
+<script type="text/javascript" src='{{ .js | default $default_mermaid_js | safeURL }}'></script>
+<!-- chart end -->{{ end }}

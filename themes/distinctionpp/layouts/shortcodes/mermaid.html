@@ -1,0 +1,45 @@
+{{ if .IsNamedParams }}
+<div id="{{ .Get "id" | default (printf "mermaid-diagram-%d" .Ordinal) | safeHTMLAttr }}" {{ with .Get "class" }} class="{{ . | safeHTMLAttr }}" {{ end }}>{{ .Inner | safeHTML }}</div><script type="text/javascript">
+jQuery(function() {
+    var diagram_id = "{{ .Get "id" | default (printf "mermaid-diagram-%d" .Ordinal) | safeHTMLAttr }}";
+    var diagram_jdom = jQuery("#" + diagram_id);
+    var css_objs = { "text-align": "center" };
+    {{ with .Get "style" }}
+    var css_styles = "{{ . | safeJS }}".split(";");
+    for (var i in css_styles) {
+        var split_idx = css_styles[i].indexOf(":");
+        if (split_idx > 0 && split_idx < css_styles[i].length) {
+            css_objs[css_styles[i].substr(0, split_idx)] = css_styles[i].substr(split_idx + 1);
+        }
+    }
+    {{ end }}
+    diagram_jdom.css(css_objs);
+
+    try {
+        mermaid.init({{ .Get "options" | default "undefined" | safeJS }}, diagram_jdom, function() {
+            console.log("done");
+        });
+    } catch(e) {
+        diagram_jdom.empty();
+        diagram_jdom.append($('<pre></pre>').css({ "text-align": "left" }).html(e.message));
+    }
+});
+</script>
+{{ else }}
+<div id="{{ printf "mermaid-diagram-%d" .Ordinal }}">{{ .Inner | safeHTML }}</div><script type="text/javascript">
+jQuery(function() {
+    var diagram_id = "{{ printf "mermaid-diagram-%d" .Ordinal }}";
+    var css_objs = { "text-align": "center" };
+    var diagram_jdom = jQuery("#" + diagram_id);
+    diagram_jdom.css(css_objs);
+
+    try {
+        mermaid.init(undefined, diagram_jdom, function() {
+            console.log("done");
+        });
+    } catch(e) {
+        diagram_jdom.empty();
+        diagram_jdom.append($('<pre></pre>').css({ "text-align": "left" }).html(e.message));
+    }
+});
+</script>{{ end }}
