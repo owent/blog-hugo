@@ -69,7 +69,7 @@ pygmentsCodeFencesGuessSyntax: false
 # color-codes for highlighting derived from this style
 pygmentsStyle:              "github"
 # true: use pygments-css or false: color-codes directly
-pygmentsUseClasses:         true
+pygmentsUseClasses:         false
 # A comma separated list of options.
 pygmentsOptions:            ""
 # Set to true to use Pygments instead of the much faster Chroma.
