@@ -35,6 +35,7 @@ params:
   githubuser: "owt5008137"
   sitesource: "https://github.com/owt5008137/hugo-theme-distinctionpp"
   favicon: /favicon.ico
+  css: ["css/syntax.css"] # additional css file related to baseURL
   ugly: ".html"
   search:
     url: //www.bing.com/search

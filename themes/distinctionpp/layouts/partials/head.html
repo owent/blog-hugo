@@ -26,4 +26,7 @@
   <script type="text/javascript" src='{{ $default_jquery_js }}' crossorigin="anonymous"></script>
   <!--<script type="text/javascript" src='{{ $default_jquery_migrate }}'></script>-->
   {{ end }}
+  {{ if $.Site.Params.css }}{{ range $.Site.Params.css }}
+  <link rel="stylesheet" href='{{ . | absURL }}' />
+  {{ end }}{{ end }}
 </head>
