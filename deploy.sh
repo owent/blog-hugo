@@ -25,4 +25,4 @@ chmod +x *.py;
 
 ./build_index_for_gitbook.py
 
-rsync -avz --force --delete public/ owent@sssvr-s.owent.net:/home/website/owent_blog
+rsync -avz --force --delete --chmod=775 public/ owent@sssvr-s.owent.net:/home/website/owent_blog
