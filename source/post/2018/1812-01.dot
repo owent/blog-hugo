@@ -1,0 +1,45 @@
+digraph elk_deploy {
+  rankdir=LR;
+  charset="utf-8";
+  bgcolor="transparent";
+  # dpi="192";
+  fontsize="16";
+  fontname="Noto Sans, DejaVu Sans Mono, Noto Sans Mono CJK SC";
+  node [shape = "box", fontsize="16", fontname="Noto Sans, DejaVu Sans Mono, Noto Sans Mono CJK SC"];
+  edge [fontsize="16", fontname="Noto Sans, DejaVu Sans Mono, Noto Sans Mono CJK SC"];
+
+  subgraph elasticsearch {
+    #margin=32;
+    label="Elasticsearch 集群";
+
+    elasticsearch_master[shape="record", label="Elasticsearch Master节点-1|Elasticsearch Master节点-2"];
+    elasticsearch_slave[shape="record", label="Elasticsearch 数据和执行节点-1|Elasticsearch 数据和执行节点-2|Elasticsearch 数据和执行节点-3"];
+
+    elasticsearch_master->elasticsearch_slave;
+    elasticsearch_slave->elasticsearch_master;
+  }
+
+  subgraph client {
+    #margin=32;
+    label="业务服务器 集群";
+
+    client_1[label="业务服务器-1"];
+    client_2[label="业务服务器-2"];
+    client_3[label="业务服务器-3"];
+  }
+
+  kibana[label="Kibana 服务"];
+  logstash[label="Logstash 服务"];
+  redis[label="Redis 服务"];
+  nginx[label="nginx 反向代理"];
+
+  client_1->logstash[label="pipeline-1:UDP", fontsize=8];
+  client_2->logstash[label="pipeline-1:UDP", fontsize=8];
+  client_3->logstash[label="pipeline-1:UDP", fontsize=8];
+  logstash->redis[label="pipeline-1", fontsize=8];
+  redis->logstash[label="pipeline-2", fontsize=8];
+  logstash->elasticsearch_master[label="pipeline-2", fontsize=8];
+  logstash->elasticsearch_master[label="pipeline-2", fontsize=8];
+
+  elasticsearch_master->kibana->nginx;
+}
