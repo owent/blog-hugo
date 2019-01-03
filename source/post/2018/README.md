@@ -1,7 +1,5 @@
 # 2018
 
-  * [libatbus的全局路由表设计](1899.md)
-  * [Google去中性化分布式系统论文三件套\(Percolator、Spanner、F1\)读后感](1813.md)
   * [使用ELK辅助监控开发测试环境服务质量和问题定位](1812.md)
   * [Webpack+vue+boostrap+ejs构建Web版GM工具](1811.md)
   * [2018年的新通用伪随机数算法\(xoshiro / xoroshiro\)的C++\(head only\)实现](1810.md)

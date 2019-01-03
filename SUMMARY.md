@@ -1,9 +1,10 @@
 # Summary
 
 * [About Me](source/about/_index.md)
+* [2019](source/post/2019/README.md)
+  * [Google去中性化分布式系统论文三件套\(Percolator、Spanner、F1\)读后感](source/post/2019/1902.md)
+  * [Rust玩具-企业微信机器人通用服务](source/post/2019/1901.md)
 * [2018](source/post/2018/README.md)
-  * [libatbus的全局路由表设计](source/post/2018/1899.md)
-  * [Google去中性化分布式系统论文三件套\(Percolator、Spanner、F1\)读后感](source/post/2018/1813.md)
   * [使用ELK辅助监控开发测试环境服务质量和问题定位](source/post/2018/1812.md)
   * [Webpack+vue+boostrap+ejs构建Web版GM工具](source/post/2018/1811.md)
   * [2018年的新通用伪随机数算法\(xoshiro / xoroshiro\)的C++\(head only\)实现](source/post/2018/1810.md)
