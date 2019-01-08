@@ -118,4 +118,17 @@ jQuery(function(){
 <!-- chart.js end -->{{ end }}
 {{ with $.Site.Params.mermaid }}<!-- mermaid begin -->
 <script type="text/javascript" src='{{ .js | default $default_mermaid_js | safeURL }}'></script>
-<!-- chart end -->{{ end }}
+<!-- mermaid end -->{{ end }}
+{{ with $.Site.Params.styleimport }}<!-- style import begin -->
+<script type="text/javascript">
+jQuery(function() {
+    setTimeout(function() {
+        var import_items = '';
+        {{ range $url := .urls }}
+        import_items += "@import url('{{ $url | safeJS }}');\r\n";{{ end }}
+
+        jQuery("head").append(jQuery('<style></style>').html(import_items));
+    }, {{ default 256 .delay }});
+});
+</script>
+<!-- style import end -->{{ end }}
