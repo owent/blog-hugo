@@ -62,9 +62,9 @@ params:
       #classPrefix: 'hljs-'
       languages: {}   # language alias
   katex:
-    js: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.js
-    css: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.css
-    autorender: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/contrib/auto-render.min.js
+    js: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.js
+    css: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css
+    autorender: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/contrib/auto-render.min.js
   mathjax:
     # js: //cdn.bootcss.com/mathjax/2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML
     # js: //cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML
