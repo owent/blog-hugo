@@ -116,17 +116,17 @@ params:
     sitename: q1
     siteprefix: "site:"
   bootstrap:
-    # js: //cdn.bootcss.com/bootstrap/4.1.3/js/bootstrap.min.js
-    js: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/js/bootstrap.min.js
-    # css: //cdn.bootcss.com/bootstrap/4.1.3/css/bootstrap.min.css
-    css: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.min.css
+    # js: //cdn.bootcss.com/bootstrap/4.2.1/js/bootstrap.min.js
+    js: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.2.1/js/bootstrap.min.js
+    # css: //cdn.bootcss.com/bootstrap/4.2.1/css/bootstrap.min.css
+    css: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.2.1/css/bootstrap.min.css
     popper:
-      js: //cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.4/umd/popper.min.js
+      js: //cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js
   highlightjs:
     style: "vs2015"      # style name
     langs: ['capnproto', 'cmake', 'd', 'dos', 'erlang', 'go', 'less', 'lua', 'php', 'powershell', 'protobuf', 'profile', 'typescript', 'vim', 'rust' ]
     selector: 'pre>code'
-    version: '9.13.1'
+    version: '9.14.2'
     url:                  # 
       # js: "//cdn.bootcss.com/highlight.js/%VERSION%/highlight.min.js"
       js: //cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/highlight.min.js
@@ -147,9 +147,9 @@ params:
     js: //cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.slim.min.js
     migrate: //cdnjs.cloudflare.com/ajax/libs/jquery-migrate/3.0.1/jquery-migrate.min.js
   chartjs:
-    js: //cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js
+    js: //cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js
   mermaid:
-    js: //cdnjs.cloudflare.com/ajax/libs/mermaid/8.0.0-rc.8/mermaid.min.js
+    js: //cdnjs.cloudflare.com/ajax/libs/mermaid/8.0.0/mermaid.min.js
   styleimport:
     delay: 200
     urls: ['https://fonts.googleapis.com/css?family=Noto+Sans+SC:400,700&subset=chinese-simplified,japanese', 'https://fonts.googleapis.com/css?family=Roboto+Mono:400,400i,500,500i&subset=latin-ext', 'https://fonts.googleapis.com/css?family=Roboto:400,400i,500,500i&subset=latin-ext']
@@ -198,5 +198,6 @@ blackfriday:
     - laxHtmlBlocks
     - hardLineBreak
     - footnotes
+    - noEmptyLineBeforeBlock
   extensionsmask:
 ---

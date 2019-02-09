@@ -1,16 +1,16 @@
-{{ $default_bootstrap_js := "//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/js/bootstrap.min.js" }}
-{{ $default_bootstrap_popper_js := "//cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.4/umd/popper.min.js" }}
+{{ $default_bootstrap_js := "//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.2.1/js/bootstrap.min.js" }}
+{{ $default_bootstrap_popper_js := "//cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" }}
 {{ $default_highlightjs_js := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/highlight.min.js" }}
 {{ $default_highlightjs_css := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/styles/%STYLE%.min.css" }}
 {{ $default_highlightjs_lang := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/languages/%LANG%.min.js" }}
 {{ $default_gitment_js := "//imsun.github.io/gitment/dist/gitment.browser.js" }}
 {{ $default_gitment_css := "//imsun.github.io/gitment/style/default.css" }}
-{{ $default_mathjax_js := "//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML" }}
+{{ $default_mathjax_js := "//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML" }}
 {{ $default_katex_js := "///cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.js" }}
 {{ $default_katex_css := "//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css" }}
 {{ $default_katex_autorender := "//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/contrib/auto-render.min.js" }}
-{{ $default_chartjs_js := "//cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js" }}
-{{ $default_mermaid_js := "//cdnjs.cloudflare.com/ajax/libs/mermaid/8.0.0-rc.8/mermaid.min.js" }}
+{{ $default_chartjs_js := "//cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js" }}
+{{ $default_mermaid_js := "//cdnjs.cloudflare.com/ajax/libs/mermaid/8.0.0/mermaid.min.js" }}
 {{ if $.Site.Params.bootstrap }}
   {{ if $.Site.Params.bootstrap.popper }}
   <script type="text/javascript" src='{{ $.Site.Params.bootstrap.popper.js | default $default_bootstrap_popper_js | safeURL }}' crossorigin="anonymous"></script>
@@ -73,7 +73,7 @@ jQuery(function(){
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
   tex2jax: {
-    inlineMath: [['\\(','\\)']],
+    inlineMath: [['$','$'], ['\\(','\\)']],
     displayMath: [['$$','$$'], ['\[','\]']],
     processEscapes: true,
     processEnvironments: true,

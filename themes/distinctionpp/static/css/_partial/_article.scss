@@ -1,8 +1,20 @@
 .toc {
     color: #4078c0;
     text-decoration: none;
-    ul {  
-      list-style-type: none;
+
+    ul {
+        list-style-type: none;
+
+        li {
+            a:not(:first-child) {
+                // patch for table of content in gohugo 
+                top: -.5em;
+                position: relative;
+                font-size: 75%;
+                line-height: 0;
+                vertical-align: baseline;
+            }
+        }
     }
 
     border: $article-toc-border;
@@ -33,13 +45,15 @@
 
 .article-more {
     a {
-        color: rgb(34,128,221);
+        color: rgb(34, 128, 221);
         font-size: 0.8rem;
         /*font-weight: bolder;*/
     }
+
     a:hover {
         text-decoration: none;
     }
+
     a::after {
         content: "»"
     }
@@ -60,11 +74,12 @@
         margin: 0.2rem 0.15rem 0.15rem 0.15rem;
         padding: 0.8rem;
 
-        ul, ol {
+        ul,
+        ol {
             margin-left: 2rem;
         }
 
-        .article-panel-footer{
+        .article-panel-footer {
             background: #ddd;
             /* border: $article-footer-border; */
             /* @include border-radius($border-radius-sm); */
@@ -100,10 +115,13 @@
 }
 
 .article-meta {
-    ul, ol {
+
+    ul,
+    ol {
         margin-left: 0 !important;
         list-style: none;
     }
+
     li {
         display: inline-block;
     }
@@ -124,7 +142,8 @@
 .article-meta-right {
     float: right;
     font-style: italic;
+
     a {
-        color: rgb(64,128,255);
+        color: rgb(64, 128, 255);
     }
 }

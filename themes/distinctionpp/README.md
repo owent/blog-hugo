@@ -43,16 +43,16 @@ params:
     sitename: q1
     siteprefix: "site:"
   bootstrap:
-    js: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/js/bootstrap.min.js
-    css: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.min.css
+    js: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.2.1/js/bootstrap.min.js
+    css: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.2.1/css/bootstrap.min.css
     popper:
-      js: //cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.4/umd/popper.min.js
+      js: //cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js
   highlightjs:
     style: "vs2015"      # style name
     langs: ['capnproto', 'cmake', 'd', 'dos', 'erlang', 'go', 'less', 'lua', 'php', 'powershell', 'protobuf', 'profile', 'typescript', 'vim']
     selector: 'pre>code'
-    version: '9.13.1'
-    url:                  # 
+    version: '9.14.2'
+    url:
       js: //cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/highlight.min.js
       style: //cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/styles/%STYLE%.min.css
       lang: //cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/languages/%LANG%.min.js
@@ -66,15 +66,15 @@ params:
     css: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css
     autorender: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/contrib/auto-render.min.js
   mathjax:
-    # js: //cdn.bootcss.com/mathjax/2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML
-    # js: //cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML
+    # js: //cdn.bootcss.com/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML
+    # js: //cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML
   jquery:
     js: //cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.slim.min.js
     migrate: //cdnjs.cloudflare.com/ajax/libs/jquery-migrate/3.0.1/jquery-migrate.min.js
   chartjs:
-    js: //cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js
+    js: //cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js
   mermaid:
-    js: //cdnjs.cloudflare.com/ajax/libs/mermaid/8.0.0-rc.8/mermaid.min.js
+    js: //cdnjs.cloudflare.com/ajax/libs/mermaid/8.0.0/mermaid.min.js
   styleimport:
     delay: 200
     urls: ['https://fonts.googleapis.com/css?family=Noto+Sans+SC:400,700&subset=chinese-simplified,japanese', 'https://fonts.googleapis.com/css?family=Roboto+Mono:400,400i,500,500i&subset=latin-ext', 'https://fonts.googleapis.com/css?family=Roboto:400,400i,500,500i&subset=latin-ext']
@@ -174,6 +174,8 @@ end
 Generate css files:
 ```bash
 sassc -t compressed -m static/css/style.scss static/css/style.css
+
+sass -s compressed --source-map -c static/css/style.scss static/css/style.css
 ```
 
 [1]: https://gohugo.io/
