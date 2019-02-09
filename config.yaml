@@ -150,9 +150,9 @@ params:
     js: //cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js
   mermaid:
     js: //cdnjs.cloudflare.com/ajax/libs/mermaid/8.0.0/mermaid.min.js
-  styleimport:
-    delay: 200
-    urls: ['https://fonts.googleapis.com/css?family=Noto+Sans+SC:400,700&subset=chinese-simplified,japanese', 'https://fonts.googleapis.com/css?family=Roboto+Mono:400,400i,500,500i&subset=latin-ext', 'https://fonts.googleapis.com/css?family=Roboto:400,400i,500,500i&subset=latin-ext']
+  # styleimport:
+  #   delay: 200
+  #   urls: ['https://fonts.googleapis.com/css?family=Noto+Sans+SC:400,700&subset=chinese-simplified,japanese', 'https://fonts.googleapis.com/css?family=Roboto+Mono:400,400i,500,500i&subset=latin-ext', 'https://fonts.googleapis.com/css?family=Roboto:400,400i,500,500i&subset=latin-ext']
 
 menu:
   main:
