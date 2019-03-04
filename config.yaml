@@ -124,9 +124,9 @@ params:
       js: //cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js
   highlightjs:
     style: "vs2015"      # style name
-    langs: ['capnproto', 'cmake', 'd', 'dos', 'erlang', 'go', 'less', 'lua', 'php', 'powershell', 'protobuf', 'profile', 'typescript', 'vim', 'rust' ]
+    langs: ['bash', 'cpp', 'capnproto', 'cmake', 'd', 'diff', 'dos', 'erlang', 'go', 'less', 'lua', 'php', 'powershell', 'protobuf', 'profile', 'typescript', 'vim', 'rust' ]
     selector: 'pre>code'
-    version: '9.14.2'
+    version: '9.15.6'
     url:                  # 
       # js: "//cdn.bootcss.com/highlight.js/%VERSION%/highlight.min.js"
       js: //cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/highlight.min.js

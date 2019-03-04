@@ -20,7 +20,7 @@ sudo apt install -y graphviz optipng
 sudo yum install -y graphviz optipng
 
 # run
-dot -Tpng -O 1807-02.dot 
+dot -Tpng -O 1807-02.dot
 optipng -o6 1807-02.dot.png
 ```
 

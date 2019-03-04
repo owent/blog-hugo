@@ -51,7 +51,7 @@ params:
     style: "vs2015"      # style name
     langs: ['capnproto', 'cmake', 'd', 'dos', 'erlang', 'go', 'less', 'lua', 'php', 'powershell', 'protobuf', 'profile', 'typescript', 'vim']
     selector: 'pre>code'
-    version: '9.14.2'
+    version: '9.15.6'
     url:
       js: //cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/highlight.min.js
       style: //cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/styles/%STYLE%.min.css
@@ -173,7 +173,7 @@ end
 
 Generate css files:
 ```bash
-sassc -t compressed -m static/css/style.scss static/css/style.css
+sassc -t compressed -m auto static/css/style.scss static/css/style.css
 
 sass -s compressed --source-map -c static/css/style.scss static/css/style.css
 ```
