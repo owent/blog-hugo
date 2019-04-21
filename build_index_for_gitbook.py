@@ -9,9 +9,9 @@ os.chdir(os.path.dirname(__file__))
 
 SUMMARY_FILE = open('SUMMARY.md', mode='w', encoding='utf8')
 
-SUMMARY_FILE.write('# Summary\n\n')
+SUMMARY_FILE.write('# Summary\r\n\r\n')
 
-SUMMARY_FILE.write('* [About Me](source/about/_index.md)\n')
+SUMMARY_FILE.write('* [About Me](source/about/_index.md)\r\n')
 
 TITLE_PATTERN = re.compile('title: ([^\r\n]*)')
 ID_PATTERN = re.compile('id:\\s*(\\d*)')
@@ -33,9 +33,9 @@ def walk_dir(parent_dir, *, ident=''):
             REPLACE_PATTERN.sub('\\\\\\g<0>', parent_dir.replace('\\', '/'))
         )
         SUMMARY_FILE.write(title_md)
-        SUMMARY_FILE.write('\n')
+        SUMMARY_FILE.write('\r\n')
         readme_file = open('{0}/README.md'.format(parent_dir), mode='w', encoding='utf8')
-        readme_file.write('# {0}\n\n'.format(title_name))
+        readme_file.write('# {0}\r\n\r\n'.format(title_name))
         return readme_file
 
     for file in filter(lambda f: f[-9:].upper() != 'README.MD', all_files):
@@ -43,7 +43,7 @@ def walk_dir(parent_dir, *, ident=''):
             if readme_file is None:
                 readme_file = get_readme_file(parent_dir, ident)
             title_file = os.path.basename(file)
-            readme_file.write('  * [{0}]({1}/README.md)\n'.format(
+            readme_file.write('  * [{0}]({1}/README.md)\r\n'.format(
                 title_file, REPLACE_PATTERN.sub('\\\\\\g<0>', os.path.relpath(file, parent_dir).replace('\\', '/'))))
             walk_dir(file, ident=ident + ' ')
         elif file[-3:].lower() == '.md':
@@ -58,9 +58,9 @@ def walk_dir(parent_dir, *, ident=''):
             else:
                 title_file = os.path.basename(file)[0:-3]
             title_file = REPLACE_PATTERN.sub('\\\\\\g<0>', title_file)
-            SUMMARY_FILE.write('{0}  * [{1}]({2})\n'.format(
+            SUMMARY_FILE.write('{0}  * [{1}]({2})\r\n'.format(
                 ident, title_file, REPLACE_PATTERN.sub('\\\\\\g<0>', file.replace('\\', '/'))))
-            readme_file.write('  * [{0}]({1})\n'.format(
+            readme_file.write('  * [{0}]({1})\r\n'.format(
                 title_file, REPLACE_PATTERN.sub('\\\\\\g<0>', os.path.relpath(file, parent_dir).replace('\\', '/'))))
 
 
