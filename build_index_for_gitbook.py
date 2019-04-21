@@ -4,6 +4,7 @@
 import os
 import glob
 import re
+import codecs
 
 os.chdir(os.path.dirname(__file__))
 
@@ -15,6 +16,7 @@ SUMMARY_FILE.write('* [About Me](source/about/_index.md)\r\n')
 
 TITLE_PATTERN = re.compile('title: ([^\r\n]*)')
 ID_PATTERN = re.compile('id:\\s*(\\d*)')
+DRAFT_PATTERN = re.compile('draft:\\s*([^\\s]*)')
 
 REPLACE_PATTERN = re.compile('([\\[\\]\\(\\)])')
 
@@ -49,7 +51,11 @@ def walk_dir(parent_dir, *, ident=''):
         elif file[-3:].lower() == '.md':
             if readme_file is None:
                 readme_file = get_readme_file(parent_dir, ident)
-            title_match = TITLE_PATTERN.search(open(file, mode='r', encoding='utf8').read())
+            file_content = codecs.open(file, mode='r', encoding='utf8').read()
+            title_match = TITLE_PATTERN.search(file_content)
+            draft_match = DRAFT_PATTERN.search(file_content)
+            if draft_match is not None and draft_match.group(1).lower() != "false" and draft_match.group(1).lower() != "0":
+                continue
             if title_match is not None:
                 title_file = title_match.group(1)
                 if title_file[0:1] == '"' or title_file[0:1] == "'":
