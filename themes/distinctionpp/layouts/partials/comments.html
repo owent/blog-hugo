@@ -7,7 +7,7 @@ var disqus_config = function () {
 {{ if .Params.id }}
 this.page.identifier = '{{ .Params.id }}';
 {{ else }}
-this.page.identifier = '{{ .UniqueID }}';
+this.page.identifier = '{{ with .File }}{{ .UniqueID }}{{ end }}';
 {{ end }}
 };
 (function() { // DON'T EDIT BELOW THIS LINE

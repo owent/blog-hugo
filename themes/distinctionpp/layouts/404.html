@@ -1,5 +1,5 @@
 {{ define "main-content" }}
-<article id="{{ .Type }}-{{ .UniqueID }}" class="article-panel article article-type-{{ .Type }}" itemscope itemprop="404">
+<article id="{{ .Type }}-{{ with .File }}{{ .UniqueID }}{{ end }}" class="article-panel article article-type-{{ .Type }}" itemscope itemprop="404">
   <div class="article-panel-inner article-inner">
     <div class="article-inner">
       <div class="article-entry" itemprop="articleBody">

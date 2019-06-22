@@ -1,4 +1,4 @@
-<article class="article-panel archive-article archive-type-{{if .Params.id }}{{ .Params.id }}{{ else }}{{ .UniqueID }}{{ end }}">
+<article class="article-panel archive-article archive-type-{{if .Params.id }}{{ .Params.id }}{{ else }}{{ with .File }}{{ .UniqueID }}{{ end }}{{ end }}">
   <div class="article-panel-inner archive-article-inner">
     <header class="article-header archive-article-title">{{ partial "post/title.html" . }}</header>
     <div class="article-excerpt">{{ .Summary }}</div>
