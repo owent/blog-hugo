@@ -103,7 +103,7 @@ ignoreFiles:
 # custom options
 
 params:
-  description: "Chanllege Everything"
+  description: "Challenge Everything"
   author: "OWenT"
   githubuser: "owt5008137"
   sitesource: "https://github.com/owent/blog-hugo"
