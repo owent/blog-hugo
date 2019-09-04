@@ -37,11 +37,23 @@ after_success:
 
       grep 'lfs' ".gitattributes" | awk '{print $1}' | xargs git lfs untrack ;
 
+      git lfs uninstall ;
+
     fi
 
     ls -A | xargs rm -rf ;
 
-    cp -rf ../public/* ../public/.* ./ ;
+    cd ../public ;
+
+    cp -rf $(ls -A) ../public-website ;
+
+    cd ../public-website ;
+
+    if [ -e ".gitattributes" ]; then
+
+      rm -rf ".gitattributes" ;
+
+    fi
 
     echo "owent.net" > CNAME ;
 
