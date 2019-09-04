@@ -19,6 +19,7 @@ matrix:
 script:
   - sudo snap install hugo
   - sudo snap refresh hugo
+  - if [ -e public ]; then rm -rf public ; fi
   - bash deploy.sh
 
 after_success:
@@ -31,6 +32,12 @@ after_success:
     git clone https://github.com/owent/blog-website.git "public-website" ;
 
     cd "public-website" ;
+
+    if [ -e ".gitattributes" ]; then
+
+      grep 'lfs' ".gitattributes" | awk '{print $1}' | xargs git untrack ;
+
+    fi
 
     ls -A | xargs rm -rf ;
 
