@@ -1,0 +1,55 @@
+language: go
+go:
+- 1.x
+
+env:
+  global:
+    - LANG="zh_CN.UTF-8"
+matrix:
+  include:
+    - os: linux
+      dist: bionic
+      sudo: required
+      addons:
+        apt:
+          packages:
+            - graphviz
+            - python3
+
+script:
+  - snap install hugo
+  - snap refresh hugo
+  - bash deploy.sh
+
+cache: 
+  apt: true
+  ccache: true
+
+deploy:
+  provider: pages
+  local_dir: public
+  repo: owent/blog-website
+  target_branch: master
+  keep_history: true
+  fqdn: owent.net
+  project_name: "I'm OWenT"
+  github_token: $GITHUB_TOKEN
+  file_glob: true
+  file: "*.tar.gz"
+  skip_cleanup: true
+  overwrite: true
+  draft: true
+  on:
+    all_branches: true
+    tags: true
+
+notifications:
+  email:
+    recipients:
+      - admin@owent.net
+      - owt5008137@live.com
+    on_success: change
+    on_failure: change
+  irc:
+    template:
+      - "%{repository}/%{branch} (%{commit} - %{author}): %{build_url}: %{message}"
