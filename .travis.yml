@@ -21,6 +21,39 @@ script:
   - sudo snap refresh hugo
   - bash deploy.sh
 
+after_success:
+  - cd public ;
+
+    echo "owent.net" > CNAME ;
+
+    git init ;
+
+    git lfs install ;
+
+    git lfs track "*.ico" ;
+
+    git lfs track "*.png" ;
+
+    git lfs track "*.jpg" ;
+
+    git lfs track "*.jpeg" ;
+
+    git lfs track "*.bmp" ;
+
+    git lfs track "*.zip" ;
+
+    git lfs track "*.tar.*" ;
+
+    git lfs track "*.tgz" ;
+
+    git lfs track "*.vsd*" ;
+
+    git lfs track "*.doc*" ;
+
+    git lfs track "*.xls*" ;
+
+    git add . ;
+
 cache: 
   apt: true
   ccache: true
