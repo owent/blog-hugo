@@ -22,37 +22,23 @@ script:
   - bash deploy.sh
 
 after_success:
-  - cd public ;
+  - if [ -e "public-website" ]; then
+
+      rm -rf "public-website" ;
+
+    fi
+
+    git clone https://github.com/owent/blog-website.git "public-website" ;
+
+    cd "public-website" ;
+
+    ls -A | xargs rm -rf ;
+
+    cp -rf ../public/* ../public/.* ./ ;
 
     echo "owent.net" > CNAME ;
 
-    git init ;
-
-    git lfs install ;
-
-    git lfs track "*.ico" ;
-
-    git lfs track "*.png" ;
-
-    git lfs track "*.jpg" ;
-
-    git lfs track "*.jpeg" ;
-
-    git lfs track "*.bmp" ;
-
-    git lfs track "*.zip" ;
-
-    git lfs track "*.tar.*" ;
-
-    git lfs track "*.tgz" ;
-
-    git lfs track "*.vsd*" ;
-
-    git lfs track "*.doc*" ;
-
-    git lfs track "*.xls*" ;
-
-    git add . ;
+    ls -A | xargs git add ;
 
     git -c user.name='travis' -c user.email='deploy@travis-ci.org' commit -m "Delpoy owent.net for $TRAVIS_COMMIT($TRAVIS_COMMIT_MESSAGE)";
 
