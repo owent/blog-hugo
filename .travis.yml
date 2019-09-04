@@ -30,7 +30,8 @@ deploy:
   local_dir: public
   repo: owent/blog-website
   target_branch: master
-  keep_history: true
+  # keep_history: true
+  keep_history: false
   fqdn: owent.net
   project_name: "I'm OWenT"
   github_token: $GITHUB_TOKEN
