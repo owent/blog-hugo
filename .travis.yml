@@ -75,7 +75,6 @@ deploy:
   keep_history: true
   # keep_history: false
   fqdn: owent.net
-  project_name: "I'm OWenT"
   github_token: $GITHUB_TOKEN
   skip_cleanup: true
   on:
