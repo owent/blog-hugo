@@ -22,64 +22,64 @@ script:
   - if [ -e public ]; then rm -rf public ; fi
   - bash deploy.sh
 
-after_success:
-  - if [ -e "public-website" ]; then
-
-      rm -rf "public-website" ;
-
-    fi
-
-    git clone https://github.com/owent/blog-website.git "public-website" ;
-
-    cd "public-website" ;
-
-    if [ -e ".gitattributes" ]; then
-
-      grep 'lfs' ".gitattributes" | awk '{print $1}' | xargs git lfs untrack ;
-
-      git lfs uninstall ;
-
-    fi
-
-    ls -A | xargs rm -rf ;
-
-    cd ../public ;
-
-    cp -rf $(ls -A) ../public-website ;
-
-    cd ../public-website ;
-
-    if [ -e ".gitattributes" ]; then
-
-      rm -rf ".gitattributes" ;
-
-    fi
-
-    echo "owent.net" > CNAME ;
-
-    ls -A | xargs git add ;
-
-    git -c user.name='travis' -c user.email='deploy@travis-ci.org' commit -a -m "Delpoy owent.net for $TRAVIS_COMMIT($TRAVIS_COMMIT_MESSAGE)";
-
-    git push -f -q https://owt5008137:$GITHUB_TOKEN@github.com/owent/blog-website HEAD:master ;
+# after_success:
+#   - if [ -e "public-website" ]; then
+# 
+#       rm -rf "public-website" ;
+# 
+#     fi
+# 
+#     git clone https://github.com/owent/blog-website.git "public-website" ;
+# 
+#     cd "public-website" ;
+# 
+#     if [ -e ".gitattributes" ]; then
+# 
+#       grep 'lfs' ".gitattributes" | awk '{print $1}' | xargs git lfs untrack ;
+# 
+#       git lfs uninstall ;
+# 
+#     fi
+# 
+#     ls -A | xargs rm -rf ;
+# 
+#     cd ../public ;
+# 
+#     cp -rf $(ls -A) ../public-website ;
+# 
+#     cd ../public-website ;
+# 
+#     if [ -e ".gitattributes" ]; then
+# 
+#       rm -rf ".gitattributes" ;
+# 
+#     fi
+# 
+#     echo "owent.net" > CNAME ;
+# 
+#     ls -A | xargs git add ;
+# 
+#     git -c user.name='travis' -c user.email='deploy@travis-ci.org' commit -a -m "Delpoy owent.net for $TRAVIS_COMMIT($TRAVIS_COMMIT_MESSAGE)";
+# 
+#     git push -f -q https://owt5008137:$GITHUB_TOKEN@github.com/owent/blog-website HEAD:master ;
 
 cache: 
   apt: true
   ccache: true
 
-# deploy:
-#   provider: pages
-#   local_dir: public
-#   repo: owent/blog-website
-#   target_branch: master
-#   # keep_history: true
-#   keep_history: false
-#   fqdn: owent.net
-#   project_name: "I'm OWenT"
-#   github_token: $GITHUB_TOKEN
-#   skip_cleanup: true
-#   on:
-#     all_branches: true
+deploy:
+  provider: pages
+  local_dir: public
+  repo: owent/blog-website
+  target_branch: master
+  keep_history: true
+  # keep_history: false
+  fqdn: owent.net
+  project_name: "I'm OWenT"
+  github_token: $GITHUB_TOKEN
+  skip_cleanup: true
+  on:
+    all_branches: true
 
 notifications:
   email:
