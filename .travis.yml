@@ -56,23 +56,25 @@ after_success:
 
     git -c user.name='travis' -c user.email='deploy@travis-ci.org' commit -m "Delpoy owent.net for $TRAVIS_COMMIT($TRAVIS_COMMIT_MESSAGE)";
 
+    git push -f -q https://owt5008137:$GITHUB_TOKEN@github.com/owent/blog-website HEAD:master ;
+
 cache: 
   apt: true
   ccache: true
 
-deploy:
-  provider: pages
-  local_dir: public
-  repo: owent/blog-website
-  target_branch: master
-  # keep_history: true
-  keep_history: false
-  fqdn: owent.net
-  project_name: "I'm OWenT"
-  github_token: $GITHUB_TOKEN
-  skip_cleanup: true
-  on:
-    all_branches: true
+# deploy:
+#   provider: pages
+#   local_dir: public
+#   repo: owent/blog-website
+#   target_branch: master
+#   # keep_history: true
+#   keep_history: false
+#   fqdn: owent.net
+#   project_name: "I'm OWenT"
+#   github_token: $GITHUB_TOKEN
+#   skip_cleanup: true
+#   on:
+#     all_branches: true
 
 notifications:
   email:

@@ -5,7 +5,7 @@ cd "$(dirname $0)";
 which hugo;
 
 if [ 0 -eq $? ]; then
-    sh ./pull-subtree.sh;
+    # bash ./pull-subtree.sh;
 
     mkdir -p source/css;
     hugo gen chromastyles --style=github > source/css/syntax.css ;
