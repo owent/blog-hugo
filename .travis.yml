@@ -34,14 +34,9 @@ deploy:
   fqdn: owent.net
   project_name: "I'm OWenT"
   github_token: $GITHUB_TOKEN
-  file_glob: true
-  file: "*.tar.gz"
   skip_cleanup: true
-  overwrite: true
-  draft: true
   on:
     all_branches: true
-    tags: true
 
 notifications:
   email:
