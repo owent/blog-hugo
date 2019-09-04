@@ -17,8 +17,8 @@ matrix:
             - python3
 
 script:
-  - snap install hugo
-  - snap refresh hugo
+  - sudo snap install hugo
+  - sudo snap refresh hugo
   - bash deploy.sh
 
 cache: 
