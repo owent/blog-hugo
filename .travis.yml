@@ -35,7 +35,7 @@ after_success:
 
     if [ -e ".gitattributes" ]; then
 
-      grep 'lfs' ".gitattributes" | awk '{print $1}' | xargs git untrack ;
+      grep 'lfs' ".gitattributes" | awk '{print $1}' | xargs git lfs untrack ;
 
     fi
 
