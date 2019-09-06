@@ -22,6 +22,7 @@ sudo yum install -y graphviz optipng
 # run
 dot -Tpng -O 1807-02.dot
 optipng -o6 1807-02.dot.png
+# trimage -f 1807-02.dot.png
 ```
 
 {% include "./LICENSE.md" %}
