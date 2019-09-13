@@ -14,9 +14,31 @@ jobs:
         go-version: '1.x'
     - name: Install dependencies
       run: |
-        sudo apt update -y && sudo apt upgrade -y && sudo apt install -y graphviz python3
+        sudo apt update -y && sudo apt install -y graphviz python3
         sudo snap install hugo && sudo snap install refresh 
     - name: Build blog website
       run: |
-        if [ -e public ]; then rm -rf public ; fi
         bash deploy.sh
+    - name: deploy
+      uses: peaceiris/actions-gh-pages@v2.2.0
+      run: |
+        mkdir -p $HOME/.ssh
+        chmod 700 $HOME/.ssh
+        echo "${{ secrets.ACTIONS_DEPLOY_KEY }}" > $HOME/.ssh/id_rsa.action
+        chmod 600 $HOME/.ssh/id_rsa.action
+        export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no User=owent IdentityFile=$HOME/.ssh/id_rsa.action"
+        if [ -e public_repo ] && [ ! -e public_repo ]; then rm -rf public_repo ; fi
+        git clone --depth=1 --single-branch --branch "master" "git@github.com:owent/blog-website.git" "public_repo"
+        cd public_repo
+        git rm -r '*'
+        find "${GITHUB_WORKSPACE}/public" -maxdepth 1 | tail -n +2 | xargs -I % cp -rf % "$PWD"
+        echo "owent.net" > CNAME
+        git config user.name "owent"
+        git config user.email "admin@owent.net"
+        git remote rm origin || true
+        git remote add origin "git@github.com:owent/blog-website.git"
+        git add --all
+        git commit --allow-empty -a -m "Automated deployment: $(date -u) ${GITHUB_SHA}"
+        git push -f origin HEAD:master
+        echo "${GITHUB_SHA} was successfully deployed"
+

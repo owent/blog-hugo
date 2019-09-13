@@ -13,7 +13,7 @@ if [ 0 -eq $? ]; then
     echo "/* Patch */ .chroma { padding: 0.5em; border-radius: 3px; }" >> source/css/syntax.css;
     echo "/* Patch */ .chroma span.err { background-color: transparent; }" >> source/css/syntax.css;
 
-    hugo;
+    hugo --gc --minify --cleanDestinationDir;
 
     if [ 0 -ne $? ]; then
         echo "Something error, exit with $?";
