@@ -1,0 +1,22 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/setup-go@v1
+      with:
+        go-version: '1.x'
+    - name: Install dependencies
+      run: |
+        sudo apt update -y && sudo apt upgrade -y && sudo apt install -y graphviz python3
+        sudo snap install hugo && sudo snap install refresh 
+    - name: Build blog website
+      run: |
+        if [ -e public ]; then rm -rf public ; fi
+        bash deploy.sh
