@@ -14,7 +14,7 @@ jobs:
         go-version: '1.x'
     - name: Install dependencies
       run: |
-        sudo apt update -y && sudo apt install -y graphviz python3
+        # sudo apt update -y && sudo apt install -y graphviz python3
         sudo snap install hugo && sudo snap install refresh 
     - name: Build blog website
       run: |
