@@ -19,8 +19,7 @@ jobs:
     - name: Build blog website
       run: |
         bash deploy.sh
-    - name: deploy
-      uses: peaceiris/actions-gh-pages@v2.2.0
+    - name: Deploy blog website
       run: |
         mkdir -p $HOME/.ssh
         chmod 700 $HOME/.ssh
