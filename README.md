@@ -3,6 +3,8 @@ OWenT.Articles
 
 All contents are also published on https://owent.net
 
+[![GitHub Actions status](https://github.com/owent/blog-hugo/workflows/CI/badge.svg)](https://github.com/owent/blog-hugo/actions)
+
 About Me
 ------
 See [About](source/about/_index.md)

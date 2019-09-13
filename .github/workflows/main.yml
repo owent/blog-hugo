@@ -24,8 +24,8 @@ jobs:
     - name: Build blog website
       run: |
         echo "GITHUB_WORKSPACE=${GITHUB_WORKSPACE}"
-        cd "${GITHUB_WORKSPACE}/source"
-        bash deploy.sh
+        cd "${GITHUB_WORKSPACE}"
+        bash "deploy.sh"
     - name: Deploy blog website
       run: |
         mkdir -p $HOME/.ssh
@@ -33,11 +33,11 @@ jobs:
         echo "${{ secrets.ACTIONS_DEPLOY_KEY }}" > $HOME/.ssh/id_rsa.action
         chmod 600 $HOME/.ssh/id_rsa.action
         export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o User=owent -o IdentityFile=$HOME/.ssh/id_rsa.action"
-        if [ -e "${GITHUB_WORKSPACE}/public_repo" ]; then rm -rf "${GITHUB_WORKSPACE}/public_repo" ; fi
-        git clone --depth=1 --single-branch --branch "master" "git@github.com:owent/blog-website.git" "${GITHUB_WORKSPACE}/public_repo"
-        cd "${GITHUB_WORKSPACE}/public_repo"
+        if [ -e "${GITHUB_WORKSPACE}/../public_repo" ]; then rm -rf "${GITHUB_WORKSPACE}/../public_repo" ; fi
+        git clone --depth=1 --single-branch --branch "master" "git@github.com:owent/blog-website.git" "${GITHUB_WORKSPACE}/../public_repo"
+        cd "${GITHUB_WORKSPACE}/../public_repo"
         git rm -r '*'
-        find "${GITHUB_WORKSPACE}/source/public" -maxdepth 1 | tail -n +2 | xargs -I % cp -rf % "$PWD"
+        find "${GITHUB_WORKSPACE}/public" -maxdepth 1 | tail -n +2 | xargs -I % cp -rf % "$PWD"
         echo "owent.net" > CNAME
         git config user.name "owent"
         git config user.email "admin@owent.net"
