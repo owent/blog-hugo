@@ -6,7 +6,13 @@ import glob
 import re
 import codecs
 
-os.chdir(os.path.dirname(__file__))
+script_dir = os.path.dirname(__file__)
+if script_dir:
+    script_dir = os.path.realpath(script_dir)
+else:
+    script_dir = os.getcwd()
+print('script_dir={0}'.format(script_dir))
+os.chdir(script_dir)
 
 SUMMARY_FILE = open('SUMMARY.md', mode='w', encoding='utf8')
 
