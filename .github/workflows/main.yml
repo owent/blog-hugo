@@ -1,12 +1,14 @@
 name: CI
 
 on: [push]
+strategy:
+  matrix:
+    os: [ubuntu-latest]
+    hugo: [0.58.2]
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
-    
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v1
       with:
@@ -21,10 +23,18 @@ jobs:
       run: |
         # sudo apt update -y && sudo apt install -y graphviz python3
         sudo snap install hugo && sudo snap refresh hugo
+        HUGO_ROOT="${GITHUB_WORKSPACE}/../hugo-${{ matrix.hugo }}"
+        mkdir -p "$HUGO_ROOT"
+        if [ ! -e "$HUGO_ROOT/hugo" ]; then
+          cd "$HUGO_ROOT"
+          wget https://github.com/gohugoio/hugo/releases/download/v${{ matrix.hugo }}/hugo_${{ matrix.hugo }}_Linux-64bit.tar.gz
+          tar -axvf hugo_${{ matrix.hugo }}_Linux-64bit.tar.gz
+        fi
     - name: Build blog website
       run: |
         echo "GITHUB_WORKSPACE=${GITHUB_WORKSPACE}"
         cd "${GITHUB_WORKSPACE}"
+        export PATH="${GITHUB_WORKSPACE}/../hugo-${{ matrix.hugo }}:$PATH"
         bash "deploy.sh"
     - name: Deploy blog website
       run: |
