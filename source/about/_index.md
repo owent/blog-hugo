@@ -24,7 +24,7 @@ date: 2009-09-01
 * Github-主站: [https://github.com/owt5008137](https://github.com/owt5008137)
 * Github-个人Utility工具集: [https://github.com/owent-utils](https://github.com/owent-utils)
 * Github-参与的开源项目: [https://github.com/owent-contrib](https://github.com/owent-contrib)
-* Excel转表工具集（Excel -&gt; Protobuf、Lua、Msgpack、Json、Xml\Javascript）: https://github.com/xresloader
+* Excel转表工具集（Excel -&gt; Protobuf、Lua、Msgpack、Json、Xml\Javascript、UnrealEngine DataTable）: https://github.com/xresloader
 
 > 1. 转表核心引擎: [xresloader](https://github.com/xresloader/xresloader)
 > 2. 批量转表规范: [xresconv-conf](https://github.com/xresloader/xresconv-conf)
@@ -74,7 +74,7 @@ date: 2009-09-01
 > * 保证跨平台一致性的离线服务器完全副盘校验服务和多版本兼容策略
 > * 开发CI和CD流程优化
 > * 在开发测试环境搭建自动化潜在问题分析和报告的流程
-> * 基于Web和websocket的GM工具
+> * 基于nodejs,webpack和websocket的GM工具
 
 ## 2016年10月 — 2017年07月：上海格奕网络科技有限公司
 
@@ -146,16 +146,13 @@ date: 2009-09-01
 --- 
 # 技术栈/关键字
 
-编程语言: c/c++(11/14/17/2a),bash,cmake,lua,python,javascript,typescript,c#,html,java,less,sass,php,sql,markdown,rust 
+编程语言: c/c++(11/14/17/2a),bash,cmake,lua,python,javascript,typescript,c#,html,java,less,sass,php,sql,rust,markdown,restructuredtext
 
-库: jemalloc/ptmalloc/tcmalloc,libuv/libevent,boost,bootstrap,jquery,v8,.net,angularjs,vue.js,nodejs,webpack,websocket,qt 
+框架和服务: redis,msgpack,protobuf,flatbuffers,ci,unity,cocos2d-x,cap’n proto,gRPC,mono/.net core,elasticsearch,logstash,kibana,nodejs,webpack
 
-框架和服务: redis,msgpack,protobuf,flatbuffers,ci,jenkins,travis,appveyor,unity,cocos2d-x,cap’n proto,gRPC,mono/.net core, elasticsearch, logstash, kibana 
-
-主题: 计算机算法,分布式系统,游戏服务器架构设计和开发,linux环境编程,操作系统,编译原理,设计模式,协程,coroutine,vscode插件开发,wordpress插件及主题开发 
+主题: 计算机算法,分布式系统,游戏服务器架构设计和开发,linux环境编程,操作系统,编译原理,设计模式,协程,coroutine,vscode插件开发,wordpress插件及主题开发,github action
 
 工具: git,svn,p4,pandoc,graphviz,valgrind,gdb/lldb,perf,gperf,binutils/readelf/tcpdump等,mingw,msys,wsl,qemu,kvm,docker 
-
 
 [1]: https://github.com/owt5008137/libcopp
 [2]: https://xresloader.atframe.work/
