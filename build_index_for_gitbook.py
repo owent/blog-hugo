@@ -14,7 +14,7 @@ else:
 print('script_dir={0}'.format(script_dir))
 os.chdir(script_dir)
 
-SUMMARY_FILE = open('SUMMARY.md', mode='w', encoding='utf8')
+SUMMARY_FILE = codecs.open('SUMMARY.md', mode='w', encoding='utf8')
 
 SUMMARY_FILE.write('# Summary\r\n\r\n')
 
@@ -26,7 +26,7 @@ DRAFT_PATTERN = re.compile('draft:\\s*([^\\s]*)')
 
 REPLACE_PATTERN = re.compile('([\\[\\]\\(\\)])')
 
-def walk_dir(parent_dir, *, ident=''):
+def walk_dir(parent_dir, ident=''):
     print('[INFO] Analysis for directory {0}'.format(parent_dir))
     all_files = glob.glob(os.path.join(parent_dir, '*'))
     if all_files is None or len(all_files) == 0:
@@ -42,7 +42,7 @@ def walk_dir(parent_dir, *, ident=''):
         )
         SUMMARY_FILE.write(title_md)
         SUMMARY_FILE.write('\r\n')
-        readme_file = open('{0}/README.md'.format(parent_dir), mode='w', encoding='utf8')
+        readme_file = codecs.open('{0}/README.md'.format(parent_dir), mode='w', encoding='utf8')
         readme_file.write('# {0}\r\n\r\n'.format(title_name))
         return readme_file
 
