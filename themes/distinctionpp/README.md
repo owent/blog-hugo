@@ -43,15 +43,15 @@ params:
     sitename: q1
     siteprefix: "site:"
   bootstrap:
-    js: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js
-    css: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css
+    js: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/js/bootstrap.min.js
+    css: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/css/bootstrap.min.css
     popper:
-      js: //cdnjs.cloudflare.com/ajax/libs/popper.js/1.15.0/umd/popper.min.js
+      js: //cdnjs.cloudflare.com/ajax/libs/popper.js/2.4.0/umd/popper.min.js
   highlightjs:
     style: "vs2015"      # style name
     langs: ['capnproto', 'cmake', 'd', 'dos', 'erlang', 'go', 'less', 'lua', 'php', 'powershell', 'protobuf', 'profile', 'typescript', 'vim']
     selector: 'pre>code'
-    version: '9.15.10'
+    version: '10.0.3'
     url:
       js: //cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/highlight.min.js
       style: //cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/styles/%STYLE%.min.css
@@ -69,12 +69,12 @@ params:
   #   js: //cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
   #   js: //unpkg.com/mathjax@3/es5/tex-mml-chtml.js
   jquery:
-    js: //cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.slim.min.js
-    migrate: //cdnjs.cloudflare.com/ajax/libs/jquery-migrate/3.0.1/jquery-migrate.min.js
+    js: //cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.slim.min.js
+    migrate: //cdnjs.cloudflare.com/ajax/libs/jquery-migrate/3.3.0/jquery-migrate.min.js
   chartjs:
-    js: //cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js
+    js: //cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js
   mermaid:
-    js: //cdnjs.cloudflare.com/ajax/libs/mermaid/8.3.1/mermaid.min.js
+    js: //cdnjs.cloudflare.com/ajax/libs/mermaid/8.5.1/mermaid.min.js
   styleimport:
     delay: 200
     urls: ['https://fonts.googleapis.com/css?family=Noto+Sans+SC:400,700&subset=chinese-simplified,japanese', 'https://fonts.googleapis.com/css?family=Roboto+Mono:400,400i,500,500i&subset=latin-ext', 'https://fonts.googleapis.com/css?family=Roboto:400,400i,500,500i&subset=latin-ext']

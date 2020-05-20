@@ -1,5 +1,5 @@
-{{ $default_bootstrap_js := "//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js" }}
-{{ $default_bootstrap_popper_js := "//cdnjs.cloudflare.com/ajax/libs/popper.js/1.15.0/umd/popper.min.js" }}
+{{ $default_bootstrap_js := "//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/js/bootstrap.min.js" }}
+{{ $default_bootstrap_popper_js := "//cdnjs.cloudflare.com/ajax/libs/popper.js/2.4.0/umd/popper.min.js" }}
 {{ $default_highlightjs_js := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/highlight.min.js" }}
 {{ $default_highlightjs_css := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/styles/%STYLE%.min.css" }}
 {{ $default_highlightjs_lang := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/languages/%LANG%.min.js" }}
@@ -9,8 +9,8 @@
 {{ $default_katex_js := "///cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.js" }}
 {{ $default_katex_css := "//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" }}
 {{ $default_katex_autorender := "//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/contrib/auto-render.min.js" }}
-{{ $default_chartjs_js := "//cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" }}
-{{ $default_mermaid_js := "//cdnjs.cloudflare.com/ajax/libs/mermaid/8.3.1/mermaid.min.js" }}
+{{ $default_chartjs_js := "//cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js" }}
+{{ $default_mermaid_js := "//cdnjs.cloudflare.com/ajax/libs/mermaid/8.5.1/mermaid.min.js" }}
 {{ if $.Site.Params.bootstrap }}
   {{ if $.Site.Params.bootstrap.popper }}
   <script type="text/javascript" src='{{ $.Site.Params.bootstrap.popper.js | default $default_bootstrap_popper_js | safeURL }}' crossorigin="anonymous"></script>

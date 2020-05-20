@@ -2,101 +2,101 @@
 baseURL: "//owent.net"
 
 # include content marked as draft
-buildDrafts:                false
+buildDrafts: false
 # include content with publishdate in the future
-buildFuture:                true
+buildFuture: true
 # include content already expired
-buildExpired:               true
+buildExpired: true
 # enable this to make all relative URLs relative to content root. Note that this does not affect absolute URLs.
-relativeURLs:               true
-canonifyURLs:               true
+relativeURLs: true
+canonifyURLs: true
 # config file (default is path/config.yaml|json|toml)
-config:                     "config.yaml"
-contentDir:                 "source"
-dataDir:                    "data"
-defaultExtension:           "html"
-defaultLayout:              "post"
+config: "config.yaml"
+contentDir: "source"
+dataDir: "data"
+defaultExtension: "html"
+defaultLayout: "post"
 # Missing translations will default to this content language
-defaultContentLanguage:     "zh-cn"
+defaultContentLanguage: "zh-cn"
 # Renders the default content language in subdir, e.g. /en/. The root directory / will redirect to /en/
 defaultContentLanguageInSubdir: false
 # The below example will disable all page types and will render nothing.
-disableKinds:               []
-disableLiveReload:          false
+disableKinds: []
+disableLiveReload: false
 # Enable GitInfo feature
-enableGitInfo:              false
+enableGitInfo: false
 # Build robots.txt file
-enableRobotsTXT:            true
+enableRobotsTXT: true
 # Do not inject generator meta tag on homepage
 disableHugoGeneratorInject: false
 # Enable Emoji emoticons support for page content.
 # See www.emoji-cheat-sheet.com
-enableEmoji:                false
+enableEmoji: false
 # Show a placeholder instead of the default value or an empty string if a translation is missing
 enableMissingTranslationPlaceholders: false
-footnoteAnchorPrefix:       ""
+footnoteAnchorPrefix: ""
 footnoteReturnLinkContents: ""
 
-languageCode:               "zh-cn"
-layoutDir:                  "layouts"
+languageCode: "zh-cn"
+layoutDir: "layouts"
 # Enable Logging
-log:                        false
+log: false
 # Log File path (if set, logging enabled automatically)
-logFile:                    ""
+logFile: ""
 # "yaml", "toml", "json"
-metaDataFormat:             "yaml"
+metaDataFormat: "yaml"
 # Edit new content with this editor, if provided
-newContentEditor:           ""
+newContentEditor: ""
 # Don't sync permission mode of files
-noChmod:                    false
+noChmod: false
 # Don't sync modification time of files
-noTimes:                    false
-paginate:                   20
-paginatePath:               "page"
+noTimes: false
+paginate: 20
+paginatePath: "page"
 permalinks:
   post: /:year/:filename
 
 # Pluralize titles in lists using inflect
-pluralizeListTitles:        true
+pluralizeListTitles: true
 # Preserve special characters in taxonomy names ("Gérard Depardieu" vs "Gerard Depardieu")
-preserveTaxonomyNames:      false
+preserveTaxonomyNames: false
 # filesystem path to write files to
-publishDir:                 "public"
+publishDir: "public"
 # Set to true to enable syntax highlighting in code fences with a language tag in markdown
-pygmentsCodefences:         false
+pygmentsCodefences: false
 # enables syntax guessing for code fences without specified language
 pygmentsCodeFencesGuessSyntax: false
 # color-codes for highlighting derived from this style
-pygmentsStyle:              "github"
+pygmentsStyle: "github"
 # true: use pygments-css or false: color-codes directly
-pygmentsUseClasses:         false
+pygmentsUseClasses: false
 # A comma separated list of options.
-pygmentsOptions:            ""
+pygmentsOptions: ""
 # Set to true to use Pygments instead of the much faster Chroma.
-pygmentsUseClassic:         false
+pygmentsUseClassic: false
 # maximum number of items in the RSS feed
-rssLimit:                   100
+rssLimit: 100
 # default sitemap configuration map
-sitemap:                     sitemap.xml
+sitemap: sitemap.xml
 # filesystem path to read files relative from
-source:                     ""
-staticDir:                  "source/post"
+source: ""
+staticDir: "source/post"
 # display memory and timing of different steps of the program
-stepAnalysis:               false
+stepAnalysis: false
 # theme to use (located by default in /themes/THEMENAME/)
-themesDir:                  "themes"
-theme:                      "distinctionpp"
-title:                      "I'm OWenT"
+themesDir: "themes"
+theme: "distinctionpp"
+title: "I'm OWenT"
 # if true, use /filename.html instead of /filename/
-uglyURLs:                   true
+uglyURLs: true
 # if true, auto-detect Chinese/Japanese/Korean Languages in the content. (.Summary and .WordCount can work properly in CJKLanguage)
-hasCJKLanguage:             true
+hasCJKLanguage: true
 # verbose output
-verbose:                    false
+verbose: false
 # verbose logging
-verboseLog:                 false
+verboseLog: false
 # watch filesystem for changes and recreate as needed
-watch:                      true
+watch: true
 ignoreFiles:
   - "README\\.md$"
 
@@ -116,40 +116,60 @@ params:
     sitename: q1
     siteprefix: "site:"
   bootstrap:
-    # js: //cdn.bootcss.com/bootstrap/4.3.1/js/bootstrap.min.js
-    js: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js
-    # css: //cdn.bootcss.com/bootstrap/4.3.1/css/bootstrap.min.css
-    css: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css
+    # js: //cdn.bootcss.com/bootstrap/4.5.0/js/bootstrap.min.js
+    js: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/js/bootstrap.min.js
+    # css: //cdn.bootcss.com/bootstrap/4.5.0/css/bootstrap.min.css
+    css: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/css/bootstrap.min.css
     popper:
-      js: //cdnjs.cloudflare.com/ajax/libs/popper.js/1.15.0/umd/popper.min.js
+      js: //cdnjs.cloudflare.com/ajax/libs/popper.js/2.4.0/umd/popper.min.js
   highlightjs:
-    style: "vs2015"      # style name
-    langs: ['bash', 'cpp', 'capnproto', 'cmake', 'd', 'diff', 'dos', 'erlang', 'go', 'less', 'lua', 'php', 'powershell', 'protobuf', 'profile', 'typescript', 'vim', 'rust' ]
-    selector: 'pre>code'
-    version: '9.15.10'
-    url:                  # 
+    style: "vs2015" # style name
+    langs:
+      [
+        "bash",
+        "cpp",
+        "capnproto",
+        "cmake",
+        "d",
+        "diff",
+        "dos",
+        "erlang",
+        "go",
+        "less",
+        "lua",
+        "php",
+        "powershell",
+        "protobuf",
+        "profile",
+        "typescript",
+        "vim",
+        "rust",
+      ]
+    selector: "pre>code"
+    version: "10.0.3"
+    url: #
       # js: "//cdn.bootcss.com/highlight.js/%VERSION%/highlight.min.js"
       js: //cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/highlight.min.js
       # style: "//cdn.bootcss.com/highlight.js/%VERSION%/styles/%STYLE%.min.css"
       style: //cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/styles/%STYLE%.min.css
       # lang: "//cdn.bootcss.com/highlight.js/%VERSION%/languages/%LANG%.min.js"
       lang: //cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/languages/%LANG%.min.js
-    options:              # options of highlight.js see http://highlightjs.readthedocs.io/en/latest/api.html#configure-options
-      tabReplace: '    '
+    options: # options of highlight.js see http://highlightjs.readthedocs.io/en/latest/api.html#configure-options
+      tabReplace: "    "
       useBR: false
       #classPrefix: 'hljs-'
-      languages: {}   # language alias
+      languages: {} # language alias
   katex:
     js: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.js
     css: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css
     autorender: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/contrib/auto-render.min.js
   jquery:
-    js: //cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.slim.min.js
-    migrate: //cdnjs.cloudflare.com/ajax/libs/jquery-migrate/3.0.1/jquery-migrate.min.js
+    js: //cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.slim.min.js
+    migrate: //cdnjs.cloudflare.com/ajax/libs/jquery-migrate/3.3.0/jquery-migrate.min.js
   chartjs:
-    js: //cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js
+    js: //cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js
   mermaid:
-    js: //cdnjs.cloudflare.com/ajax/libs/mermaid/8.3.1/mermaid.min.js
+    js: //cdnjs.cloudflare.com/ajax/libs/mermaid/8.5.1/mermaid.min.js
   # styleimport:
   #   delay: 200
   #   urls: ['https://fonts.googleapis.com/css?family=Noto+Sans+SC:400,700&subset=chinese-simplified,japanese', 'https://fonts.googleapis.com/css?family=Roboto+Mono:400,400i,500,500i&subset=latin-ext', 'https://fonts.googleapis.com/css?family=Roboto:400,400i,500,500i&subset=latin-ext']
@@ -170,8 +190,8 @@ menu:
       URL: "/about.html"
 
 author:
-    name: "OWenT"
-    email: "admin@owent.net"
+  name: "OWenT"
+  email: "admin@owent.net"
 
 taxonomies:
   tag: "tags"
@@ -201,3 +221,4 @@ blackfriday:
     - noEmptyLineBeforeBlock
   extensionsmask:
 ---
+
