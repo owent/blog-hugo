@@ -1,0 +1,367 @@
+<mxfile host="" modified="2020-05-26T03:18:56.309Z" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Code-Insiders/1.46.0-insider Chrome/80.0.3987.165 Electron/8.3.0 Safari/537.36" etag="FZmiCn8RtdHmHyoTCbOh" version="13.1.3">
+    <diagram id="6hGFLwfOUW9BJ-s0fimq" name="transaction process">
+        <mxGraphModel dx="883" dy="721" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="15" value="执行者" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+                    <mxGeometry x="40" y="140" width="100" height="800" as="geometry"/>
+                </mxCell>
+                <mxCell id="17" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;" vertex="1" parent="15">
+                    <mxGeometry x="45" y="60" width="10" height="660" as="geometry"/>
+                </mxCell>
+                <mxCell id="33" value="失败则退出" style="edgeStyle=orthogonalEdgeStyle;html=1;align=left;spacingLeft=2;endArrow=block;rounded=0;" edge="1" target="17" parent="15" source="17">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="110" y="130" as="sourcePoint"/>
+                        <Array as="points">
+                            <mxPoint x="90" y="130"/>
+                            <mxPoint x="90" y="150"/>
+                        </Array>
+                        <mxPoint x="110" y="150" as="targetPoint"/>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="47" value="失败或事务冲突则跳到下面失败流程" style="edgeStyle=orthogonalEdgeStyle;html=1;align=left;spacingLeft=2;endArrow=block;rounded=0;" edge="1" parent="15" source="17" target="17">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="60" y="350.0000000000001" as="sourcePoint"/>
+                        <Array as="points">
+                            <mxPoint x="95" y="330"/>
+                            <mxPoint x="95" y="350"/>
+                        </Array>
+                        <mxPoint x="60" y="370.0000000000001" as="targetPoint"/>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="56" value="失败或则走失败流程" style="edgeStyle=orthogonalEdgeStyle;html=1;align=left;spacingLeft=2;endArrow=block;rounded=0;" edge="1" parent="15" source="17" target="17">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="60" y="445" as="sourcePoint"/>
+                        <Array as="points">
+                            <mxPoint x="100" y="445"/>
+                            <mxPoint x="100" y="465"/>
+                        </Array>
+                        <mxPoint x="60" y="465" as="targetPoint"/>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="16" value="ID分配器" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+                    <mxGeometry x="170" y="140" width="100" height="800" as="geometry"/>
+                </mxCell>
+                <mxCell id="18" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;" vertex="1" parent="16">
+                    <mxGeometry x="45" y="60" width="10" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="19" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="17" target="18">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="150" y="220"/>
+                            <mxPoint x="150" y="220"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="31" value="ID分配" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="19">
+                    <mxGeometry x="-0.1583" relative="1" as="geometry">
+                        <mxPoint x="14.17" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="20" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="18" target="17">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="105" y="230" as="sourcePoint"/>
+                        <mxPoint x="225" y="230" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="180" y="250"/>
+                            <mxPoint x="180" y="250"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="21" value="事务协调者" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+                    <mxGeometry x="560" y="140" width="100" height="790" as="geometry"/>
+                </mxCell>
+                <mxCell id="22" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;" vertex="1" parent="21">
+                    <mxGeometry x="45" y="140" width="10" height="620" as="geometry"/>
+                </mxCell>
+                <mxCell id="75" value="超时和数据清理" style="edgeStyle=orthogonalEdgeStyle;html=1;align=left;spacingLeft=2;endArrow=block;rounded=0;" edge="1" parent="21" source="22" target="22">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="70" y="720" as="sourcePoint"/>
+                        <Array as="points">
+                            <mxPoint x="90" y="720"/>
+                            <mxPoint x="90" y="740"/>
+                        </Array>
+                        <mxPoint x="70" y="740" as="targetPoint"/>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="23" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="17" target="22">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="150" y="300" as="sourcePoint"/>
+                        <mxPoint x="225" y="310.0000000000001" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="300" y="310"/>
+                            <mxPoint x="300" y="310"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="30" value="创建事务" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="23">
+                    <mxGeometry x="-0.1006" y="-1" relative="1" as="geometry">
+                        <mxPoint x="20.83" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="24" value="参与者1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+                    <mxGeometry x="300" y="140" width="100" height="800" as="geometry"/>
+                </mxCell>
+                <mxCell id="39" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;" vertex="1" parent="24">
+                    <mxGeometry x="45" y="220" width="10" height="410" as="geometry"/>
+                </mxCell>
+                <mxCell id="26" value="参与者2" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+                    <mxGeometry x="440" y="140" width="100" height="790" as="geometry"/>
+                </mxCell>
+                <mxCell id="40" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;" vertex="1" parent="26">
+                    <mxGeometry x="45" y="240" width="10" height="390" as="geometry"/>
+                </mxCell>
+                <mxCell id="28" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="22" target="17">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="96.32999999999993" y="321.5200000000002" as="sourcePoint"/>
+                        <mxPoint x="160" y="326" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="300" y="340"/>
+                            <mxPoint x="300" y="340"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="35" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;" edge="1" parent="1" source="17" target="22">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="110" y="810" as="sourcePoint"/>
+                        <mxPoint x="615" y="810" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="380" y="810"/>
+                            <mxPoint x="380" y="810"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="36" value="如果没有成功的协调者，直接通知事务取消" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="35">
+                    <mxGeometry x="-0.1006" y="-1" relative="1" as="geometry">
+                        <mxPoint x="20.83" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="38" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;" edge="1" parent="1" source="22" target="17">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="615" y="630" as="sourcePoint"/>
+                        <mxPoint x="105" y="350" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="340" y="840"/>
+                            <mxPoint x="340" y="840"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="41" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="17" target="39">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="105" y="320" as="sourcePoint"/>
+                        <mxPoint x="625" y="320" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="190" y="380"/>
+                            <mxPoint x="190" y="380"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="42" value="通知参与者1进行事务准备" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="41">
+                    <mxGeometry x="-0.1006" y="-1" relative="1" as="geometry">
+                        <mxPoint x="20.83" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="43" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="17" target="40">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="105" y="390" as="sourcePoint"/>
+                        <mxPoint x="355" y="390" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="320" y="400"/>
+                            <mxPoint x="320" y="400"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="44" value="通知参与者2进行事务准备" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="43">
+                    <mxGeometry x="-0.1006" y="-1" relative="1" as="geometry">
+                        <mxPoint x="-40" y="-1" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="45" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="39" target="17">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="300" y="430" as="sourcePoint"/>
+                        <mxPoint x="105" y="350" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="240" y="420"/>
+                            <mxPoint x="240" y="420"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="49" value="参与者1进行事务准备结果" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="45">
+                    <mxGeometry x="0.08" y="-1" relative="1" as="geometry">
+                        <mxPoint x="20" y="1" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="46" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="40" target="17">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="360" y="449.58" as="sourcePoint"/>
+                        <mxPoint x="110" y="449.58" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="270" y="450"/>
+                            <mxPoint x="270" y="450"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="50" value="参与者2进行事务准备结果" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="46">
+                    <mxGeometry x="0.4231" relative="1" as="geometry">
+                        <mxPoint x="22.5" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="51" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="17" target="22">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="90" y="540" as="sourcePoint"/>
+                        <mxPoint x="610" y="540" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="470" y="530"/>
+                            <mxPoint x="470" y="530"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="52" value="事务提交" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="51">
+                    <mxGeometry x="-0.1006" y="-1" relative="1" as="geometry">
+                        <mxPoint x="-99.17" y="-1" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="53" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="22" target="17">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="615" y="350" as="sourcePoint"/>
+                        <mxPoint x="105" y="350" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="350" y="560"/>
+                            <mxPoint x="350" y="560"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="55" value="事务提交" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="53">
+                    <mxGeometry x="0.085" y="1" relative="1" as="geometry">
+                        <mxPoint x="-103.33" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="58" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="17" target="39">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="110" y="640" as="sourcePoint"/>
+                        <mxPoint x="360" y="640" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="220" y="620"/>
+                            <mxPoint x="220" y="620"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="59" value="通知参与者1事务提交或取消" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="58">
+                    <mxGeometry x="-0.1006" y="-1" relative="1" as="geometry">
+                        <mxPoint x="20.83" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="60" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="17" target="40">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="100" y="650" as="sourcePoint"/>
+                        <mxPoint x="490" y="650" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="370" y="640"/>
+                            <mxPoint x="370" y="640"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="61" value="通知参与者2事务提交或取消" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="60">
+                    <mxGeometry x="-0.1006" y="-1" relative="1" as="geometry">
+                        <mxPoint x="-40" y="-1" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="62" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="39" target="22">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="365" y="650" as="sourcePoint"/>
+                        <mxPoint x="590" y="650" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="480" y="660"/>
+                            <mxPoint x="480" y="660"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="63" value="参与者1处理完成" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="62">
+                    <mxGeometry x="-0.1006" y="-1" relative="1" as="geometry">
+                        <mxPoint x="-47.5" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="65" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="40" target="22">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="485" y="680" as="sourcePoint"/>
+                        <mxPoint x="735" y="680" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="560" y="680"/>
+                            <mxPoint x="560" y="680"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="66" value="参与者2处理完成" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="65">
+                    <mxGeometry x="-0.1006" y="-1" relative="1" as="geometry">
+                        <mxPoint x="5.829999999999998" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="67" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="22" target="39">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="610" y="710" as="sourcePoint"/>
+                        <mxPoint x="360" y="710" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="480" y="710"/>
+                            <mxPoint x="480" y="710"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="68" value="参与者1处理完成" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="67">
+                    <mxGeometry x="0.08" y="-1" relative="1" as="geometry">
+                        <mxPoint x="-50" y="1" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="69" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="22" target="40">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="570" y="720" as="sourcePoint"/>
+                        <mxPoint x="365" y="720" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="540" y="730"/>
+                            <mxPoint x="540" y="730"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="70" value="参与者2处理完成" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="69">
+                    <mxGeometry x="0.08" y="-1" relative="1" as="geometry">
+                        <mxPoint x="4.170000000000002" y="1" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="71" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="39" target="17">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="345" y="730" as="sourcePoint"/>
+                        <mxPoint x="95" y="730" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="230" y="730"/>
+                            <mxPoint x="230" y="730"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="72" value="参与者1事务提交或取消完成" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="71">
+                    <mxGeometry x="0.08" y="-1" relative="1" as="geometry">
+                        <mxPoint x="20" y="1" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="73" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="40" target="17">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="460" y="750" as="sourcePoint"/>
+                        <mxPoint x="100" y="750" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="290" y="750"/>
+                            <mxPoint x="290" y="750"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="74" value="参与者2事务提交或取消完成" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="73">
+                    <mxGeometry x="0.4231" relative="1" as="geometry">
+                        <mxPoint x="22.5" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
