@@ -1,0 +1,1 @@
+<iframe src="{{ (trim .Inner " \t\r\n") | safeHTMLAttr }}" {{ range $_, $v := (slice "width" "height" "allow" "allowfullscreen" "allowpaymentrequest" "csp" "importance" "referrerpolicy" "sandbox" "srcdoc") }}{{ with $.Get $v }} {{$v}}="{{ . | safeHTMLAttr }}"{{ end }}{{ end }}></iframe>
