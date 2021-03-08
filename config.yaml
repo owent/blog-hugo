@@ -116,12 +116,12 @@ params:
     sitename: q1
     siteprefix: "site:"
   bootstrap:
-    # js: //cdn.bootcss.com/bootstrap/4.5.0/js/bootstrap.min.js
-    js: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/js/bootstrap.min.js
-    # css: //cdn.bootcss.com/bootstrap/4.5.0/css/bootstrap.min.css
-    css: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/css/bootstrap.min.css
+    # js: //cdn.bootcss.com/bootstrap/4.6.0/js/bootstrap.min.js
+    js: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/js/bootstrap.min.js
+    # css: //cdn.bootcss.com/bootstrap/4.6.0/css/bootstrap.min.css
+    css: //cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/css/bootstrap.min.css
     popper:
-      js: //cdnjs.cloudflare.com/ajax/libs/popper.js/2.4.0/umd/popper.min.js
+      js: //cdnjs.cloudflare.com/ajax/libs/popper.js/2.9.0/umd/popper.min.js
   highlightjs:
     style: "vs2015" # style name
     langs:
@@ -140,13 +140,15 @@ params:
         "php",
         "powershell",
         "protobuf",
+        "python",
         "profile",
         "typescript",
         "vim",
         "rust",
+        "yaml",
       ]
     selector: "pre>code"
-    version: "10.0.3"
+    version: "10.6.0"
     url: #
       # js: "//cdn.bootcss.com/highlight.js/%VERSION%/highlight.min.js"
       js: //cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/highlight.min.js
@@ -160,16 +162,16 @@ params:
       #classPrefix: 'hljs-'
       languages: {} # language alias
   katex:
-    js: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.js
-    css: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css
-    autorender: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/contrib/auto-render.min.js
+    js: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.12.0/katex.min.js
+    css: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.12.0/katex.min.css
+    autorender: //cdnjs.cloudflare.com/ajax/libs/KaTeX/0.12.0/contrib/auto-render.min.js
   jquery:
-    js: //cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.slim.min.js
-    migrate: //cdnjs.cloudflare.com/ajax/libs/jquery-migrate/3.3.0/jquery-migrate.min.js
+    js: //cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.slim.min.js
+    migrate: //cdnjs.cloudflare.com/ajax/libs/jquery-migrate/3.3.2/jquery-migrate.min.js
   chartjs:
-    js: //cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js
+    js: //cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js
   mermaid:
-    js: //cdnjs.cloudflare.com/ajax/libs/mermaid/8.5.1/mermaid.min.js
+    js: //cdnjs.cloudflare.com/ajax/libs/mermaid/8.9.1/mermaid.min.js
   # styleimport:
   #   delay: 200
   #   urls: ['https://fonts.googleapis.com/css?family=Noto+Sans+SC:400,700&subset=chinese-simplified,japanese', 'https://fonts.googleapis.com/css?family=Roboto+Mono:400,400i,500,500i&subset=latin-ext', 'https://fonts.googleapis.com/css?family=Roboto:400,400i,500,500i&subset=latin-ext']
