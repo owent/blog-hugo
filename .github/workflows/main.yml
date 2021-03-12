@@ -46,7 +46,7 @@ jobs:
         chmod 700 $HOME/.ssh
         echo "${{ secrets.ACTIONS_DEPLOY_KEY }}" > $HOME/.ssh/id_ed25519.action
         chmod 600 $HOME/.ssh/id_ed25519.action
-        export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o User=owent -o IdentityFile=$HOME/.ssh/id_ed25519.action"
+        export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o IdentityFile=$HOME/.ssh/id_ed25519.action"
         if [[ -e "${GITHUB_WORKSPACE}/../public_repo" ]]; then rm -rf "${GITHUB_WORKSPACE}/../public_repo" ; fi
         git clone --depth=1 --single-branch --branch "master" "git@github.com:owent/blog-website.git" "${GITHUB_WORKSPACE}/../public_repo"
         cd "${GITHUB_WORKSPACE}/../public_repo"
