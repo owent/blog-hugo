@@ -1,16 +1,16 @@
-{{ $default_bootstrap_js := "//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/js/bootstrap.min.js" }}
-{{ $default_bootstrap_popper_js := "//cdnjs.cloudflare.com/ajax/libs/popper.js/2.9.0/umd/popper.min.js" }}
+{{ $default_bootstrap_js := "//unpkg.com/bootstrap@latest/dist/js/bootstrap.min.js" }}
+{{ $default_bootstrap_popper_js := "//unpkg.com/popper.js@latest/dist/umd/popper.min.js" }}
 {{ $default_highlightjs_js := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/highlight.min.js" }}
 {{ $default_highlightjs_css := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/styles/%STYLE%.min.css" }}
 {{ $default_highlightjs_lang := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/languages/%LANG%.min.js" }}
 {{ $default_gitment_js := "//imsun.github.io/gitment/dist/gitment.browser.js" }}
 {{ $default_gitment_css := "//imsun.github.io/gitment/style/default.css" }}
 {{ $default_mathjax_js := "//unpkg.com/mathjax@3/es5/tex-mml-chtml.js" }}
-{{ $default_katex_js := "///cdnjs.cloudflare.com/ajax/libs/KaTeX/0.12.0/katex.min.js" }}
-{{ $default_katex_css := "//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.12.0/katex.min.css" }}
-{{ $default_katex_autorender := "//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.12.0/contrib/auto-render.min.js" }}
-{{ $default_chartjs_js := "//cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js" }}
-{{ $default_mermaid_js := "//cdnjs.cloudflare.com/ajax/libs/mermaid/8.9.1/mermaid.min.js" }}
+{{ $default_katex_js := "///unpkg.com/katex@latest/dist/katex.min.js" }}
+{{ $default_katex_css := "//unpkg.com/katex@latest/dist/katex.min.css" }}
+{{ $default_katex_autorender := "//unpkg.com/katex@latest/dist/contrib/auto-render.min.js" }}
+{{ $default_chartjs_js := "//unpkg.com/chart.js@latest/dist/Chart.min.js" }}
+{{ $default_mermaid_js := "//unpkg.com/mermaid@latest/dist/mermaid.min.js" }}
 {{ if $.Site.Params.bootstrap }}
   {{ if $.Site.Params.bootstrap.popper }}
   <script type="text/javascript" src='{{ $.Site.Params.bootstrap.popper.js | default $default_bootstrap_popper_js | safeURL }}' crossorigin="anonymous"></script>
