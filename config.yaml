@@ -195,32 +195,72 @@ author:
   name: "OWenT"
   email: "admin@owent.net"
 
+Copyright: '<a rel="license" href="https://github.com/owent/blog-hugo/blob/master/LICENSE.md"><img alt="知识共享许可协议" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/80x15.png" /></a>'
+
 taxonomies:
   tag: "tags"
   category: "categories"
 
 DisqusShortname: owent
-googleAnalytics: "UA-19298704-1"
+GoogleAnalytics: "UA-19298704-1"
 
-blackfriday:
-  taskLists: true
-  smartypants: true
-  angledQuotes: false
-  fractions: true
-  smartDashes: true
-  latexDashes: true
-  hrefTargetBlank: true
-  plainIDAnchors: true
-  extensions:
-    - noIntraEmphasis
-    - tables
-    - fencedCode
-    - autolink
-    - strikethrough
-    - laxHtmlBlocks
-    - hardLineBreak
-    - footnotes
-    - noEmptyLineBeforeBlock
-  extensionsmask:
+
+markup:
+  defaultMarkdownHandler: goldmark
+  blackfriday:
+    taskLists: true
+    smartypants: true
+    angledQuotes: false
+    fractions: true
+    smartDashes: true
+    latexDashes: true
+    hrefTargetBlank: true
+    plainIDAnchors: true
+    extensions:
+      - noIntraEmphasis
+      - tables
+      - fencedCode
+      - autolink
+      - strikethrough
+      - laxHtmlBlocks
+      - hardLineBreak
+      - footnotes
+      - noEmptyLineBeforeBlock
+    extensionsmask:
+  goldmark:
+    extensions:
+      definitionList: true
+      footnote: true
+      linkify: true
+      strikethrough: true
+      table: true
+      taskList: true
+      typographer: true
+    parser:
+      attribute:
+        block: false
+        title: true
+      autoHeadingID: true
+      autoHeadingIDType: github
+    renderer:
+      hardWraps: false
+      unsafe: false
+      xhtml: false
+  highlight:
+    anchorLineNos: false
+    codeFences: true
+    guessSyntax: false
+    hl_Lines: ""
+    lineAnchors: ""
+    lineNoStart: 1
+    lineNos: false
+    lineNumbersInTable: true
+    noClasses: true
+    style: monokai
+    tabWidth: 4
+  tableOfContents:
+    endLevel: 3
+    ordered: false
+    startLevel: 2
 ---
 
