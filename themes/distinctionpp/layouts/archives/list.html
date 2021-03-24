@@ -1,9 +1,9 @@
 {{ define "main-content" }}<div id="archive-page-content">
 <article class="article-panel article-page" itemscope itemprop="blogPost">
   <div class="article-panel-inner article-inner">
-    <div class="article-inner">
-      <div class=float-left>{{ partial "widget/recent-posts.html" . }}</div>
-      <div class=float-right>{{ partial "widget/category.html" . }}</div>
+    <div class="article-inner clearfix">
+      <div class="float-left float-start">{{ partial "widget/recent-posts.html" . }}</div>
+      <div class="float-right float-end">{{ partial "widget/category.html" . }}</div>
       <div class="clearfix"></div>
       <hr />
       {{ partial "widget/tagcloud.html" . }}

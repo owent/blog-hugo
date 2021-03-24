@@ -46,16 +46,16 @@ params:
     js: //unpkg.com/bootstrap@latest/dist/js/bootstrap.min.js
     css: //unpkg.com/bootstrap@latest/dist/css/bootstrap.min.css
     popper:
-      js: //unpkg.com/popper.js@latest/dist/umd/popper.min.js
+      js: //unpkg.com/@popperjs/core@latest/dist/umd/popper.min.js
   highlightjs:
     style: "vs2015"      # style name
     langs: ['capnproto', 'cmake', 'd', 'dos', 'erlang', 'go', 'less', 'lua', 'php', 'powershell', 'protobuf', 'profile', 'typescript', 'vim']
     selector: 'pre>code'
-    version: '10.6.0'
+    version: 'latest'
     url:
-      js: //cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/highlight.min.js
-      style: //cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/styles/%STYLE%.min.css
-      lang: //cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/languages/%LANG%.min.js
+      js: //unpkg.com/@highlightjs/cdn-assets@%VERSION%/highlight.min.js
+      style: //unpkg.com/@highlightjs/cdn-assets@%VERSION%/styles/%STYLE%.min.css
+      lang: //unpkg.com/@highlightjs/cdn-assets@%VERSION%/languages/%LANG%.min.js
     options:              # options of highlight.js see http://highlightjs.readthedocs.io/en/latest/api.html#configure-options
       tabReplace: '    '
       useBR: false

@@ -2,11 +2,11 @@
   <div class="article-panel-inner article-inner">
     <div class="article-inner">
       <header class="article-header">{{ partial "post/title.html" . }}</header><hr />
-      {{ if .TableOfContents }}<div id="toc" class="well toc m-3 p-1 pr-1 pt-1 pb-2 float-md-right">{{ .TableOfContents }}</div><br />{{ end }}
+      {{ if .TableOfContents }}<div id="toc" class="well toc m-3 p-1 pr-1 pt-1 pb-2 float-md-right float-md-end">{{ .TableOfContents }}</div><br />{{ end }}
       <div class="article-entry" itemprop="articleBody">{{ .Content }}</div>
       <hr />
       <footer class="article-footer">
-        <div class="article-panel-footer article-meta article-footer">
+        <div class="article-panel-footer article-meta article-footer clearfix">
           <span class="article-meta-left">{{ partial "post/category.html" . }}</span>
           <span class="article-meta-right">{{ partial "post/date.html" . }}</span>
           <span class="clearfix"></span>
