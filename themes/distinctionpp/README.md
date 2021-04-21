@@ -9,7 +9,7 @@ Distinctionpp theme for [Hugo][1].
 ### Install
 
 ``` bash
-$ git clone -b master https://github.com/owt5008137/hugo-theme-distinctionpp.git themes/distinctionpp
+$ git clone -b master https://github.com/owent/hugo-theme-distinctionpp.git themes/distinctionpp
 ```
 
 **Distinctionpp requires Hugo 1.5 and above.**
@@ -32,8 +32,8 @@ git pull
 params:
   description: "Chanllege Everything"
   author: "OWenT"
-  githubuser: "owt5008137"
-  sitesource: "https://github.com/owt5008137/hugo-theme-distinctionpp"
+  githubuser: "owent"
+  sitesource: "https://github.com/owent/hugo-theme-distinctionpp"
   favicon: /favicon.ico
   css: ["css/syntax.css"] # additional css file related to baseURL
   ugly: ".html"
