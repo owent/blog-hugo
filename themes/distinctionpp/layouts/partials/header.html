@@ -15,7 +15,7 @@
           <span class="navbar-toggler-icon"></span>
         </button>
         <a id="main-nav-brand" class="navbar-brand collapse" href="#">#</a>
-        <div class="collapse navbar-collapse" id="main-nav-links">
+        <div class="collapse navbar-collapse position-relative" id="main-nav-links">
           <ul class="navbar-nav mr-auto">
             {{ if $.Site.Menus.main }}
               {{ range $.Site.Menus.main }}
@@ -28,11 +28,11 @@
             <li class="nav-item"><a id="nav-rss-link" class="nav-link" href="{{ $.Site.RSSLink }}" title='{{ i18n "rssFeed" }}'>{{ i18n "rssFeed" }}</a></li>
           </ul>
           {{ with $.Site.Params.Search }}
-          <form class="form-inline" method="get" accept-charset="UTF-8" action='{{ index . "url" | default "//google.com/search" | safeHTMLAttr }}'>
+          <div class="col-2 position-absolute end-0"><form class="input-group" method="get" accept-charset="UTF-8" action='{{ index . "url" | default "//google.com/search" | safeHTMLAttr }}'>
             <input type="hidden" name='{{ index . "sitename" | default "sitesearch" | safeHTMLAttr}}' value='{{ index . "siteprefix" | default "" | safeHTMLAttr }}{{ replaceRE "^[^:/]*:?//([^/:]+).*" "$1" $.Site.BaseURL | safeHTMLAttr }}' />
             <input class="form-control" type="text" placeholder='{{ i18n "search" }}' name='{{ index . "keywork" | default "q" | safeHTMLAttr }}' />
             <button class="btn btn-outline-secondary my-2 my-sm-0" type="submit">{{ i18n "search" }}</button>
-          </form>
+          </form></div>
           {{ end }}
         </div>
       </nav>
