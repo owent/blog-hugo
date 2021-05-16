@@ -9,7 +9,7 @@ Distinctionpp theme for [Hugo][1].
 ### Install
 
 ``` bash
-$ git clone -b master https://github.com/owt5008137/hugo-theme-distinctionpp.git themes/distinctionpp
+$ git clone -b master https://github.com/owent/hugo-theme-distinctionpp.git themes/distinctionpp
 ```
 
 **Distinctionpp requires Hugo 1.5 and above.**
@@ -32,8 +32,8 @@ git pull
 params:
   description: "Chanllege Everything"
   author: "OWenT"
-  githubuser: "owt5008137"
-  sitesource: "https://github.com/owt5008137/hugo-theme-distinctionpp"
+  githubuser: "owent"
+  sitesource: "https://github.com/owent/hugo-theme-distinctionpp"
   favicon: /favicon.ico
   css: ["css/syntax.css"] # additional css file related to baseURL
   ugly: ".html"
@@ -46,16 +46,16 @@ params:
     js: //unpkg.com/bootstrap@latest/dist/js/bootstrap.min.js
     css: //unpkg.com/bootstrap@latest/dist/css/bootstrap.min.css
     popper:
-      js: //unpkg.com/popper.js@latest/dist/umd/popper.min.js
+      js: //unpkg.com/@popperjs/core@latest/dist/umd/popper.min.js
   highlightjs:
     style: "vs2015"      # style name
     langs: ['capnproto', 'cmake', 'd', 'dos', 'erlang', 'go', 'less', 'lua', 'php', 'powershell', 'protobuf', 'profile', 'typescript', 'vim']
     selector: 'pre>code'
-    version: '10.4.1'
+    version: 'latest'
     url:
-      js: //cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/highlight.min.js
-      style: //cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/styles/%STYLE%.min.css
-      lang: //cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/languages/%LANG%.min.js
+      js: //unpkg.com/@highlightjs/cdn-assets@%VERSION%/highlight.min.js
+      style: //unpkg.com/@highlightjs/cdn-assets@%VERSION%/styles/%STYLE%.min.css
+      lang: //unpkg.com/@highlightjs/cdn-assets@%VERSION%/languages/%LANG%.min.js
     options:              # options of highlight.js see http://highlightjs.readthedocs.io/en/latest/api.html#configure-options
       tabReplace: '    '
       useBR: false
@@ -111,6 +111,7 @@ All of them are enabled by default. You can edit them in `widget` setting.
 ## shortcodes
 
 ### chart
+
 See http://www.chartjs.org for more detail
 ```
 {{< chart id="ID" style="css styles canvas" class="class of canvas" alt="text before rended" >}}
@@ -143,6 +144,7 @@ See http://www.chartjs.org for more detail
 ```
 
 ### diagram - mermaid
+
 See https://mermaidjs.github.io/
 
 ```
@@ -172,6 +174,7 @@ end
 ## Development
 
 Generate css files:
+
 ```bash
 sassc -t compressed -m auto static/css/style.scss static/css/style.css
 

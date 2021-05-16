@@ -3,9 +3,9 @@
 
 name: "Distinctionpp"
 license: "MIT"
-licenselink: "https://github.com/owt5008137/hugo-theme-distinctionpp/blob/master/LICENSE.md"
+licenselink: "https://github.com/owent/hugo-theme-distinctionpp/blob/master/LICENSE.md"
 description: "Distinctionpp theme for hugo"
-homepage: "https://github.com/owt5008137/hugo-theme-distinctionpp"
+homepage: "https://github.com/owent/hugo-theme-distinctionpp"
 tags:
   - hugo
   - theme

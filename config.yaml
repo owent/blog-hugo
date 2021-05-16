@@ -105,7 +105,7 @@ ignoreFiles:
 params:
   description: "Challenge Everything"
   author: "OWenT"
-  githubuser: "owt5008137"
+  githubuser: "owent"
   sitesource: "https://github.com/owent/blog-hugo"
   favicon: /favicon.ico
   css: ["css/syntax.css"]
@@ -116,12 +116,10 @@ params:
     sitename: q1
     siteprefix: "site:"
   bootstrap:
-    # js: //cdn.bootcss.com/bootstrap/4.5.3/js/bootstrap.min.js
     js: //unpkg.com/bootstrap@latest/dist/js/bootstrap.min.js
-    # css: //cdn.bootcss.com/bootstrap/4.5.3/css/bootstrap.min.css
     css: //unpkg.com/bootstrap@latest/dist/css/bootstrap.min.css
     popper:
-      js: //unpkg.com/popper.js@latest/dist/umd/popper.min.js
+      js: //unpkg.com/@popperjs/core@latest/dist/umd/popper.min.js
   highlightjs:
     style: "vs2015" # style name
     langs:
@@ -140,20 +138,19 @@ params:
         "php",
         "powershell",
         "protobuf",
+        "python",
         "profile",
         "typescript",
         "vim",
         "rust",
+        "yaml",
       ]
     selector: "pre>code"
-    version: "10.4.1"
-    url: #
-      # js: "//cdn.bootcss.com/highlight.js/%VERSION%/highlight.min.js"
-      js: //cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/highlight.min.js
-      # style: "//cdn.bootcss.com/highlight.js/%VERSION%/styles/%STYLE%.min.css"
-      style: //cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/styles/%STYLE%.min.css
-      # lang: "//cdn.bootcss.com/highlight.js/%VERSION%/languages/%LANG%.min.js"
-      lang: //cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/languages/%LANG%.min.js
+    version: "latest"
+    url:
+      js: //unpkg.com/@highlightjs/cdn-assets@%VERSION%/highlight.min.js
+      style: //unpkg.com/@highlightjs/cdn-assets@%VERSION%/styles/%STYLE%.min.css
+      lang: //unpkg.com/@highlightjs/cdn-assets@%VERSION%/languages/%LANG%.min.js
     options: # options of highlight.js see http://highlightjs.readthedocs.io/en/latest/api.html#configure-options
       tabReplace: "    "
       useBR: false
@@ -193,32 +190,72 @@ author:
   name: "OWenT"
   email: "admin@owent.net"
 
+Copyright: '<a rel="license" href="https://github.com/owent/blog-hugo/blob/master/LICENSE.md"><img alt="知识共享许可协议" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/80x15.png" /></a>'
+
 taxonomies:
   tag: "tags"
   category: "categories"
 
 DisqusShortname: owent
-googleAnalytics: "UA-19298704-1"
+GoogleAnalytics: "UA-19298704-1"
 
-blackfriday:
-  taskLists: true
-  smartypants: true
-  angledQuotes: false
-  fractions: true
-  smartDashes: true
-  latexDashes: true
-  hrefTargetBlank: true
-  plainIDAnchors: true
-  extensions:
-    - noIntraEmphasis
-    - tables
-    - fencedCode
-    - autolink
-    - strikethrough
-    - laxHtmlBlocks
-    - hardLineBreak
-    - footnotes
-    - noEmptyLineBeforeBlock
-  extensionsmask:
+
+markup:
+  defaultMarkdownHandler: goldmark
+  blackfriday:
+    taskLists: true
+    smartypants: true
+    angledQuotes: false
+    fractions: true
+    smartDashes: true
+    latexDashes: true
+    hrefTargetBlank: true
+    plainIDAnchors: true
+    extensions:
+      - noIntraEmphasis
+      - tables
+      - fencedCode
+      - autolink
+      - strikethrough
+      - laxHtmlBlocks
+      - hardLineBreak
+      - footnotes
+      - noEmptyLineBeforeBlock
+    extensionsmask:
+  goldmark:
+    extensions:
+      definitionList: true
+      footnote: true
+      linkify: true
+      strikethrough: true
+      table: true
+      taskList: true
+      typographer: true
+    parser:
+      attribute:
+        block: false
+        title: true
+      autoHeadingID: true
+      autoHeadingIDType: github
+    renderer:
+      hardWraps: false
+      unsafe: false
+      xhtml: false
+  highlight:
+    anchorLineNos: false
+    codeFences: true
+    guessSyntax: false
+    hl_Lines: ""
+    lineAnchors: ""
+    lineNoStart: 1
+    lineNos: false
+    lineNumbersInTable: true
+    noClasses: true
+    style: monokai
+    tabWidth: 4
+  tableOfContents:
+    endLevel: 3
+    ordered: false
+    startLevel: 2
 ---
 

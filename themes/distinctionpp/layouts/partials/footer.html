@@ -1,22 +1,21 @@
 <footer id="footer">
   <div class="outer">
-    <div id="footer-info" class="inner">
-      <strong id="footer-left">{{if $.Site.Copyright }}{{ $.Site.Copyright }}{{ else }}
-        &copy; {{ $.Site.LastChange.Format "2006" }}
+    <div id="footer-info" class="inner clearfix">
+      <strong id="footer-left" class="float-left float-start">{{if $.Site.Copyright }}{{ $.Site.Copyright | safeHTML }}{{ else }}&copy;{{end}}
+        {{ $.Site.LastChange.Format "2006" }}
         {{if and .Author .Author.DisplayName }}{{ .Author.DisplayName | safeHTML}}
         {{else if and $.Site.Params $.Site.Params.Author }}{{ $.Site.Params.Author | safeHTML}}
         {{else if and $.Site.Author $.Site.Author.Name }}{{ $.Site.Author.Name | safeHTML}}
         {{end}}
-        {{end}}
       </strong>
-      <strong id="footer-right">
+      <strong id="footer-right" class="float-right float-end">
         {{with .Params.PageSource }}
         <a href="{{ .Params.PageSource | safeURL}}" target="_blank">{{ i18n "page_source" }}</a>,{{end}}
         {{if and $.Site.Params $.Site.Params.SiteSource }}
         <a href="{{ $.Site.Params.SiteSource | safeURL}}" target="_blank">{{ i18n "site_source" }}</a>,
         {{end}}
         {{ i18n "powered_by" }} <a href="https://gohugo.io/" target="_blank">Hugo</a>,
-        {{ i18n "theme" }} <a href="https://github.com/owt5008137/hugo-theme-distinctionpp" target="_blank">distinctionpp</a>
+        {{ i18n "theme" }} <a href="https://github.com/owent/hugo-theme-distinctionpp" target="_blank">distinctionpp</a>
       </strong>
       <span class="clearfix"></span>
     </div>
