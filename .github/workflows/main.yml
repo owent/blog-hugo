@@ -9,36 +9,31 @@ jobs:
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
       with:
-        submodules: false
-        lfs: true
+        lfs: 'true'
         clean: clean
-        path: source
-    - uses: actions/setup-go@v1
-      with:
-        go-version: '1.x'
     - name: Install dependencies
       run: |
         # sudo apt update -y && sudo apt install -y graphviz python3
         TAG_URL="https://api.github.com/repos/gohugoio/hugo/releases/latest"
         NEW_VER="$(curl -s "${TAG_URL}" --connect-timeout 10| grep 'tag_name' | cut -d\" -f4)"
-        HUGO_ROOT="${GITHUB_WORKSPACE}/../hugo-$NEW_VER"
+        HUGO_ROOT="${GITHUB_WORKSPACE}/hugo-$NEW_VER"
         mkdir -p "$HUGO_ROOT"
         if [ ! -e "$HUGO_ROOT/hugo" ]; then
           cd "$HUGO_ROOT"
           wget https://github.com/gohugoio/hugo/releases/download/$NEW_VER/hugo_${NEW_VER:1}_Linux-64bit.tar.gz
           tar -axvf hugo_${NEW_VER:1}_Linux-64bit.tar.gz
         fi
-        if [ -e "${GITHUB_WORKSPACE}/../hugo-latest" ]; then
-          rm -rf "${GITHUB_WORKSPACE}/../hugo-latest";
+        if [ -e "${GITHUB_WORKSPACE}/hugo-latest" ]; then
+          rm -rf "${GITHUB_WORKSPACE}/hugo-latest";
         fi
-        ln -s "$HUGO_ROOT" "${GITHUB_WORKSPACE}/../hugo-latest" ;
+        ln -s "$HUGO_ROOT" "${GITHUB_WORKSPACE}/hugo-latest" ;
     - name: Build blog website
       run: |
         echo "GITHUB_WORKSPACE=${GITHUB_WORKSPACE}"
         cd "${GITHUB_WORKSPACE}"
-        export PATH="${GITHUB_WORKSPACE}/../hugo-latest:$PATH"
+        export PATH="${GITHUB_WORKSPACE}/hugo-latest:$PATH"
         bash "deploy.sh"
     - name: Deploy blog website
       run: |
@@ -47,9 +42,9 @@ jobs:
         echo "${{ secrets.ACTIONS_DEPLOY_KEY }}" > $HOME/.ssh/id_ed25519.action
         chmod 600 $HOME/.ssh/id_ed25519.action
         export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o IdentityFile=$HOME/.ssh/id_ed25519.action"
-        if [[ -e "${GITHUB_WORKSPACE}/../public_repo" ]]; then rm -rf "${GITHUB_WORKSPACE}/../public_repo" ; fi
-        git clone --depth=10 --single-branch --branch "main" "git@github.com:owent/blog-website.git" "${GITHUB_WORKSPACE}/../public_repo"
-        cd "${GITHUB_WORKSPACE}/../public_repo"
+        if [[ -e "${GITHUB_WORKSPACE}/publish-repo" ]]; then rm -rf "${GITHUB_WORKSPACE}/publish-repo" ; fi
+        git clone --depth=10 --single-branch --branch "main" "git@github.com:owent/blog-website.git" "${GITHUB_WORKSPACE}/publish-repo"
+        cd "${GITHUB_WORKSPACE}/publish-repo"
         git rm -r '*'
         find "${GITHUB_WORKSPACE}/public" -maxdepth 1 | tail -n +2 | xargs -I % cp -rf % "$PWD"
         echo "owent.net" > CNAME
