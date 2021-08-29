@@ -21,7 +21,7 @@ date: 2009-09-01
 
 # 主要开源活动
 
-* Github-主站: [https://github.com/owt5008137](https://github.com/owt5008137)
+* Github-主站: [https://github.com/owent](https://github.com/owent)
 * Github-个人Utility工具集: [https://github.com/owent-utils](https://github.com/owent-utils)
 * Github-参与的开源项目: [https://github.com/owent-contrib](https://github.com/owent-contrib)
 * Excel转表工具集（Excel -&gt; Protobuf、Lua、Msgpack、Json、Xml\Javascript、UnrealEngine DataTable）: https://github.com/xresloader
@@ -47,13 +47,13 @@ date: 2009-09-01
 >   * 示例的协程RPC和任务管理
 > * [AtgwInnerCli-CSharp - atgateway的C\#适配](https://github.com/atframework/AtgwInnerCli-CSharp)（纯C客户端API的包装，可用于Unity 3D）
 
-* Redis高可用解决方案:  [hiredis-happ](https://github.com/owt5008137/hiredis-happ)\(首先支持redis cluster集群，支持自动重试、断线重连、按需连接\)
+* Redis高可用解决方案:  [hiredis-happ](https://github.com/owent/hiredis-happ)\(首先支持redis cluster集群，支持自动重试、断线重连、按需连接\)
 * 高性能、跨平台C++协程框架: [libcopp][1]
 * cmake 的一些扩展模块和C++版本适配方案: [owent-utils/cmake](https://github.com/owent-utils/cmake)
 * 编译器构建脚本(最新版本 [GCC](https://github.com/owent-utils/bash-shell/tree/master/GCC%20Installer)和[Clang+LLVM+Libc++](https://github.com/owent-utils/bash-shell/tree/master/LLVM%26Clang%20Installer))
-* 极简单且带扩展语法的ini读取工具: [libiniloader](https://github.com/owt5008137/libiniloader)
+* 极简单且带扩展语法的ini读取工具: [libiniloader](https://github.com/owent/libiniloader)
 * WordPress代码高亮插件: [WP-Code-Highlight.js](https://wordpress.org/plugins/wp-code-highlightjs/)
-* 静态化博客系统主题 [hexo-theme-distinctionpp](https://github.com/owt5008137/hexo-theme-distinctionpp)、[hugo-theme-distinctionpp](https://github.com/owt5008137/hugo-theme-distinctionpp)
+* 静态化博客系统主题 [hexo-theme-distinctionpp](https://github.com/owent/hexo-theme-distinctionpp)、[hugo-theme-distinctionpp](https://github.com/owent/hugo-theme-distinctionpp)
 
 生命不息，折腾不止，平常写的小玩具和小工具就不列举了。
 
@@ -154,5 +154,5 @@ date: 2009-09-01
 
 工具: git,svn,p4,pandoc,graphviz,valgrind,gdb/lldb,perf,gperf,binutils/readelf/tcpdump等,mingw,msys,wsl,qemu,kvm,docker 
 
-[1]: https://github.com/owt5008137/libcopp
+[1]: https://github.com/owent/libcopp
 [2]: https://xresloader.atframe.work/
