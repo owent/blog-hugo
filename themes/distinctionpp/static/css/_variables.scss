@@ -1,11 +1,20 @@
 // Config
-$font-content: "Noto Sans Mono", "Noto Mono", "DejaVu Sans", "Noto Sans SC", "Noto Sans", "Noto Sans CJK SC", Roboto, "YaHei Consolas Hybrid", "Source Code Pro", "Microsoft YaHei", "Wenquanyi Micro Hei","WenQuanYi Zen Hei","WenQuanYi Zen Hei","Apple LiGothic Medium", Consolas, SimHei, monospace, Arial, sans-serif;
-$font-code: "Noto Sans Mono", "Noto Mono", "DejaVu Sans Mono", "Noto Sans Mono SC", "Noto Sans Mono CJK SC", "Roboto Mono", "YaHei Consolas Hybrid", "Source Code Pro", "WenQuanYi Micro Hei Mono", "Microsoft YaHei", Consolas, monospace, "Helvetica Neue", Helvetica, Arial, sans-serif;
-$font-title: "Noto Sans Mono", "Noto Mono", "DejaVu Sans", "Noto Sans SC", "Noto Sans", "Noto Sans CJK SC", Roboto, "YaHei Consolas Hybrid", "Source Code Pro", "Microsoft YaHei", "Wenquanyi Micro Hei","WenQuanYi Zen Hei","WenQuanYi Zen Hei","Apple LiGothic Medium", Consolas, SimHei, monospace, Arial, sans-serif;
+$font-content: "Sarasa Gothic SC Semibold", "Sarasa Gothic SC",
+  "Sarasa Fixed SC Semibold", "Sarasa Fixed SC", "Noto Sans Mono", "Noto Mono",
+  "Noto Sans SC", "Noto Sans", "Noto Sans CJK SC", Roboto, "Microsoft YaHei",
+  "Apple LiGothic Medium", Consolas, monospace, sans;
+$font-code: "Sarasa Mono SC Semibold", "Sarasa Mono SC",
+  "Sarasa Mono CL Semibold", "Sarasa Mono CL", "Noto Sans Mono", "Noto Mono",
+  "Noto Sans Mono SC", "Noto Sans Mono CJK SC", "Roboto Mono", "Microsoft YaHei",
+  Consolas, monospace, sans;
+$font-title: "Sarasa UI SC", "Sarasa Gothic SC", "Sarasa Fixed SC",
+  "Noto Sans Mono", "Noto Mono", "Noto Sans SC", "Noto Sans", "Noto Sans CJK SC",
+  Roboto, "Microsoft YaHei", "Apple LiGothic Medium", Consolas, monospace, sans;
+$font-weight-title: Bold;
 
-$title-color: #FFFFFF;
+$title-color: #ffffff;
 $title-shadow: #000 1px 1px 3px;
-$description-color: #CCC;
+$description-color: #ccc;
 
 // vars
 $gray-dark: DarkGray;
@@ -14,41 +23,40 @@ $gray: Gray;
 $border-width: 0.05rem;
 
 // CSS3 transition
-$transition-base:        all .2s ease-in-out !default;
-$transition-fade:        opacity .15s linear !default;
-$transition-collapse:    height .35s ease !default;
+$transition-base: all 0.2s ease-in-out !default;
+$transition-fade: opacity 0.15s linear !default;
+$transition-collapse: height 0.35s ease !default;
 
 // CSS3 border
-$border-radius:          .25rem !default;
-$border-radius-lg:       .3rem !default;
-$border-radius-sm:       .2rem !default;
+$border-radius: 0.25rem !default;
+$border-radius-lg: 0.3rem !default;
+$border-radius-sm: 0.2rem !default;
 
 // Articles
-$article-background: rgb(241,241,241);
-$article-inner-border: 0.2rem solid rgb(212,212,212);
+$article-background: rgb(241, 241, 241);
+$article-inner-border: 0.2rem solid rgb(212, 212, 212);
 $article-footer-border: $border-width solid #666;
 $article-tag-border: $border-width solid #666;
-$article-toc-border: $border-width solid rgb(212,212,212);
-
+$article-toc-border: $border-width solid rgb(212, 212, 212);
 
 // Tables
 //
 // Customizes the `.table` component with basic values, each used across all table variations.
 
-$table-cell-padding:            .75rem !default;
-$table-sm-cell-padding:         .3rem !default;
+$table-cell-padding: 0.75rem !default;
+$table-sm-cell-padding: 0.3rem !default;
 
-$table-bg:                      transparent !default;
+$table-bg: transparent !default;
 
-$table-inverse-bg:              $gray-dark !default;
-$table-inverse-color:           $article-background !default;
+$table-inverse-bg: $gray-dark !default;
+$table-inverse-color: $article-background !default;
 
-$table-bg-accent:               rgba(0,0,0,.05) !default;
-$table-bg-hover:                rgba(0,0,0,.075) !default;
-$table-bg-active:               $table-bg-hover !default;
+$table-bg-accent: rgba(0, 0, 0, 0.05) !default;
+$table-bg-hover: rgba(0, 0, 0, 0.075) !default;
+$table-bg-active: $table-bg-hover !default;
 
-$table-head-bg:                 $gray-lighter !default;
-$table-head-color:              $gray !default;
+$table-head-bg: $gray-lighter !default;
+$table-head-color: $gray !default;
 
-$table-border-width:            $border-width !default;
-$table-border-color:            $gray-lighter !default;
+$table-border-width: $border-width !default;
+$table-border-color: $gray-lighter !default;

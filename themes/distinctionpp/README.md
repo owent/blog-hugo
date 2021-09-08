@@ -9,7 +9,7 @@ Distinctionpp theme for [Hugo][1].
 ### Install
 
 ``` bash
-$ git clone -b master https://github.com/owent/hugo-theme-distinctionpp.git themes/distinctionpp
+git clone -b master https://github.com/owent/hugo-theme-distinctionpp.git themes/distinctionpp
 ```
 
 **Distinctionpp requires Hugo 1.5 and above.**
@@ -113,6 +113,7 @@ All of them are enabled by default. You can edit them in `widget` setting.
 ### chart
 
 See http://www.chartjs.org for more detail
+
 ```
 {{< chart id="ID" style="css styles canvas" class="class of canvas" alt="text before rended" >}}
 // json options of [chartjs](http://www.chartjs.org), for example
