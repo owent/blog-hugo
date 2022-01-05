@@ -21,7 +21,10 @@ jQuery(function() {
         });
     } catch(e) {
         diagram_jdom.empty();
-        diagram_jdom.append($('<pre></pre>').css({ "text-align": "left" }).html(e.message));
+        const error_message = document.createElement("pre");
+        error_message.style.textAlign = "left";
+        error_message.innerText = e.message.toString();
+        diagram_jdom.append(error_message);
     }
 });
 </script>
@@ -39,7 +42,10 @@ jQuery(function() {
         });
     } catch(e) {
         diagram_jdom.empty();
-        diagram_jdom.append($('<pre></pre>').css({ "text-align": "left" }).html(e.message));
+        const error_message = document.createElement("pre");
+        error_message.style.textAlign = "left";
+        error_message.innerText = e.message.toString();
+        diagram_jdom.append(error_message);
     }
 });
 </script>{{ end }}
