@@ -1,16 +1,15 @@
-OWenT.Articles
-======
+# OWenT.Articles
 
 All contents are also published on https://owent.net
 
 [![GitHub Actions status](https://github.com/owent/blog-hugo/workflows/CI/badge.svg)](https://github.com/owent/blog-hugo/actions)
 
-About Me
-------
+## About Me
+
 See [About](source/about/_index.md)
 
-Notice
-------
+## Notice
+
 新博客系统采用 [Hugo][3] ， 主题是自己开发的 [hugo-theme-distinctionpp][4] 。
 
 ```bash
@@ -31,6 +30,7 @@ optipng -o6 1807-02.dot.png
 
 
 ## Search Engine Support
+
 + Google
   + https://cse.google.com
   + URL: //google.com/search
@@ -61,16 +61,19 @@ optipng -o6 1807-02.dot.png
   + 站内限制参数: insite=域名
 
 ## Plugins for gitbook
+
 + [toc](https://plugins.gitbook.com/plugin/toc)
 + [mathjax](https://plugins.gitbook.com/plugin/mathjax)
 
 ### Tex/Latex and [MathJax][1] and [KaTex][2]
 
 ### Online [MathJax][1] Editor
+
 1. https://zohooo.github.io/jaxedit/
 2. http://zh.numberempire.com/texequationeditor/equationeditor.php
 
 ### Supported LaTeX/Tex commands on [MathJax][1] or [KaTex][2]
+
 1. https://docs.mathjax.org/en/latest/tex.html#supported-latex-commands
 2. http://www.onemathematicalcat.org/MathJaxDocumentation/TeXSyntax.htm
 3. https://khan.github.io/KaTeX/function-support.html
