@@ -22,7 +22,7 @@ s.setAttribute('data-timestamp', +new Date());
 {{ end }}
 {{ if and $.Site.Params.utteranc $.Site.Params.utteranc.repo }}
 <hr />
-<script src="{{ default "https://utteranc.es/client.js" $.Site.Params.utteranc.js}"
+<script src="{{ default "https://utteranc.es/client.js" $.Site.Params.utteranc.js}}"
         repo="{{ $.Site.Params.utteranc.repo }}"
         issue-term="{{ default "pathname" $.Site.Params.utteranc.issue_term}}"
         theme="{{ default "github-light" $.Site.Params.utteranc.theme}}"
