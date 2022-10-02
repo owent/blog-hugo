@@ -167,6 +167,10 @@ params:
     js: //unpkg.com/chart.js@latest/dist/chart.min.js
   mermaid:
     js: //unpkg.com/mermaid@latest/dist/mermaid.min.js
+  utteranc:
+    repo: "owent/blog-website"
+    issue_term: "pathname"
+    theme: "github-dark"
   # styleimport:
   #   delay: 200
   #   urls: ['https://fonts.googleapis.com/css?family=Noto+Sans+SC:400,700&subset=chinese-simplified,japanese', 'https://fonts.googleapis.com/css?family=Roboto+Mono:400,400i,500,500i&subset=latin-ext', 'https://fonts.googleapis.com/css?family=Roboto:400,400i,500,500i&subset=latin-ext']
@@ -196,7 +200,7 @@ taxonomies:
   tag: "tags"
   category: "categories"
 
-DisqusShortname: owent
+# DisqusShortname: owent
 GoogleAnalytics: "UA-19298704-1"
 
 

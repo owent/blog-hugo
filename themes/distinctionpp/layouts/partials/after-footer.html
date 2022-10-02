@@ -3,8 +3,6 @@
 {{ $default_highlightjs_js := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/highlight.min.js" }}
 {{ $default_highlightjs_css := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/styles/%STYLE%.min.css" }}
 {{ $default_highlightjs_lang := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/languages/%LANG%.min.js" }}
-{{ $default_gitment_js := "//imsun.github.io/gitment/dist/gitment.browser.js" }}
-{{ $default_gitment_css := "//imsun.github.io/gitment/style/default.css" }}
 {{ $default_mathjax_js := "//unpkg.com/mathjax@3/es5/tex-mml-chtml.js" }}
 {{ $default_katex_js := "///unpkg.com/katex@latest/dist/katex.min.js" }}
 {{ $default_katex_css := "//unpkg.com/katex@latest/dist/katex.min.css" }}
@@ -47,27 +45,6 @@ jQuery(function (){
 });
 </script>
 <!-- highlight.js end -->
-{{ end }}{{ with $.Site.Params.gitment }}
-<!-- gitment begin -->
-<script type="text/javascript" src='{{ .js | default $default_gitment_js | safeURL }}'></script>
-<script type="text/javascript">
-jQuery(function(){
-    jQuery("head").append('<link rel="stylesheet" href="{{ .css | default $default_gitment_css | safeURL }}" />');
-    const gitment = new Gitment({
-    owner: '{{ .owner | safeJS }}',
-    repo: '{{ .repo | safeJS }}',
-    oauth: {
-        client_id: '{{ .oauth.client_id | safeJS }}',
-        client_secret: '{{ .oauth.client_secret | safeJS }}',
-    },
-    // ...
-    // For more available options, check out the documentation below
-    })
-
-    gitment.render(document.getElementById('gitment_thread'))
-});
-</script>
-<!-- gitment end -->
 {{ end }}{{ partial "google-analytics.html" . }}
 {{ with $.Site.Params.mathjax }}<!-- mathjax begin -->
 <script type="text/javascript">
