@@ -124,16 +124,19 @@ params:
     style: "vs2015" # style name
     langs:
       [
+        "awk",
         "bash",
         "cpp",
         "capnproto",
         "cmake",
         "d",
         "diff",
+        "dockerfile",
         "dos",
         "erlang",
         "go",
         "less",
+        "llvm",
         "lua",
         "php",
         "powershell",
@@ -202,7 +205,6 @@ taxonomies:
 
 # DisqusShortname: owent
 GoogleAnalytics: "UA-19298704-1"
-
 
 markup:
   defaultMarkdownHandler: goldmark
