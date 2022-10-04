@@ -159,6 +159,8 @@ params:
       useBR: false
       #classPrefix: 'hljs-'
       languages: {} # language alias
+      ignoreUnescapedHTML: true
+      throwUnescapedHTML: false
   katex:
     js: //unpkg.com/katex@latest/dist/katex.min.js
     css: //unpkg.com/katex@latest/dist/katex.min.css

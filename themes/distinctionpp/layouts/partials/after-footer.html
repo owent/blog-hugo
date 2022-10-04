@@ -33,9 +33,27 @@ jQuery(function (){
     } else {
         hljs.configure(evel({{ .options | jsonify }}));
     }
+    const allLanguages = {};
+    for (const lang of hljs.listLanguages() ) {
+        allLanguages[lang.toLowerCase()] = true;
+    }
+
     jQuery('{{ .selector | default "pre>code" }}').each(function(i, block) {
         try {
-            hljs.highlightBlock(block);
+            if (block.className.match(/\bnohighlight\b/i)) {
+                return;
+            }
+            const detectLang = block.className.match(/language-([^\s]+)/i);
+            if (detectLang && detectLang.length >= 2 && hljs.getLanguage(detectLang[1])) {
+                hljs.highlightElement(block);
+            } else {
+                const jdom = jQuery(block);
+                const result = hljs.highlightAuto(jdom.text(), hljs.listLanguages());
+                if (result && result.value) {
+                    jdom.html(result.value);
+                    jdom.addClass("hljs");
+                }
+            }
         } catch (e) {
             if (window.console) {
                 console.log(e.toString() + "\r\nMaybe can not detect the language");
