@@ -72,7 +72,7 @@ params:
     js: //unpkg.com/jquery@latest/dist/jquery.slim.min.js
     migrate: //unpkg.com/jquery-migrate@latest/dist/jquery-migrate.min.js
   chartjs:
-    js: //unpkg.com/chart.js@latest/dist/chart.min.js
+    js: //unpkg.com/chart.js@latest/dist/chart.umd.js
   mermaid:
     js: //unpkg.com/mermaid@latest/dist/mermaid.min.js
   styleimport:
