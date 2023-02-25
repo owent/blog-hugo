@@ -3,9 +3,9 @@
 cd "$(dirname $0)";
 
 PREFIX=themes/distinctionpp;
-HTTPS_REPO=https://github.com/owt5008137/hugo-theme-distinctionpp.git;
-SSH_REPO=git@github.com:owt5008137/hugo-theme-distinctionpp.git;
-BRANCH=master;
+HTTPS_REPO=https://github.com/owent/hugo-theme-distinctionpp.git;
+SSH_REPO=git@github.com:owent/hugo-theme-distinctionpp.git;
+BRANCH=main;
 
 
 REMOTE_LIST=($(git remote show));

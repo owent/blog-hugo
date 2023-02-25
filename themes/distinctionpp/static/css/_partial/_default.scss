@@ -203,3 +203,7 @@ table {
     margin-top: 2.5rem;
   }
 }
+
+div.mermaid[data-processed], pre.mermaid[data-processed] {
+  text-align: center;
+}

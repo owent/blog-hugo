@@ -12,6 +12,10 @@ tags:
   - distinctionpp
 features:
   - highlightjs
+  - mermaid
+  - chartjs
+  - katex
+  - mathjax
 min_version: "0.22.1"
 
 author:

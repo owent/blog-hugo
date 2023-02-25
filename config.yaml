@@ -172,6 +172,7 @@ params:
     js: //unpkg.com/chart.js@latest/dist/chart.umd.js
   mermaid:
     js: //unpkg.com/mermaid@latest/dist/mermaid.esm.min.mjs
+    theme: neutral
   utteranc:
     repo: "owent/blog-website"
     issue_term: "pathname"

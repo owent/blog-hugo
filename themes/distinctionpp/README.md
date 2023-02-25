@@ -9,7 +9,7 @@ Distinctionpp theme for [Hugo][1].
 ### Install
 
 ``` bash
-git clone -b master https://github.com/owent/hugo-theme-distinctionpp.git themes/distinctionpp
+git clone https://github.com/owent/hugo-theme-distinctionpp.git themes/distinctionpp
 ```
 
 **Distinctionpp requires Hugo 1.5 and above.**
@@ -75,6 +75,7 @@ params:
     js: //unpkg.com/chart.js@latest/dist/chart.umd.js
   mermaid:
     js: //unpkg.com/mermaid@latest/dist/mermaid.esm.min.mjs
+    theme: default
   styleimport:
     delay: 200
     urls: ['https://fonts.googleapis.com/css?family=Noto+Sans+SC:400,700&subset=chinese-simplified,japanese', 'https://fonts.googleapis.com/css?family=Roboto+Mono:400,400i,500,500i&subset=latin-ext', 'https://fonts.googleapis.com/css?family=Roboto:400,400i,500,500i&subset=latin-ext']
@@ -153,7 +154,7 @@ See http://www.chartjs.org for more detail
 See https://mermaidjs.github.io/
 
 ```
-{{< mermaid id="ID" style="css styles for div" class="class of div" options="" >}}
+{{< mermaid id="ID" style="css styles for div" class="class of div" >}}
 sequenceDiagram
 Alice ->> Bob: Hello Bob, how are you?
 Bob-->>John: How about you John?
