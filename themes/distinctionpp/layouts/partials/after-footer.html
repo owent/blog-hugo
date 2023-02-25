@@ -8,7 +8,7 @@
 {{ $default_katex_css := "//unpkg.com/katex@latest/dist/katex.min.css" }}
 {{ $default_katex_autorender := "//unpkg.com/katex@latest/dist/contrib/auto-render.min.js" }}
 {{ $default_chartjs_js := "//unpkg.com/chart.js@latest/dist/chart.umd.js" }}
-{{ $default_mermaid_js := "//unpkg.com/mermaid@latest/dist/mermaid.min.js" }}
+{{ $default_mermaid_js := "//unpkg.com/mermaid@latest/dist/mermaid.esm.min.mjs" }}
 {{ if $.Site.Params.bootstrap }}
   {{ if $.Site.Params.bootstrap.popper }}
   <script type="text/javascript" src='{{ $.Site.Params.bootstrap.popper.js | default $default_bootstrap_popper_js | safeURL }}' crossorigin="anonymous"></script>

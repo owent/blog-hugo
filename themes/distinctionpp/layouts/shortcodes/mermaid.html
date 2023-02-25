@@ -16,8 +16,11 @@ jQuery(function() {
     diagram_jdom.css(css_objs);
 
     try {
-        mermaid.init({{ .Get "options" | default "undefined" | safeJS }}, diagram_jdom, function() {
-            console.log("done");
+        // mermaid.init({{ .Get "options" | default "undefined" | safeJS }}, diagram_jdom, function() {
+        //     console.log("done");
+        // });
+        mermaid.run({
+            querySelector: "#" + diagram_id,
         });
     } catch(e) {
         diagram_jdom.empty();
@@ -37,8 +40,11 @@ jQuery(function() {
     diagram_jdom.css(css_objs);
 
     try {
-        mermaid.init(undefined, diagram_jdom, function() {
-            console.log("done");
+        // mermaid.init(undefined, diagram_jdom, function() {
+        //     console.log("done");
+        // });
+        mermaid.run({
+            querySelector: "#" + diagram_id,
         });
     } catch(e) {
         diagram_jdom.empty();

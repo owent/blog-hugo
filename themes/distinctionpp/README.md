@@ -74,7 +74,7 @@ params:
   chartjs:
     js: //unpkg.com/chart.js@latest/dist/chart.umd.js
   mermaid:
-    js: //unpkg.com/mermaid@latest/dist/mermaid.min.js
+    js: //unpkg.com/mermaid@latest/dist/mermaid.esm.min.mjs
   styleimport:
     delay: 200
     urls: ['https://fonts.googleapis.com/css?family=Noto+Sans+SC:400,700&subset=chinese-simplified,japanese', 'https://fonts.googleapis.com/css?family=Roboto+Mono:400,400i,500,500i&subset=latin-ext', 'https://fonts.googleapis.com/css?family=Roboto:400,400i,500,500i&subset=latin-ext']
