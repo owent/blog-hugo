@@ -2,8 +2,10 @@
 
 * [About Me](source/about/_index.md)
 * [2023](source/post/2023/README.md)
-  * [Opentelemetry-cpp的Logs模块标准更新](source/post/2023/2302.md)
-  * [给cmake-toolset和工具链加HTTP/2和HTTP/3支持](source/post/2023/2301.md)
+  * [xresloader-Excel导表工具链的近期变更汇总](source/post/2023/2304.md)
+  * [打通游戏服务端框架的C++20协程改造的最后一环](source/post/2023/2303.md)
+  * [Opentelemetry-cpp的Logs模块标准更新\(涉及近期版本:1.8-1.9的BREAK CHANGES\)](source/post/2023/2302.md)
+  * [给cmake-toolset和工具链\(curl等\)加HTTP/2和HTTP/3支持](source/post/2023/2301.md)
 * [2022](source/post/2022/README.md)
   * [又开新坑之 coredns 插件: nftables和filter](source/post/2022/2210.md)
   * [关于opentelemetry-cpp社区对于C++ Head Only组件单例和符号可见性的讨论小记](source/post/2022/2209.md)

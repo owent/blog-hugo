@@ -9,51 +9,50 @@ jobs:
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v2
-      with:
-        lfs: 'true'
-        clean: clean
-    - name: Install dependencies
-      run: |
-        # sudo apt update -y && sudo apt install -y graphviz python3
-        TAG_URL="https://api.github.com/repos/gohugoio/hugo/releases/latest"
-        NEW_VER="$(curl -s "${TAG_URL}" --connect-timeout 10| grep 'tag_name' | cut -d\" -f4)"
-        HUGO_ROOT="${GITHUB_WORKSPACE}/hugo-$NEW_VER"
-        mkdir -p "$HUGO_ROOT"
-        if [ ! -e "$HUGO_ROOT/hugo" ]; then
-          cd "$HUGO_ROOT"
-          wget https://github.com/gohugoio/hugo/releases/download/$NEW_VER/hugo_${NEW_VER:1}_Linux-64bit.tar.gz
-          tar -axvf hugo_${NEW_VER:1}_Linux-64bit.tar.gz
-        fi
-        if [ -e "${GITHUB_WORKSPACE}/hugo-latest" ]; then
-          rm -rf "${GITHUB_WORKSPACE}/hugo-latest";
-        fi
-        ln -s "$HUGO_ROOT" "${GITHUB_WORKSPACE}/hugo-latest" ;
-    - name: Build blog website
-      run: |
-        echo "GITHUB_WORKSPACE=${GITHUB_WORKSPACE}"
-        cd "${GITHUB_WORKSPACE}"
-        export PATH="${GITHUB_WORKSPACE}/hugo-latest:$PATH"
-        bash "deploy.sh"
-    - name: Deploy blog website
-      run: |
-        mkdir -p $HOME/.ssh
-        chmod 700 $HOME/.ssh
-        echo "${{ secrets.ACTIONS_DEPLOY_KEY }}" > $HOME/.ssh/id_ed25519.action
-        chmod 600 $HOME/.ssh/id_ed25519.action
-        export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o IdentityFile=$HOME/.ssh/id_ed25519.action"
-        if [[ -e "${GITHUB_WORKSPACE}/publish-repo" ]]; then rm -rf "${GITHUB_WORKSPACE}/publish-repo" ; fi
-        git clone --depth=10 --single-branch --branch "main" "git@github.com:owent/blog-website.git" "${GITHUB_WORKSPACE}/publish-repo"
-        cd "${GITHUB_WORKSPACE}/publish-repo"
-        git rm -r '*'
-        find "${GITHUB_WORKSPACE}/public" -maxdepth 1 | tail -n +2 | xargs -I % cp -rf % "$PWD"
-        echo "owent.net" > CNAME
-        git config user.name "owent"
-        git config user.email "admin@owent.net"
-        git remote rm origin || true
-        git remote add origin "git@github.com:owent/blog-website.git"
-        git add --all
-        git commit --allow-empty -a -m "Automated deployment: $(date -u) ${GITHUB_SHA}"
-        git push -f origin HEAD:main
-        echo "${GITHUB_SHA} was successfully deployed"
-
+      - uses: actions/checkout@v3
+        with:
+          lfs: "true"
+          clean: clean
+      - name: Install dependencies
+        run: |
+          # sudo apt update -y && sudo apt install -y graphviz python3
+          TAG_URL="https://api.github.com/repos/gohugoio/hugo/releases/latest"
+          NEW_VER="$(curl -s "${TAG_URL}" --connect-timeout 10| grep 'tag_name' | cut -d\" -f4)"
+          HUGO_ROOT="${GITHUB_WORKSPACE}/hugo-$NEW_VER"
+          mkdir -p "$HUGO_ROOT"
+          if [ ! -e "$HUGO_ROOT/hugo" ]; then
+            cd "$HUGO_ROOT"
+            wget https://github.com/gohugoio/hugo/releases/download/$NEW_VER/hugo_${NEW_VER:1}_Linux-64bit.tar.gz
+            tar -axvf hugo_${NEW_VER:1}_Linux-64bit.tar.gz
+          fi
+          if [ -e "${GITHUB_WORKSPACE}/hugo-latest" ]; then
+            rm -rf "${GITHUB_WORKSPACE}/hugo-latest";
+          fi
+          ln -s "$HUGO_ROOT" "${GITHUB_WORKSPACE}/hugo-latest" ;
+      - name: Build blog website
+        run: |
+          echo "GITHUB_WORKSPACE=${GITHUB_WORKSPACE}"
+          cd "${GITHUB_WORKSPACE}"
+          export PATH="${GITHUB_WORKSPACE}/hugo-latest:$PATH"
+          bash "deploy.sh"
+      - name: Deploy blog website
+        run: |
+          mkdir -p $HOME/.ssh
+          chmod 700 $HOME/.ssh
+          echo "${{ secrets.ACTIONS_DEPLOY_KEY }}" > $HOME/.ssh/id_ed25519.action
+          chmod 600 $HOME/.ssh/id_ed25519.action
+          export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o IdentityFile=$HOME/.ssh/id_ed25519.action"
+          if [[ -e "${GITHUB_WORKSPACE}/publish-repo" ]]; then rm -rf "${GITHUB_WORKSPACE}/publish-repo" ; fi
+          git clone --depth=10 --single-branch --branch "main" "git@github.com:owent/blog-website.git" "${GITHUB_WORKSPACE}/publish-repo"
+          cd "${GITHUB_WORKSPACE}/publish-repo"
+          git rm -r '*'
+          find "${GITHUB_WORKSPACE}/public" -maxdepth 1 | tail -n +2 | xargs -I % cp -rf % "$PWD"
+          echo "owent.net" > CNAME
+          git config user.name "owent"
+          git config user.email "admin@owent.net"
+          git remote rm origin || true
+          git remote add origin "git@github.com:owent/blog-website.git"
+          git add --all
+          git commit --allow-empty -a -m "Automated deployment: $(date -u) ${GITHUB_SHA}"
+          git push -f origin HEAD:main
+          echo "${GITHUB_SHA} was successfully deployed"
