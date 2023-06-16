@@ -25,7 +25,9 @@
                 <li class="nav-item"><a class="nav-link" href="{{ $.Site.BaseURL }}" title='{{ i18n "home" }}'>{{ i18n "home" }}</a></li>
                 <li class="nav-item"><a class="nav-link" href='{{ $.Site.BaseURL }}/archives/' title='{{ i18n "archives" }}'>{{ i18n "archives" }}</a></li>
             {{ end }}
-            <li class="nav-item"><a id="nav-rss-link" class="nav-link" href="{{ $.Site.RSSLink }}" title='{{ i18n "rssFeed" }}'>{{ i18n "rssFeed" }}</a></li>
+            {{ with .OutputFormats.Get "rss" -}}
+            <li class="nav-item"><a id="nav-rss-link" class="nav-link" href="{{ .Permalink }}" title='{{ i18n "rssFeed" }}'>{{ i18n "rssFeed" }}</a></li>
+            {{ end -}}
           </ul>
           {{ with $.Site.Params.Search }}
           <div class="col-2 position-absolute end-0"><form class="input-group" method="get" accept-charset="UTF-8" action='{{ index . "url" | default "//google.com/search" | safeHTMLAttr }}'>
