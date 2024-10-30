@@ -183,6 +183,9 @@ params:
   adsense:
     code: |
       <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8180054975285991" crossorigin="anonymous"></script>
+  metas:
+    - <meta name="baidu-site-verification" content="Vsc27DkHq2" />
+    - <meta name="baidu-site-verification" content="Nr2nabjqKj" />
 
 menu:
   main:
