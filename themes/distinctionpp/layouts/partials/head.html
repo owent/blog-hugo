@@ -31,4 +31,14 @@
   {{ if $.Site.Params.css }}{{ range $.Site.Params.css }}
   <link rel="stylesheet" href='{{ . | absURL }}' />
   {{ end }}{{ end }}
+  {{- if not ( .Params.noad ) }}
+    {{- with $.Site.Params.adsense }}
+      {{- with .code }}
+        {{- . | safeHTML }}
+      {{- end }}
+      {{- with .meta }}
+        {{- . | safeHTML }}
+      {{- end }}
+    {{ end }}
+  {{ end }}
 </head>

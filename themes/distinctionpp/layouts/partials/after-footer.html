@@ -20,7 +20,7 @@
 <script type="text/javascript" src='{{ $default_bootstrap_popper_js }}' crossorigin="anonymous"></script>
 <script type="text/javascript" src='{{ $default_bootstrap_js }}' crossorigin="anonymous"></script>
 {{ end }}
-{{ with $.Site.Params.highlightjs }}
+{{- with $.Site.Params.highlightjs }}
 <!-- highlight.js begin -->
 <script type="text/javascript" src='{{ replace (default $default_highlightjs_js .url.js) "%VERSION%" .version | safeURL  }}'></script>
 {{ range $lang := .langs }}
@@ -63,7 +63,7 @@ jQuery(function (){
 });
 </script>
 <!-- highlight.js end -->
-{{ end }}{{ partial "google-analytics.html" . }}
+{{- end }}{{ partial "google-analytics.html" . }}
 {{ with $.Site.Params.mathjax }}<!-- mathjax begin -->
 <script type="text/javascript">
 window.MathJax = {

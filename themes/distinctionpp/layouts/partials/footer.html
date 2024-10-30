@@ -2,7 +2,7 @@
   <div class="outer">
     <div id="footer-info" class="inner clearfix">
       <strong id="footer-left" class="float-left float-start">{{if $.Site.Copyright }}{{ $.Site.Copyright | safeHTML }}{{ else }}&copy;{{end}}
-        {{ $.Site.LastChange.Format "2006" }}
+        {{ $.Site.Lastmod.Format "2006" }}
         {{if and .Params.author }}{{ .Params.author | safeHTML}}
         {{else if and $.Site.Params $.Site.Params.author }}{{ $.Site.Params.author | safeHTML}}
         {{else if and $.Site.Taxonomies $.Site.Taxonomies.author }}{{ $.Site.Taxonomies.author | safeHTML}}

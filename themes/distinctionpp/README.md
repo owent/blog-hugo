@@ -107,8 +107,11 @@ taxonomies:
   tag: "tags"
   category: "categories"
 
-DisqusShortname: owent
-googleAnalytics: "UA-19298704-1"
+services:
+  # disqus:
+  #   shortname: owent
+  googleAnalytics:
+    ID: "G-PQEY77BYG1"
 ```
 
 All of them are enabled by default. You can edit them in `widget` setting.

@@ -1,18 +1,18 @@
-{{ if or .PrevPage .NextPage }}
+{{ if or .Prev .Next }}
 <hr />
 <nav id="article-nav">
   <ul class="pagination">
-  {{ if .NextPage }}
+  {{ if .Next }}
     <li class="page-item">
-      <a class="page-link" id="article-nav-newer" class="article-nav-link-wrap" href='{{ .NextPage.Permalink }}'>
-        {{ i18n "older" }}<strong>{{ .NextPage.Title }}</strong>
+      <a class="page-link" id="article-nav-newer" class="article-nav-link-wrap" href='{{ .Next.Permalink }}'>
+        {{ i18n "older" }}<strong>{{ .Next.Title }}</strong>
       </a>
     </li>
   {{ end }}
-  {{ if .PrevPage }}
+  {{ if .Prev }}
     <li class="page-item">
-      <a class="page-link" id="article-nav-older" class="article-nav-link-wrap" href='{{ .PrevPage.Permalink }}'>
-        {{ i18n "newer" }}<strong>{{ .PrevPage.Title }}</strong>
+      <a class="page-link" id="article-nav-older" class="article-nav-link-wrap" href='{{ .Prev.Permalink }}'>
+        {{ i18n "newer" }}<strong>{{ .Prev.Title }}</strong>
       </a>
     </li>
   {{ end }}

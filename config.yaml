@@ -180,6 +180,9 @@ params:
   # styleimport:
   #   delay: 200
   #   urls: ['https://fonts.googleapis.com/css?family=Noto+Sans+SC:400,700&subset=chinese-simplified,japanese', 'https://fonts.googleapis.com/css?family=Roboto+Mono:400,400i,500,500i&subset=latin-ext', 'https://fonts.googleapis.com/css?family=Roboto:400,400i,500,500i&subset=latin-ext']
+  adsense:
+    code: |
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8180054975285991" crossorigin="anonymous"></script>
 
 menu:
   main:
@@ -206,8 +209,13 @@ taxonomies:
   tag: "tags"
   category: "categories"
 
-# DisqusShortname: owent
-GoogleAnalytics: "UA-19298704-1"
+# services:
+
+services:
+  # disqus:
+  #   shortname: owent
+  googleAnalytics:
+    ID: "G-PQEY77BYG1"
 
 markup:
   defaultMarkdownHandler: goldmark
