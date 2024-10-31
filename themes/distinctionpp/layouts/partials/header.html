@@ -27,6 +27,7 @@
             {{ end }}
             {{ with .OutputFormats.Get "rss" -}}
             <li class="nav-item"><a id="nav-rss-link" class="nav-link" href="{{ .Permalink }}" title='{{ i18n "rssFeed" }}'>{{ i18n "rssFeed" }}</a></li>
+            <li class="nav-item nav-ads ads-placeholder ads-container"><ins class="adsbygoogle"></ins></li>
             {{ end -}}
           </ul>
           {{ with $.Site.Params.Search }}
