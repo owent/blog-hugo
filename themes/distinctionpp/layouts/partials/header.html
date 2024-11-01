@@ -31,10 +31,10 @@
             {{ end -}}
           </ul>
           {{ with $.Site.Params.Search }}
-          <div class="col-2 position-absolute end-0"><form class="input-group" method="get" accept-charset="UTF-8" action='{{ index . "url" | default "//google.com/search" | safeHTMLAttr }}'>
+          <div class="col-12 col-xl-2 col-lg-3 col-md-4" id="main-nav-search"><form class="input-group" method="get" accept-charset="UTF-8" action='{{ index . "url" | default "//google.com/search" | safeHTMLAttr }}'>
             <input type="hidden" name='{{ index . "sitename" | default "sitesearch" | safeHTMLAttr}}' value='{{ index . "siteprefix" | default "" | safeHTMLAttr }}{{ replaceRE "^[^:/]*:?//([^/:]+).*" "$1" $.Site.BaseURL | safeHTMLAttr }}' />
             <input class="form-control" type="text" placeholder='{{ i18n "search" }}' name='{{ index . "keywork" | default "q" | safeHTMLAttr }}' />
-            <button class="btn btn-outline-secondary my-2 my-sm-0" type="submit">{{ i18n "search" }}</button>
+            <button class="btn btn-outline-secondary my-0" type="submit">{{ i18n "search" }}</button>
           </form></div>
           {{ end }}
         </div>

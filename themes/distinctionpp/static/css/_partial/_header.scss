@@ -70,3 +70,12 @@
   padding-bottom: 0.4em;
   background-color: #282828;
 }
+
+#main-nav-search {
+  position: static;
+  // https://getbootstrap.com/docs/5.3/layout/breakpoints/#available-breakpoints
+  @media (min-width: 768px) {  
+    position: absolute !important;
+    right: 0 !important;
+  }
+}
