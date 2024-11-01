@@ -1,3 +1,6 @@
+@use '../variables' as *;
+@use '../_utils/mixin' as *;
+
 ul.article-tag-list {
     font-size: 0.8rem;
     display: inline-block;

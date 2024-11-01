@@ -48,12 +48,12 @@
 
 // ------------ Import bootstrap ------------
 
-@import 'variables';
-@import '_utils/mixin';
-@import '_partial/default';
-@import '_partial/header';
-@import '_partial/archive';
-@import '_partial/article';
-@import '_partial/tags';
-@import '_partial/comment';
-@import '_partial/footer';
+@use 'variables';
+@use '_utils/mixin';
+@use '_partial/default';
+@use '_partial/header';
+@use '_partial/archive';
+@use '_partial/article';
+@use '_partial/tags';
+@use '_partial/comment';
+@use '_partial/footer';

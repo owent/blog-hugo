@@ -1,3 +1,6 @@
+@use '../variables' as *;
+@use '../_utils/mixin' as *;
+
 #archive-content, #index-content {
     @include column-count(auto);
     @include column-width(26rem);

@@ -1,7 +1,7 @@
 <article class="article-panel archive-article archive-type-{{if .Params.id }}{{ .Params.id }}{{ else }}{{ with .File }}{{ .UniqueID }}{{ end }}{{ end }}">
   <div class="article-panel-inner archive-article-inner">
     <header class="article-header archive-article-title">{{ partial "post/title.html" . }}</header>
-    <div class="article-excerpt">{{ .Summary }}</div>
+    <div class="article-summary">{{ .Summary }}</div>
     <div class="article-more"><a href="{{ .Permalink }}" target="_blank" itemprop="url">{{ T "readMore" }}</a></div>
     <div class="article-panel-footer archive-article-footer">{{ partial "post/date.html" . }}</div>
   </div>

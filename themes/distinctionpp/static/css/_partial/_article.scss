@@ -1,3 +1,6 @@
+@use '../variables' as *;
+@use '../_utils/mixin' as *;
+
 .toc {
     color: #4078c0;
     text-decoration: none;
@@ -39,8 +42,10 @@
     }
 }
 
-.article-excerpt {
+.article-summary {
     color: rgb(123, 125, 131);
+    max-height: 24rem;
+    overflow-y: hidden;
 }
 
 .article-more {

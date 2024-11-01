@@ -1,3 +1,5 @@
+@use 'sass:list';
+
 @mixin break-inside($val) {
     break-inside: $val;
     page-break-inside: $val;
@@ -66,7 +68,7 @@
 }
 
 @mixin transition($transition...) {
-    @if length($transition) == 0 {
+    @if list.length($transition) == 0 {
       transition: $transition-base;
     } @else {
       transition: $transition;
