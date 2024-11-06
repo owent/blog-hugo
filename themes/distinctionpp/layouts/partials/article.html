@@ -1,10 +1,68 @@
 <article id="{{ .Type }}-{{ with .File }}{{ .UniqueID }}{{ end }}" class="article-panel article article-type-{{ .Type }}" itemscope itemprop="blogPost">
+  {{- if not ( .Params.noad ) }}
+    {{- with $.Site.Params.Ads }}
+      {{- with .article}}
+        {{- with .panel_header}}
+  <div class="ads-placeholder ads-container">{{. | safeHTML }}</div>
+        {{- end}}
+      {{- end}}
+    {{- end}}
+  {{- end -}}
   <div class="article-panel-inner article-inner">
     <div class="article-inner">
+  {{- if not ( .Params.noad ) }}
+    {{- with $.Site.Params.Ads }}
+      {{- with .article}}
+        {{- with .before_title}}
+    <div class="ads-placeholder ads-container">{{. | safeHTML }}</div>
+        {{- end}}
+      {{- end}}
+    {{- end}}
+  {{- end -}}
       <header class="article-header">{{ partial "post/title.html" . }}</header><hr />
-      {{ if .TableOfContents }}<div id="toc" class="well toc m-3 p-1 pr-1 pt-1 pb-2 float-md-right float-md-end">{{ .TableOfContents }}</div><br />{{ end }}
+  {{- if not ( .Params.noad ) }}
+    {{- with $.Site.Params.Ads }}
+      {{- with .article}}
+        {{- with .after_title}}
+    <div class="ads-placeholder ads-container">{{. | safeHTML }}</div>
+        {{- end}}
+      {{- end}}
+    {{- end}}
+  {{- end -}}
+  {{- if .TableOfContents }}
+      <div id="toc" class="well toc m-3 p-1 pr-1 pt-1 pb-2 float-md-right float-md-end">
+      {{- if not ( .Params.noad ) }}
+        {{- with $.Site.Params.Ads }}
+          {{- with .article}}
+            {{- with .before_toc}}
+        <div class="ads-placeholder ads-container">{{. | safeHTML }}</div>
+            {{- end}}
+          {{- end}}
+        {{- end}}
+      {{- end -}}
+      {{ .TableOfContents }}
+      {{- if not ( .Params.noad ) }}
+        {{- with $.Site.Params.Ads }}
+          {{- with .article}}
+            {{- with .after_toc}}
+        <div class="ads-placeholder ads-container">{{. | safeHTML }}</div>
+            {{- end}}
+          {{- end}}
+        {{- end}}
+      {{- end -}}
+      </div><br />
+  {{- end }}
       <div class="article-entry" itemprop="articleBody">{{ .Content }}</div>
       <hr />
+  {{- if not ( .Params.noad ) }}
+    {{- with $.Site.Params.Ads }}
+      {{- with .article}}
+        {{- with .after_body}}
+      <div class="ads-placeholder ads-container">{{. | safeHTML }}</div>
+        {{- end}}
+      {{- end}}
+    {{- end}}
+  {{- end -}}
       <footer class="article-footer">
         <div class="article-panel-footer article-meta article-footer clearfix">
           <span class="article-meta-left">{{ partial "post/category.html" . }}</span>
@@ -14,8 +72,35 @@
         <!-- social share --><!-- <a data-url="<%- post.permalink %>" data-id="<%= post._id %>" class="article-share-link"><%= __('share') %></a> -->
         {{ partial "post/tag.html" . }}
       </footer>
+      {{- if not ( .Params.noad ) }}
+        {{- with $.Site.Params.Ads }}
+          {{- with .article}}
+            {{- with .after_footer}}
+    <div class="ads-placeholder ads-container">{{. | safeHTML }}</div>
+            {{- end}}
+          {{- end}}
+        {{- end}}
+      {{- end -}}
     </div>
     {{ partial "post/nav.html" . }}
+    {{- if not ( .Params.noad ) }}
+      {{- with $.Site.Params.Ads }}
+        {{- with .article}}
+          {{- with .before_comments }}
+    <div class="ads-placeholder ads-container">{{. | safeHTML }}</div>
+          {{- end}}
+        {{- end}}
+      {{- end}}
+    {{- end -}}
     {{ partial "comments.html" . }}
+    {{- if not ( .Params.noad ) }}
+      {{- with $.Site.Params.Ads }}
+        {{- with .article}}
+          {{- with .after_comments }}
+    <div class="ads-placeholder ads-container">{{. | safeHTML }}</div>
+          {{- end}}
+        {{- end}}
+      {{- end}}
+    {{- end -}}
   </div>
 </article>

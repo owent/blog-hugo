@@ -51,8 +51,9 @@ newContentEditor: ""
 noChmod: false
 # Don't sync modification time of files
 noTimes: false
-paginate: 20
-paginatePath: "page"
+pagination:
+  pagerSize: 20
+  path: "page"
 permalinks:
   post: /:year/:filename
 
@@ -183,8 +184,52 @@ params:
   adsense:
     code: |
       <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8180054975285991" crossorigin="anonymous"></script>
+    amp: |
+      <script async custom-element="amp-ad" src="https://cdn.ampproject.org/v0/amp-ad-0.1.js"></script>
   metas:
     - <meta name="baidu-site-verification" content="codeva-4M5iohb9TW" />
+  ads:
+    menu: |
+      <amp-ad
+          layout="fixed"
+          width="120"
+          height="52"
+          type="adsense"
+          data-ad-client="ca-pub-8180054975285991"
+          data-ad-slot="4450372783">
+      </amp-ad>
+    article:
+      # panel_header:
+      # panel_footer:
+      # before_title:
+      # after_title:
+      # after_body:
+      after_footer: |
+        <amp-ad width="100vw" height="160"
+            type="adsense"
+            data-ad-client="ca-pub-8180054975285991"
+            data-ad-slot="5599802929"
+            data-auto-format="rspv"
+            data-full-width="">
+          <div overflow=""></div>
+        </amp-ad>
+      # before_comments:
+      # after_comments:
+      after_toc: |
+        <amp-ad width="100vw" height="160"
+            type="adsense"
+            data-ad-client="ca-pub-8180054975285991"
+            data-ad-slot="1249494377"
+            data-auto-format="rspv"
+            data-full-width="">
+          <div overflow=""></div>
+        </amp-ad>
+    # archive:
+    #   # panel_header:
+    #   # panel_footer:
+    #   # before_title:
+    #   # after_title:
+    #   # after_summary:
 
 menu:
   main:

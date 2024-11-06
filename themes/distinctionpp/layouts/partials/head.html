@@ -40,6 +40,9 @@
         {{- . | safeHTML }}
       {{- end }}
     {{ end }}
+    {{- with $.Site.Params.adsense }}
+      {{- with .amp }}{{. | safeHTML }}{{ end -}}
+    {{ end -}}
   {{ end }}
   {{- with $.Site.Params.metas }}
     {{- range . }}

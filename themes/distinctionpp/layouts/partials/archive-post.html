@@ -1,8 +1,53 @@
 <article class="article-panel archive-article archive-type-{{if .Params.id }}{{ .Params.id }}{{ else }}{{ with .File }}{{ .UniqueID }}{{ end }}{{ end }}">
+  {{- if not ( .Params.noad ) }}
+    {{- with $.Site.Params.Ads }}
+      {{- with .archive}}
+        {{- with .panel_header}}
+  <div class="ads-placeholder ads-container">{{. | safeHTML }}</div>
+        {{- end}}
+      {{- end}}
+    {{- end}}
+  {{- end -}}
   <div class="article-panel-inner archive-article-inner">
+  {{- if not ( .Params.noad ) }}
+    {{- with $.Site.Params.Ads }}
+      {{- with .archive}}
+        {{- with .before_title}}
+  <div class="ads-placeholder ads-container">{{. | safeHTML }}</div>
+        {{- end}}
+      {{- end}}
+    {{- end}}
+  {{- end -}}
     <header class="article-header archive-article-title">{{ partial "post/title.html" . }}</header>
+  {{- if not ( .Params.noad ) }}
+    {{- with $.Site.Params.Ads }}
+      {{- with .archive}}
+        {{- with .after_title}}
+  <div class="ads-placeholder ads-container">{{. | safeHTML }}</div>
+        {{- end}}
+      {{- end}}
+    {{- end}}
+  {{- end -}}
     <div class="article-summary">{{ .Summary }}</div>
+  {{- if not ( .Params.noad ) }}
+    {{- with $.Site.Params.Ads }}
+      {{- with .archive}}
+        {{- with .after_summary}}
+  <div class="ads-placeholder ads-container">{{. | safeHTML }}</div>
+        {{- end}}
+      {{- end}}
+    {{- end}}
+  {{- end -}}
     <div class="article-more"><a href="{{ .Permalink }}" target="_blank" itemprop="url">{{ T "readMore" }}</a></div>
     <div class="article-panel-footer archive-article-footer">{{ partial "post/date.html" . }}</div>
   </div>
+  {{- if not ( .Params.noad ) }}
+    {{- with $.Site.Params.Ads }}
+      {{- with .archive}}
+        {{- with .panel_footer}}
+  <div class="ads-placeholder ads-container">{{. | safeHTML }}</div>
+        {{- end}}
+      {{- end}}
+    {{- end}}
+  {{- end -}}
 </article>

@@ -27,8 +27,14 @@
             {{ end }}
             {{ with .OutputFormats.Get "rss" -}}
             <li class="nav-item"><a id="nav-rss-link" class="nav-link" href="{{ .Permalink }}" title='{{ i18n "rssFeed" }}'>{{ i18n "rssFeed" }}</a></li>
-            <li class="nav-item nav-ads ads-placeholder ads-container"><ins class="adsbygoogle"></ins></li>
-            {{ end -}}
+            {{- end -}}
+            {{- if not ( .Params.noad ) }}
+              {{- with $.Site.Params.Ads }}
+                {{- with .menu }}
+                <li class="nav-item nav-ads ads-placeholder ads-container">{{. | safeHTML }}</li>
+                {{- end}}
+              {{- end}}
+            {{- end -}}
           </ul>
           {{ with $.Site.Params.Search }}
           <div class="col-12 col-xl-2 col-lg-3 col-md-4" id="main-nav-search"><form class="input-group" method="get" accept-charset="UTF-8" action='{{ index . "url" | default "//google.com/search" | safeHTMLAttr }}'>

@@ -3,6 +3,7 @@ title: About
 id: 1
 type: "page"
 date: 2009-09-01
+noad: true
 ---
 
 | 欧文韬                                       | TEL. 18601690140                                                |
