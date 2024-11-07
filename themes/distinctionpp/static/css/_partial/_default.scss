@@ -210,3 +210,18 @@ table {
 div.mermaid[data-processed], pre.mermaid[data-processed] {
   text-align: center;
 }
+
+.ads_infeed {
+  height: 50px;
+
+  @media (min-width: 768px) {
+    height: 64px;
+  }
+  @media (min-width: 1200px) {
+    height: 80px;
+  }
+}
+
+.ads_menu {
+  height: 50px;
+}
