@@ -1,9 +1,44 @@
 <article id="{{ .Type }}-{{ with .File }}{{ .UniqueID }}{{ end }}" class="article-panel article article-type-{{ .Type }}" itemscope itemprop="blogPage">
+  {{- if not ( .Params.noad ) }}
+    {{- with $.Site.Params.Ads }}
+      {{- with .page}}
+        {{- with .panel_header}}
+  <div class="ads-placeholder ads-container">{{. | safeHTML }}</div>
+        {{- end}}
+      {{- end}}
+    {{- end}}
+  {{- end -}}
   <div class="article-panel-inner article-inner">
     <div class="article-inner">
+      {{- if not ( .Params.noad ) }}
+      {{- with $.Site.Params.Ads }}
+        {{- with .page}}
+          {{- with .before_title}}
+      <div class="ads-placeholder ads-container">{{. | safeHTML }}</div>
+          {{- end}}
+        {{- end}}
+      {{- end}}
+    {{- end -}}
       <header class="article-header">{{ partial "post/title.html" . }}</header><hr />
-      <div class="article-ads ads-placeholder ads-container"><ins class="adsbygoogle"></ins></li>
+      {{- if not ( .Params.noad ) }}
+      {{- with $.Site.Params.Ads }}
+        {{- with .page}}
+          {{- with .after_title}}
+      <div class="ads-placeholder ads-container">{{. | safeHTML }}</div>
+          {{- end}}
+        {{- end}}
+      {{- end}}
+    {{- end -}}
       <div class="article-entry" itemprop="articleBody">{{ .Content }}</div>
+    {{- if not ( .Params.noad ) }}
+      {{- with $.Site.Params.Ads }}
+        {{- with .page}}
+          {{- with .after_body}}
+        <div class="ads-placeholder ads-container">{{. | safeHTML }}</div>
+          {{- end}}
+        {{- end}}
+      {{- end}}
+    {{- end -}}
     </div>
   </div>
 </article>

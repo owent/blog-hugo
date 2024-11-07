@@ -1,36 +1,55 @@
 <!DOCTYPE html>
 <html lang="{{ $.Site.LanguageCode }}">
-
 <head>
-  {{ $default_jquery_js := "//unpkg.com/jquery@latest/dist/jquery.slim.min.js" }}
-  {{ $default_jquery_migrate := "//unpkg.com/jquery-migrate@latest/dist/jquery-migrate.min.js" }}
   <meta charset="utf-8" />
   <title>{{- .Title -}} | {{- $.Site.Title -}}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <link rel="canonical" href="{{ .Permalink }}">
-  {{ with .OutputFormats.Get "rss" -}}
+  {{- with .OutputFormats.Get "rss" -}}
       {{ printf `<link rel="%s" type="%s" href="%s" title="%s" />` .Rel .MediaType.Type .Permalink $.Site.Title | safeHTML }}
-  {{ end -}}
-  {{ with $.Site.Params }}{{ with .favicon }}
+  {{- end -}}
+  {{- with $.Site.Params }}{{ with .favicon }}
   <link rel="icon" href='{{ . }}' />{{ end }}{{ end }}
-  {{ $bootstrap_css := "//unpkg.com/bootstrap@latest/dist/css/bootstrap.min.css" }}
-  {{ if $.Site.Params.bootstrap }}
+  {{- $bootstrap_css := "//unpkg.com/bootstrap@latest/dist/css/bootstrap.min.css" }}
+  {{- if $.Site.Params.bootstrap }}
   <link rel="stylesheet" href='{{ $.Site.Params.bootstrap.css | default $bootstrap_css | safeURL }}' crossorigin="anonymous" />
-  {{ else }}
+  {{- else }}
   <link rel="stylesheet" href='{{ $bootstrap_css }}' crossorigin="anonymous" />
-  {{ end }}
+  {{- end }}
   <link rel="stylesheet" href='{{ $.Site.BaseURL }}/css/style.css' />
-
-  {{ if $.Site.Params.jquery }}
-  <script type="text/javascript" src='{{ $.Site.Params.jquery.js | default $default_jquery_js | safeURL }}' crossorigin="anonymous"></script>
-  <!--<script type="text/javascript" src='{{ $.Site.Params.jquery.migrate | default $default_jquery_migrate | safeURL }}'></script>-->
-  {{ else }}
-  <script type="text/javascript" src='{{ $default_jquery_js }}' crossorigin="anonymous"></script>
-  <!--<script type="text/javascript" src='{{ $default_jquery_migrate }}'></script>-->
-  {{ end }}
-  {{ if $.Site.Params.css }}{{ range $.Site.Params.css }}
+  {{- if $.Site.Params.css }}
+    {{- range $.Site.Params.css }}
   <link rel="stylesheet" href='{{ . | absURL }}' />
-  {{ end }}{{ end }}
+    {{- end }}
+  {{- end }}
+<script type="importmap">
+{
+  "imports": {
+  {{- with $.Site.Params.modules }}
+    {{- with .importmap }}
+  {{- range $k, $v := . }}
+    "{{ $k }}": "{{ $v }}",
+  {{- end }}
+  {{- if and $.Site.Params.mermaid $.Site.Params.mermaid.js }}
+    "mermaid": "{{ $.Site.Params.mermaid.js | safeJS }}",
+  {{- else }}
+    "mermaid": "//unpkg.com/mermaid@latest/dist/mermaid.esm.min.mjs",
+  {{- end }}
+  {{- if and $.Site.Params.bootstrap $.Site.Params.bootstrap.js }}
+    "bootstrap": "{{ $.Site.Params.bootstrap.js | safeJS }}",
+  {{- else }}
+    "bootstrap": "//unpkg.com/bootstrap@latest/dist/js/bootstrap.esm.min.js",
+  {{- end }}
+  {{- if and $.Site.Params.bootstrap $.Site.Params.bootstrap.popper $.Site.Params.bootstrap.popper.js }}
+    "@popperjs/core": "{{ $.Site.Params.bootstrap.popper.js | safeJS }}"
+  {{- else }}
+    "@popperjs/core": "{{ $.Site.Params.bootstrap.popper.js | safeJS }}"
+  {{- end }}
+    {{- end }}
+  {{- end }}
+  }
+}
+</script>
   {{- if not ( .Params.noad ) }}
     {{- with $.Site.Params.adsense }}
       {{- with .code }}
@@ -42,11 +61,11 @@
     {{ end }}
     {{- with $.Site.Params.adsense }}
       {{- with .amp }}{{. | safeHTML }}{{ end -}}
-    {{ end -}}
-  {{ end }}
+    {{- end}}
+  {{- end }}
   {{- with $.Site.Params.metas }}
     {{- range . }}
       {{- . | safeHTML }}
-    {{ end }}  
-  {{ end }}
+    {{- end }}  
+  {{- end }}
 </head>

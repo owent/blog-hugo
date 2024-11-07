@@ -1,5 +1,3 @@
-{{ $default_bootstrap_js := "//unpkg.com/bootstrap@latest/dist/js/bootstrap.min.js" }}
-{{ $default_bootstrap_popper_js := "//unpkg.com/popper.js@latest/dist/umd/popper.min.js" }}
 {{ $default_highlightjs_js := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/highlight.min.js" }}
 {{ $default_highlightjs_css := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/styles/%STYLE%.min.css" }}
 {{ $default_highlightjs_lang := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/languages/%LANG%.min.js" }}
@@ -8,26 +6,28 @@
 {{ $default_katex_css := "//unpkg.com/katex@latest/dist/katex.min.css" }}
 {{ $default_katex_autorender := "//unpkg.com/katex@latest/dist/contrib/auto-render.min.js" }}
 {{ $default_chartjs_js := "//unpkg.com/chart.js@latest/dist/chart.umd.js" }}
-{{ $default_mermaid_js := "//unpkg.com/mermaid@latest/dist/mermaid.esm.min.mjs" }}
-{{ if $.Site.Params.bootstrap }}
-  {{ if $.Site.Params.bootstrap.popper }}
-  <script type="text/javascript" src='{{ $.Site.Params.bootstrap.popper.js | default $default_bootstrap_popper_js | safeURL }}' crossorigin="anonymous"></script>
-  {{ else }}
-  <script type="text/javascript" src='{{ $default_bootstrap_popper_js }}'></script>
-  {{ end }}
-<script type="text/javascript" src='{{ $.Site.Params.bootstrap.js | default $default_bootstrap_js | safeURL }}' crossorigin="anonymous"></script>
-{{ else }}
-<script type="text/javascript" src='{{ $default_bootstrap_popper_js }}' crossorigin="anonymous"></script>
-<script type="text/javascript" src='{{ $default_bootstrap_js }}' crossorigin="anonymous"></script>
-{{ end }}
+<script type="module">
+import * as Popper from "@popperjs/core";
+import * as bootstrap from 'bootstrap';
+{{- with $.Site.Params.modules }}
+    {{- with .module }}
+        {{- range . }}
+{{ . | safeJS }}
+        {{- end }}
+    {{- end }}
+{{- end }}
+</script>
 {{- with $.Site.Params.highlightjs }}
 <!-- highlight.js begin -->
 <script type="text/javascript" src='{{ replace (default $default_highlightjs_js .url.js) "%VERSION%" .version | safeURL  }}'></script>
 {{ range $lang := .langs }}
 <script type="text/javascript" src='{{ replace (replace (default $default_highlightjs_lang $.Site.Params.highlightjs.url.lang) "%VERSION%" $.Site.Params.highlightjs.version) "%LANG%" $lang | safeURL  }}'></script>{{ end }}
 <script type="text/javascript">
-jQuery(function (){
-    jQuery("head").append('<link rel="stylesheet" href="{{ replace (replace (default $default_highlightjs_css .url.style) "%VERSION%" .version) "%STYLE%" .style | safeURL  }}" />');
+document.addEventListener('DOMContentLoaded', (event) => {
+    const hljs_style = document.createElement('link');
+    hljs_style.rel = 'stylesheet';
+    hljs_style.href = '{{ replace (replace (default $default_highlightjs_css .url.style) "%VERSION%" .version) "%STYLE%" .style | safeJS  }}';
+    document.querySelector('head').appendChild(hljs_style);
     if (window.JSON) {
         hljs.configure(JSON.parse({{ .options | jsonify }}));
     } else {
@@ -38,20 +38,23 @@ jQuery(function (){
         allLanguages[lang.toLowerCase()] = true;
     }
 
-    jQuery('{{ .selector | default "pre>code" }}').each(function(i, block) {
+    for(const block of document.querySelectorAll('{{ .selector | default "pre>code" }}')) {
         try {
-            if (block.className.match(/\bnohighlight\b|\bmermaid\b/i)) {
-                return;
+            if (block.className.match(/\bmermaid\b/i)) {
+                block.classList.add("mermaid");
+                continue;
+            }
+            if (block.className.match(/\bnohighlight\b/i)) {
+                continue;
             }
             const detectLang = block.className.match(/language-([^\s]+)/i);
             if (detectLang && detectLang.length >= 2 && hljs.getLanguage(detectLang[1])) {
                 hljs.highlightElement(block);
             } else {
-                const jdom = jQuery(block);
-                const result = hljs.highlightAuto(jdom.text(), hljs.listLanguages());
+                const result = hljs.highlightAuto(block.innerText, hljs.listLanguages());
                 if (result && result.value) {
-                    jdom.html(result.value);
-                    jdom.addClass("hljs");
+                    block.innerHTML = result.value;
+                    block.classList.add("hljs");
                 }
             }
         } catch (e) {
@@ -59,7 +62,7 @@ jQuery(function (){
                 console.log(e.toString() + "\r\nMaybe can not detect the language");
             }
         }
-    });
+    }
 });
 </script>
 <!-- highlight.js end -->
@@ -84,8 +87,11 @@ window.MathJax = {
 <script type="text/javascript" src='{{ .js | default $default_katex_js | safeURL }}'></script>
 <script type="text/javascript" src='{{ .autorender | default $default_katex_autorender | safeURL }}'></script>
 <script type="text/javascript">
-jQuery(function(){
-    jQuery("head").append('<link rel="stylesheet" href="{{ .css | default $default_katex_css | safeURL }}" />');
+document.addEventListener('DOMContentLoaded', (event) => {
+    const katex_style = document.createElement('link');
+    katex_style.rel = 'stylesheet';
+    katex_style.href = '{{ .css | default $default_katex_css | safeJS  }}';
+    document.querySelector('head').appendChild(katex_style);
     renderMathInElement(document.body, {
         delimiters: [
             {left: "$$", right: "$$", display: true},
@@ -104,73 +110,85 @@ jQuery(function(){
 <!-- chart.js end -->{{ end }}
 {{ with $.Site.Params.mermaid }}<!-- mermaid begin -->
 <script type="module">
-    import mermaid from "{{ .js | default $default_mermaid_js | safeURL }}";
-    const config = {
-        theme: '{{ .theme | default "default" }}',
-        logLevel: 'fatal',
-        securityLevel: 'loose', // 'sandbox', 'strict', 'loose', 'antiscript'
-        startOnLoad: true,
-        arrowMarkerAbsolute: false,
-        /*
-        er: {
-            diagramPadding: 20,
-            layoutDirection: 'TB',
-            minEntityWidth: 100,
-            minEntityHeight: 75,
-            entityPadding: 15,
-            stroke: 'gray',
-            fill: 'honeydew',
-            fontSize: 12,
-            useMaxWidth: true,
-        },
-        flowchart: {
-            diagramPadding: 8,
-            htmlLabels: true,
-            curve: 'basis',
-        },
-        sequence: {
-            diagramMarginX: 50,
-            diagramMarginY: 10,
-            actorMargin: 50,
-            width: 150,
-            height: 65,
-            boxMargin: 10,
-            boxTextMargin: 5,
-            noteMargin: 10,
-            messageMargin: 35,
-            messageAlign: 'center',
-            mirrorActors: true,
-            bottomMarginAdj: 1,
-            useMaxWidth: true,
-            rightAngles: false,
-            showSequenceNumbers: false,
-        },
-        gantt: {
-            titleTopMargin: 25,
-            barHeight: 20,
-            barGap: 4,
-            topPadding: 50,
-            leftPadding: 75,
-            gridLineStartPadding: 35,
-            fontSize: 11,
-            fontFamily: '"Open Sans", sans-serif',
-            numberSectionStyles: 4,
-            axisFormat: '%Y-%m-%d',
-            topAxis: false,
-        },*/
-    };
-    mermaid.initialize(config);
+import mermaid from "mermaid";
+const config = {
+    theme: '{{ .theme | default "default" }}',
+    logLevel: 'fatal',
+    securityLevel: 'loose', // 'sandbox', 'strict', 'loose', 'antiscript'
+    startOnLoad: true,
+    arrowMarkerAbsolute: false,
+    /*
+    er: {
+        diagramPadding: 20,
+        layoutDirection: 'TB',
+        minEntityWidth: 100,
+        minEntityHeight: 75,
+        entityPadding: 15,
+        stroke: 'gray',
+        fill: 'honeydew',
+        fontSize: 12,
+        useMaxWidth: true,
+    },
+    flowchart: {
+        diagramPadding: 8,
+        htmlLabels: true,
+        curve: 'basis',
+    },
+    sequence: {
+        diagramMarginX: 50,
+        diagramMarginY: 10,
+        actorMargin: 50,
+        width: 150,
+        height: 65,
+        boxMargin: 10,
+        boxTextMargin: 5,
+        noteMargin: 10,
+        messageMargin: 35,
+        messageAlign: 'center',
+        mirrorActors: true,
+        bottomMarginAdj: 1,
+        useMaxWidth: true,
+        rightAngles: false,
+        showSequenceNumbers: false,
+    },
+    gantt: {
+        titleTopMargin: 25,
+        barHeight: 20,
+        barGap: 4,
+        topPadding: 50,
+        leftPadding: 75,
+        gridLineStartPadding: 35,
+        fontSize: 11,
+        fontFamily: '"Open Sans", sans-serif',
+        numberSectionStyles: 4,
+        axisFormat: '%Y-%m-%d',
+        topAxis: false,
+    },*/
+};
+mermaid.initialize(config);
 </script>
 <!-- mermaid end -->{{ end }}
+{{- if not ( .Params.noad ) }}
+    {{- with $.Site.Params.adsense }}
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+    {{- end}}
+{{- end -}}
 {{ with $.Site.Params.styleimport }}<!-- style import begin -->
 <script type="text/javascript">
-jQuery(function() {
+document.addEventListener('DOMContentLoaded', (event) => {
     setTimeout(function() {
         var import_items = '';
-        {{ range $url := .urls }}
-        import_items += "@import url('{{ $url | safeJS }}');\r\n";{{ end }}
+        {{- range $url := .urls }}
+        import_items += "@import url('{{ $url | safeJS }}');\r\n";
+        {{ end }}
 
-        jQuery("head").append(jQuery('<style></style>').html(import_items));
+        if (import_items) {
+            const import_style = document.createElement('style');
+            import_style.innerHTML = import_items;
+            document.querySelector('head').appendChild(import_style);
+        }
     }, {{ default 256 .delay }});
 });
 </script>

@@ -116,11 +116,18 @@ params:
     keywork: q
     sitename: q1
     siteprefix: "site:"
+  modules:
+    importmap:
+      "react": "//unpkg.com/react@latest"
+      "react-bootstrap": "//unpkg.com/react-bootstrap@latest"
+    module:
+      - |
+        // import React from "react";
   bootstrap:
-    js: //unpkg.com/bootstrap@latest/dist/js/bootstrap.min.js
     css: //unpkg.com/bootstrap@latest/dist/css/bootstrap.min.css
+    js: "//unpkg.com/bootstrap@latest/dist/js/bootstrap.esm.min.js"
     popper:
-      js: //unpkg.com/@popperjs/core@latest/dist/umd/popper.min.js
+      js: "//unpkg.com/@popperjs/core@latest/dist/esm/popper.js"
   highlightjs:
     style: "vs2015" # style name
     langs:
@@ -166,9 +173,6 @@ params:
     js: //unpkg.com/katex@latest/dist/katex.min.js
     css: //unpkg.com/katex@latest/dist/katex.min.css
     autorender: //unpkg.com/katex@latest/dist/contrib/auto-render.min.js
-  jquery:
-    js: //unpkg.com/jquery@latest/dist/jquery.slim.min.js
-    migrate: //unpkg.com/jquery-migrate@latest/dist/jquery-migrate.min.js
   chartjs:
     js: //unpkg.com/chart.js@latest/dist/chart.umd.js
   mermaid:
@@ -194,9 +198,6 @@ params:
           data-ad-slot="4450372783"
           data-ad-format="auto"
           data-full-width-responsive="true"></ins>
-      <script>
-          (adsbygoogle = window.adsbygoogle || []).push({});
-      </script>
     article:
       # panel_header:
       # panel_footer:
@@ -211,9 +212,6 @@ params:
             data-ad-slot="5599802929"
             data-ad-format="auto"
             data-full-width-responsive="true"></ins>
-        <script>
-            (adsbygoogle = window.adsbygoogle || []).push({});
-        </script>
       # before_comments:
       # after_comments:
       after_toc: |
@@ -224,9 +222,15 @@ params:
             data-ad-slot="1249494377"
             data-ad-format="auto"
             data-full-width-responsive="true"></ins>
-        <script>
-            (adsbygoogle = window.adsbygoogle || []).push({});
-        </script>
+    page:
+      after_body: |
+        <!-- article_after_footer -->
+        <ins class="adsbygoogle ads_infeed"
+            style="display:block"
+            data-ad-client="ca-pub-8180054975285991"
+            data-ad-slot="5599802929"
+            data-ad-format="auto"
+            data-full-width-responsive="true"></ins>
     # archive:
     #   # panel_header:
     #   # panel_footer:

@@ -1,28 +1,23 @@
 {{ if .IsNamedParams }}
 <canvas id="{{ .Get "id" | default (printf "charjs-chart-%d" .Ordinal) | safeHTMLAttr }}" {{ with .Get "class" }} class="{{ . | safeHTMLAttr }}" {{ end }}>{{ .Get "alt" | default (printf "Chart %d" .Ordinal) | safeHTML }}</canvas>{{ if .Inner }}<script type="text/javascript">
-jQuery(function() {
+document.addEventListener('DOMContentLoaded', (event) => {
     var chart_id = "{{ .Get "id" | default (printf "charjs-chart-%d" .Ordinal) | safeHTMLAttr }}";
-    {{ with .Get "style" }}
-    var css_styles = "{{ . | safeJS }}".split(";");
-    var css_objs = {};
-    for (var i in css_styles) {
-        var split_idx = css_styles[i].indexOf(":");
-        if (split_idx > 0 && split_idx < css_styles[i].length) {
-            css_objs[css_styles[i].substr(0, split_idx)] = css_styles[i].substr(split_idx + 1);
-        }
+    const chart_dom = document.getElementById(chart_id);
+    if(chart_dom) {
+    {{- with .Get "style" }}
+    chart_dom.style.cssText = "{{ . | safeJS }}";
+    {{- end }}
+        new Chart(
+            chart_dom,
+            {{ .Inner | safeJS }}
+        );
     }
-    jQuery("#" + chart_id).css(css_objs);
-    {{ end }}
-    new Chart(
-        document.getElementById(chart_id),
-        {{ .Inner | safeJS }}
-    );
 });
 </script>
 {{ end }}{{ else }}
 <canvas id="{{ printf "charjs-chart-%d" .Ordinal }}">{{ printf "Chart %d" .Ordinal | safeHTML }}</canvas>{{ if .Inner }}
 <script type="text/javascript">
-jQuery(function() {
+document.addEventListener('DOMContentLoaded', (event) => {
     var chart_id = "{{ printf "charjs-chart-%d" .Ordinal }}";
     new Chart(
         document.getElementById(chart_id),

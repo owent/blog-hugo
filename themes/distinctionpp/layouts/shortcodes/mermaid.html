@@ -1,4 +1,9 @@
-{{ if .IsNamedParams }}
-<pre id="{{ .Get "id" | default (printf "mermaid-diagram-%d" .Ordinal) | safeHTMLAttr }}" class="{{ with .Get "class" }}{{ . | safeHTMLAttr }} {{ end }}mermaid">{{ .Inner | safeHTML }}</pre>
-{{ else }}
-<pre id="{{ printf "mermaid-diagram-%d" .Ordinal }}" class="mermaid">{{ .Inner | safeHTML }}</pre>{{ end }}
+{{- if .IsNamedParams }}
+<pre id="{{ .Get "id" | default (printf "mermaid-diagram-%d" .Ordinal) | safeHTMLAttr }}" class="{{ with .Get "class" }}{{ . | safeHTMLAttr }} {{ end }}mermaid">
+{{ .Inner | safeHTML }}
+</pre>
+{{- else }}
+<pre id="{{ printf "mermaid-diagram-%d" .Ordinal }}" class="mermaid">
+{{ .Inner | safeHTML }}
+</pre>
+{{- end }}

@@ -43,10 +43,7 @@ params:
     sitename: q1
     siteprefix: "site:"
   bootstrap:
-    js: //unpkg.com/bootstrap@latest/dist/js/bootstrap.min.js
     css: //unpkg.com/bootstrap@latest/dist/css/bootstrap.min.css
-    popper:
-      js: //unpkg.com/@popperjs/core@latest/dist/umd/popper.min.js
   highlightjs:
     style: "vs2015"      # style name
     langs: ['capnproto', 'cmake', 'd', 'dos', 'erlang', 'go', 'less', 'lua', 'php', 'powershell', 'protobuf', 'profile', 'typescript', 'vim']
@@ -68,9 +65,6 @@ params:
   # mathjax:
   #   js: //cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
   #   js: //unpkg.com/mathjax@3/es5/tex-mml-chtml.js
-  jquery:
-    js: //unpkg.com/jquery@latest/dist/jquery.slim.min.js
-    migrate: //unpkg.com/jquery-migrate@latest/dist/jquery-migrate.min.js
   chartjs:
     js: //unpkg.com/chart.js@latest/dist/chart.umd.js
   mermaid:
