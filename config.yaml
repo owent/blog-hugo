@@ -198,6 +198,9 @@ params:
           data-ad-slot="4450372783"
           data-ad-format="auto"
           data-full-width-responsive="true"></ins>
+      <script>
+          (adsbygoogle = window.adsbygoogle || []).push({});
+      </script>
     article:
       # panel_header:
       # panel_footer:
@@ -212,6 +215,9 @@ params:
             data-ad-slot="5599802929"
             data-ad-format="auto"
             data-full-width-responsive="true"></ins>
+        <script>
+            (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
       # before_comments:
       # after_comments:
       after_toc: |
@@ -222,6 +228,9 @@ params:
             data-ad-slot="1249494377"
             data-ad-format="auto"
             data-full-width-responsive="true"></ins>
+        <script>
+            (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
     page:
       after_body: |
         <!-- article_after_footer -->
@@ -231,6 +240,9 @@ params:
             data-ad-slot="5599802929"
             data-ad-format="auto"
             data-full-width-responsive="true"></ins>
+        <script>
+            (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
     # archive:
     #   # panel_header:
     #   # panel_footer:

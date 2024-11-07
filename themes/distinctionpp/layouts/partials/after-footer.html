@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 </script>
 <!-- highlight.js end -->
 {{- end }}{{ partial "google-analytics.html" . }}
-{{ with $.Site.Params.mathjax }}<!-- mathjax begin -->
+{{- with $.Site.Params.mathjax }}<!-- mathjax begin -->
 <script type="text/javascript">
 window.MathJax = {
     tex: {
@@ -82,8 +82,9 @@ window.MathJax = {
 };
 </script>
 <script src="{{ .js | default $default_mathjax_js | safeURL }}" id="MathJax-script" async></script>
-<!-- mathjax end -->{{ end }}
-{{ with $.Site.Params.katex }}<!-- katex begin -->
+<!-- mathjax end -->
+{{- end }}
+{{- with $.Site.Params.katex }}<!-- katex begin -->
 <script type="text/javascript" src='{{ .js | default $default_katex_js | safeURL }}'></script>
 <script type="text/javascript" src='{{ .autorender | default $default_katex_autorender | safeURL }}'></script>
 <script type="text/javascript">
@@ -104,11 +105,13 @@ document.addEventListener('DOMContentLoaded', (event) => {
     });
 });
 </script>
-<!-- katex end -->{{ end }}
-{{ with $.Site.Params.chartjs }}<!-- chart.js begin -->
+<!-- katex end -->
+{{- end }}
+{{- with $.Site.Params.chartjs }}<!-- chart.js begin -->
 <script type="text/javascript" src='{{ .js | default $default_chartjs_js | safeURL }}'></script>
-<!-- chart.js end -->{{ end }}
-{{ with $.Site.Params.mermaid }}<!-- mermaid begin -->
+<!-- chart.js end -->
+{{- end }}
+{{- with $.Site.Params.mermaid }}<!-- mermaid begin -->
 <script type="module">
 import mermaid from "mermaid";
 const config = {
@@ -167,14 +170,8 @@ const config = {
 };
 mermaid.initialize(config);
 </script>
-<!-- mermaid end -->{{ end }}
-{{- if not ( .Params.noad ) }}
-    {{- with $.Site.Params.adsense }}
-<script>
-    (adsbygoogle = window.adsbygoogle || []).push({});
-</script>
-    {{- end}}
-{{- end -}}
+<!-- mermaid end -->
+ {{- end }}
 {{ with $.Site.Params.styleimport }}<!-- style import begin -->
 <script type="text/javascript">
 document.addEventListener('DOMContentLoaded', (event) => {
