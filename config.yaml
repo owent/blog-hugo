@@ -81,7 +81,9 @@ rssLimit: 100
 sitemap: sitemap.xml
 # filesystem path to read files relative from
 source: ""
-staticDir: "source/post"
+staticDir:
+  - "source/post"
+  - "source/static"
 # display memory and timing of different steps of the program
 stepAnalysis: false
 # theme to use (located by default in /themes/THEMENAME/)
