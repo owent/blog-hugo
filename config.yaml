@@ -225,7 +225,7 @@ params:
       after_footer: |
         <!-- article_after_footer -->
         <ins class="adsbygoogle ads_infeed"
-            style="display:block"
+            style="display:block; width: 120px;"
             data-ad-client="ca-pub-8180054975285991"
             data-ad-slot="5599802929"
             data-ad-format="auto"
