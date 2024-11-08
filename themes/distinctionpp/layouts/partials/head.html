@@ -65,7 +65,10 @@
   {{- end }}
   {{- with $.Site.Params.metas }}
     {{- range . }}
-      {{- . }}
+    <meta
+      {{- range $k, $v := . }}
+        {{- " " | safeHTMLAttr }}{{ $k | safeHTMLAttr }}="{{ $v | safeHTMLAttr }}"
+      {{- end }} />
     {{ end }}
   {{- end }}
 </head>

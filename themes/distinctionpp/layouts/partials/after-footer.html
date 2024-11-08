@@ -1,27 +1,28 @@
-{{ $default_highlightjs_js := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/highlight.min.js" }}
-{{ $default_highlightjs_css := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/styles/%STYLE%.min.css" }}
-{{ $default_highlightjs_lang := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/languages/%LANG%.min.js" }}
-{{ $default_mathjax_js := "//unpkg.com/mathjax@3/es5/tex-mml-chtml.js" }}
-{{ $default_katex_js := "///unpkg.com/katex@latest/dist/katex.min.js" }}
-{{ $default_katex_css := "//unpkg.com/katex@latest/dist/katex.min.css" }}
-{{ $default_katex_autorender := "//unpkg.com/katex@latest/dist/contrib/auto-render.min.js" }}
-{{ $default_chartjs_js := "//unpkg.com/chart.js@latest/dist/chart.umd.js" }}
+{{- $default_highlightjs_js := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/highlight.min.js" }}
+{{- $default_highlightjs_css := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/styles/%STYLE%.min.css" }}
+{{- $default_highlightjs_lang := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/languages/%LANG%.min.js" }}
+{{- $default_mathjax_js := "//unpkg.com/mathjax@3/es5/tex-mml-chtml.js" }}
+{{- $default_katex_js := "///unpkg.com/katex@latest/dist/katex.min.js" }}
+{{- $default_katex_css := "//unpkg.com/katex@latest/dist/katex.min.css" }}
+{{- $default_katex_autorender := "//unpkg.com/katex@latest/dist/contrib/auto-render.min.js" }}
+{{- $default_chartjs_js := "//unpkg.com/chart.js@latest/dist/chart.umd.js" }}
 <script type="module">
-import * as Popper from "@popperjs/core";
-import * as bootstrap from 'bootstrap';
+{{- "// import * as Popper from \"@popperjs/core\";" | safeJS }}
+{{- "// import * as bootstrap from \"bootstrap\";" | safeJS }}
 {{- with $.Site.Params.modules }}
     {{- with .module }}
         {{- range . }}
 {{ . | safeJS }}
-        {{- end }}
+        {{ end }}
     {{- end }}
 {{- end }}
 </script>
 {{- with $.Site.Params.highlightjs }}
 <!-- highlight.js begin -->
 <script type="text/javascript" src='{{ replace (default $default_highlightjs_js .url.js) "%VERSION%" .version | safeURL  }}'></script>
-{{ range $lang := .langs }}
-<script type="text/javascript" src='{{ replace (replace (default $default_highlightjs_lang $.Site.Params.highlightjs.url.lang) "%VERSION%" $.Site.Params.highlightjs.version) "%LANG%" $lang | safeURL  }}'></script>{{ end }}
+    {{- range $lang := .langs }}
+<script type="text/javascript" src='{{ replace (replace (default $default_highlightjs_lang $.Site.Params.highlightjs.url.lang) "%VERSION%" $.Site.Params.highlightjs.version) "%LANG%" $lang | safeURL  }}'></script>
+    {{- end }}
 <script type="text/javascript">
 document.addEventListener('DOMContentLoaded', (event) => {
     const hljs_style = document.createElement('link');

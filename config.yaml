@@ -125,7 +125,7 @@ params:
         // import React from "react";
   content:
     footer:
-      right: "沪ICP备2022003252号"
+      right: "沪ICP备2022003252号&nbsp;&nbsp;"
   bootstrap:
     css: //unpkg.com/bootstrap@latest/dist/css/bootstrap.min.css
     js: "//unpkg.com/bootstrap@latest/dist/js/bootstrap.esm.min.js"
@@ -192,7 +192,8 @@ params:
     code: |
       <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8180054975285991" crossorigin="anonymous"></script>
   metas:
-    - <meta name="baidu-site-verification" content="codeva-4M5iohb9TW" />
+    - name: "baidu-site-verification"
+      content: "codeva-4M5iohb9TW"
   ads:
     menu: |
       <ins class="adsbygoogle ads_menu"
