@@ -198,8 +198,17 @@ params:
           data-ad-slot="4450372783"
           data-ad-format="auto"
           data-full-width-responsive="true"></ins>
-      <script>
-          (adsbygoogle = window.adsbygoogle || []).push({});
+      <script type="text/javascript">
+      document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(function() {
+          try {
+            (adsbygoogle = window.adsbygoogle || []).push({});
+          } catch (e) {
+            console.log("Load adsbygoogle failed");
+            console.error(e);
+          }
+        }, 256);
+      });
       </script>
     article:
       # panel_header:
@@ -215,8 +224,17 @@ params:
             data-ad-slot="5599802929"
             data-ad-format="auto"
             data-full-width-responsive="true"></ins>
-        <script>
-            (adsbygoogle = window.adsbygoogle || []).push({});
+        <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', () => {
+          setTimeout(function() {
+            try {
+              (adsbygoogle = window.adsbygoogle || []).push({});
+            } catch (e) {
+              console.log("Load adsbygoogle failed");
+              console.error(e);
+            }
+          }, 256);
+        });
         </script>
       # before_comments:
       # after_comments:
@@ -228,8 +246,17 @@ params:
             data-ad-slot="1249494377"
             data-ad-format="auto"
             data-full-width-responsive="true"></ins>
-        <script>
-            (adsbygoogle = window.adsbygoogle || []).push({});
+        <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', () => {
+          setTimeout(function() {
+            try {
+              (adsbygoogle = window.adsbygoogle || []).push({});
+            } catch (e) {
+              console.log("Load adsbygoogle failed");
+              console.error(e);
+            }
+          }, 256);
+        });
         </script>
     page:
       after_body: |
@@ -240,8 +267,17 @@ params:
             data-ad-slot="5599802929"
             data-ad-format="auto"
             data-full-width-responsive="true"></ins>
-        <script>
-            (adsbygoogle = window.adsbygoogle || []).push({});
+        <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', () => {
+          setTimeout(function() {
+            try {
+              (adsbygoogle = window.adsbygoogle || []).push({});
+            } catch (e) {
+              console.log("Load adsbygoogle failed");
+              console.error(e);
+            }
+          }, 256);
+        });
         </script>
     # archive:
     #   # panel_header:
