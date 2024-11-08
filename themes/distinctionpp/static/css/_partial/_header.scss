@@ -2,7 +2,7 @@
 @use '../_utils/mixin' as *;
 
 #header {
-  padding: 1rem 0.5rem 0.2rem 0.5rem;
+  padding: 1rem 0 0.2rem 0;
   background-color: rgb(51, 51, 51);
 }
 
@@ -68,6 +68,8 @@
 
 #main-nav {
   padding-bottom: 0.4em;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
   background-color: #282828;
 }
 
