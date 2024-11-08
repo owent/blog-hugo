@@ -123,6 +123,9 @@ params:
     module:
       - |
         // import React from "react";
+  content:
+    footer:
+      right: "沪ICP备2022003252号"
   bootstrap:
     css: //unpkg.com/bootstrap@latest/dist/css/bootstrap.min.css
     js: "//unpkg.com/bootstrap@latest/dist/js/bootstrap.esm.min.js"

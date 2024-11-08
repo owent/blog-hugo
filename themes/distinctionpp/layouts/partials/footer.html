@@ -1,19 +1,42 @@
 <footer id="footer">
   <div class="outer">
     <div id="footer-info" class="inner clearfix">
-      <strong id="footer-left" class="float-left float-start">{{if $.Site.Copyright }}{{ $.Site.Copyright | safeHTML }}{{ else }}&copy;{{end}}
-        {{ $.Site.Lastmod.Format "2006" }}
-        {{if and .Params.author }}{{ .Params.author | safeHTML}}
-        {{else if and $.Site.Params $.Site.Params.author }}{{ $.Site.Params.author | safeHTML}}
-        {{else if and $.Site.Taxonomies $.Site.Taxonomies.author }}{{ $.Site.Taxonomies.author | safeHTML}}
-        {{end}}
+      <strong id="footer-left" class="float-left float-start">
+        {{- if $.Site.Copyright }}
+          {{- $.Site.Copyright | safeHTML }}
+        {{- else }}
+        &nbsp;&copy;&nbsp;
+        {{- end}}
+        {{- $.Site.Lastmod.Format "2006" }}&nbsp;
+        {{- if and .Params.author }}
+          {{- .Params.author | safeHTML}}
+        {{- else if and $.Site.Params $.Site.Params.author }}
+          {{- $.Site.Params.author | safeHTML}}
+        {{- else if and $.Site.Taxonomies $.Site.Taxonomies.author }}
+          {{- $.Site.Taxonomies.author | safeHTML}}
+        {{- end}}
+        {{- with $.Site.Params.Content }}
+          {{- with .Footer }}
+            {{- with .Left }}
+              {{- . | safeHTML}}
+            {{- end}}
+          {{- end}}
+        {{- end}}
       </strong>
       <strong id="footer-right" class="float-right float-end">
-        {{with .Params.PageSource }}
-        <a href="{{ .Params.PageSource | safeURL}}" target="_blank">{{ i18n "page_source" }}</a>,{{end}}
-        {{if and $.Site.Params $.Site.Params.SiteSource }}
+        {{- with $.Site.Params.Content }}
+          {{- with .Footer }}
+            {{- with .Right }}
+              {{- . | safeHTML}}
+            {{- end}}
+          {{- end}}
+        {{- end}}
+        {{- with .Params.PageSource -}}
+        <a href="{{ .Params.PageSource | safeURL}}" target="_blank">{{ i18n "page_source" }}</a>,
+        {{- end}}
+        {{- if and $.Site.Params $.Site.Params.SiteSource -}}
         <a href="{{ $.Site.Params.SiteSource | safeURL}}" target="_blank">{{ i18n "site_source" }}</a>,
-        {{end}}
+        {{- end}}
         {{ i18n "powered_by" }} <a href="https://gohugo.io/" target="_blank">Hugo</a>,
         {{ i18n "theme" }} <a href="https://github.com/owent/hugo-theme-distinctionpp" target="_blank">distinctionpp</a>
       </strong>

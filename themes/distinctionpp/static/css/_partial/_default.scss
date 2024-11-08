@@ -11,6 +11,7 @@ ol {
 
 body {
   font-family: $font-content;
+  min-width: $body-min-width;
   @media (min-width: 1200px) {
     font-size: 1.25rem;
   }

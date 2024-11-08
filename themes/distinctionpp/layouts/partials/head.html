@@ -65,7 +65,7 @@
   {{- end }}
   {{- with $.Site.Params.metas }}
     {{- range . }}
-      {{- . | safeHTML }}
-    {{- end }}  
+      {{- . }}
+    {{ end }}
   {{- end }}
 </head>
