@@ -197,16 +197,7 @@ params:
     - name: "baidu-site-verification"
       content: "codeva-4M5iohb9TW"
   ads:
-    menu: |
-      <ins class="adsbygoogle ads_menu"
-          style="display:block; width: 120px; height: 57px;"
-          data-ad-client="ca-pub-8180054975285991"
-          data-ad-slot="4450372783"
-          data-ad-format="rectangle, horizontal"
-          data-full-width-responsive="true"></ins>
-      <script>
-      (adsbygoogle = window.adsbygoogle || []).push({});
-      </script>
+    # menu:
     article:
       # panel_header:
       # panel_footer:
