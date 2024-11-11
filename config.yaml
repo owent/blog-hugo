@@ -199,7 +199,7 @@ params:
   ads:
     menu: |
       <ins class="adsbygoogle ads_menu"
-          style="display:block; width: 120px;"
+          style="display:block; width: 120px; height: 57px;"
           data-ad-client="ca-pub-8180054975285991"
           data-ad-slot="4450372783"
           data-ad-format="auto"
