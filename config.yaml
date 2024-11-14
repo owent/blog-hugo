@@ -127,7 +127,7 @@ params:
         // import React from "react";
   content:
     footer:
-      right: "沪ICP备2022003252号&nbsp;&nbsp;"
+      right: '<a href="https://beian.miit.gov.cn/" target="_blank">沪ICP备2022003252号</a>&nbsp;&nbsp;'
   bootstrap:
     css: //unpkg.com/bootstrap@latest/dist/css/bootstrap.min.css
     js: "//unpkg.com/bootstrap@latest/dist/js/bootstrap.esm.min.js"
