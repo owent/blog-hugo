@@ -172,7 +172,7 @@ const config = {
 mermaid.initialize(config);
 </script>
 <!-- mermaid end -->
- {{- end }}
+{{- end }}
 {{ with $.Site.Params.styleimport }}<!-- style import begin -->
 <script type="text/javascript">
 document.addEventListener('DOMContentLoaded', (event) => {
@@ -190,4 +190,22 @@ document.addEventListener('DOMContentLoaded', (event) => {
     }, {{ default 256 .delay }});
 });
 </script>
-<!-- style import end -->{{ end }}
+<!-- style import end -->
+{{- end }}
+{{- with $.Site.Params.Content }}
+  {{- with .after_footer }}
+    {{- range . -}}
+    <script
+      {{- with .attributes }}
+        {{- range $k, $v := . -}}
+            {{- " " | safeHTMLAttr }}{{ $k | safeHTMLAttr }}="{{ $v | safeHTMLAttr }}"
+        {{- end -}}
+      {{- end -}}
+    >
+      {{- with .content }}
+        {{- . | safeJS }}
+      {{- end -}}
+    </script>
+    {{- end}}
+  {{- end}}
+{{- end}}

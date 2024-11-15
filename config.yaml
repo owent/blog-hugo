@@ -128,6 +128,18 @@ params:
   content:
     footer:
       right: '<a href="https://beian.miit.gov.cn/" target="_blank">沪ICP备2022003252号</a>&nbsp;&nbsp;'
+    after_footer:
+      - attributes:
+          type: "text/javascript"
+        content: |
+          var _hmt = _hmt || [];
+          (function() {
+            var hm = document.createElement("script");
+            hm.src = "https://hm.baidu.com/hm.js?6a0daf8d58889f1cf55a353867bfdbb0";
+            var sdoms = document.getElementsByTagName("script");
+            var s = document.getElementsByTagName("script")[sdoms.length - 1]; 
+            s.parentNode.appendChild(hm);
+          })();
   bootstrap:
     css: //unpkg.com/bootstrap@latest/dist/css/bootstrap.min.css
     js: "//unpkg.com/bootstrap@latest/dist/js/bootstrap.esm.min.js"
