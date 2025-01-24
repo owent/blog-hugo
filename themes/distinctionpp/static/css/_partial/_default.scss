@@ -129,6 +129,8 @@ table {
   width: 100%;
   max-width: 100%;
   margin-bottom: 1rem;
+  display: block;
+  overflow-x: scroll;
 
   border: $table-border-width solid $table-border-color;
   th,
