@@ -6,10 +6,10 @@ date: 2009-09-01
 noad: true
 ---
 
-| 欧文韬                                       | TEL. 18601690140                                                |
-| -------------------------------------------- | --------------------------------------------------------------- |
-| 性别： 男                                    | E-Mail\(主\): [admin@owent.net](mailto:admin@owent.net)         |
-| Blog: [https://owent.net](https://owent.net) | E-Mail\(备\): [owt5008137@live.com](mailto:owt5008137@live.com) |
+| 欧文韬                    | TEL. 18601690140                                                |
+| ------------------------- | --------------------------------------------------------------- |
+| 性别： 男                 | E-Mail\(主\): [admin@owent.net](mailto:admin@owent.net)         |
+| Blog: <https://owent.net> | E-Mail\(备\): [owt5008137@live.com](mailto:owt5008137@live.com) |
 
 # 工作学习经历
 
@@ -22,10 +22,10 @@ noad: true
 
 # 主要开源活动
 
-* Github-主站: [https://github.com/owent](https://github.com/owent)
-* Github-个人Utility工具集: [https://github.com/owent-utils](https://github.com/owent-utils)
-* Github-参与的开源项目: [https://github.com/owent-contrib](https://github.com/owent-contrib)
-* Excel转表工具集（Excel -&gt; Protobuf、Lua、Msgpack、Json、Xml\Javascript、UnrealEngine DataTable）: https://github.com/xresloader
+* Github-主站: <https://github.com/owent>
+* Github-【CNCF云原生计算基金会-可观测性领域-opentelemetry-cpp核心贡献者】: <https://github.com/open-telemetry/opentelemetry-cpp>
+* Github-个人Utility工具集: <https://github.com/owent-utils>
+* Excel转表工具集（Excel -&gt; Protobuf、Lua、Msgpack、Json、Xml\Javascript、UnrealEngine DataTable）: <https://github.com/xresloade>
 
 > 1. 转表核心引擎: [xresloader](https://github.com/xresloader/xresloader)
 > 2. 批量转表规范: [xresconv-conf](https://github.com/xresloader/xresconv-conf)
@@ -62,17 +62,17 @@ noad: true
 
 ## 2017年09月 — 至今：腾讯科技（上海）有限公司
 
-* 保密项目-UE
+* 保密项目 - UE
+* Pix - UE - PC+手机,大乱斗
 * 钢之炼金术师 - 手游
 * 疯狂动物成 - 手游 - 三消+养成
 
 > * 游戏服务器架构建设、优化，系统方案设计和部分实现
->   * 基于 [libcopp][1] 的RPC系统和相关的监控、容灾设计实现
+>   * 基于 [libcopp][1] 的统一RPC框架，相关的监控、容灾设计实现
+>   * 公共组件和解决方案: 分布式消息队列、分布式事务、上云和HPA能力、可观测性建设等等。
 > * 用于protobuf和tdr的业务代码生成系统
 > * 转表工具链 [xresloader][2] 和相关编辑器(UnrealEngine)支持
 > * 跨平台开发支持（客户端、服务器共享模块）
-> * 基于ELK的开发测试环境监控平台
-> * 保证跨平台一致性的离线服务器完全副盘校验服务和多版本兼容策略
 > * 开发CI和CD流程优化
 > * 在开发测试环境搭建自动化潜在问题分析和报告的流程
 > * 基于nodejs,webpack和websocket的GM工具
@@ -147,7 +147,7 @@ noad: true
 --- 
 # 技术栈/关键字
 
-编程语言: c/c++(11/14/17/2a),bash,cmake,lua,python,javascript,typescript,c#,html,java,less,sass,php,sql,rust,markdown,restructuredtext
+编程语言: c/c++(11/14/17/20/23/26),bash,cmake,lua,python,javascript,typescript,c#,html,java,less,sass,php,sql,rust,markdown,restructuredtext
 
 框架和服务: redis,msgpack,protobuf,flatbuffers,ci,unity,cocos2d-x,cap’n proto,gRPC,mono/.net core,elasticsearch,logstash,kibana,nodejs,webpack
 
