@@ -56,6 +56,7 @@ noad: true
 >   * 示例的echosvr、loginsvr、gamesvr、分布式事务解决方案、异步队列（一致性问题）方案等
 >   * 示例的协程RPC框架和任务管理
 >   * 可观测性接入，通用动态策略能力
+>   * 基于指标的适用于所有长状态、短状态和无状态服务的HPA能力支持和云原生支持
 > * [cmake-toolset - 跨平台构建系统](https://github.com/atframework/cmake-toolset)
 >   * 支持 Windows,Linux,macOS,Android,iOS
 >   * 适配 UnrealEngine UBT 和 Unity 支持
@@ -93,7 +94,7 @@ noad: true
 >     * 分布式消息队列
 >     * 分布式事务
 >     * 通用动态策略系统框架
->     * 上云和HPA能力
+>     * 上云和HPA能力（基于指标，适用于各类长状态、短状态和无状态服务）
 >     * 可观测性能力建设
 >     * 通用公会服务、好友服务、异步队列、邮件系统、交易行系统（拍卖+证券交易类）等等
 > * 模板引擎和代码生器
