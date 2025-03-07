@@ -1,6 +1,6 @@
 ---
 title: About
-id: 1
+id: 2
 type: "page"
 date: 2025-01-01
 noad: true
@@ -106,7 +106,7 @@ noad: true
 >     * 可观测性能力建设
 >     * 通用公会服务、好友服务、异步队列、邮件系统、交易行系统（拍卖+证券交易类）等等
 > * 模板引擎和代码生器
-> * 转表工具链 [xresloader][2] 和相关编辑器(UnrealEngine)支持
+> * 转表工具链 [xresloader][2] 和相关编辑器(UnrealEngine)支持。支持各类数据交叉校验
 > * 跨平台开发支持（客户端、服务器共享模块）
 > * 开发CI和CD流程优化，自动分析工具，LLM集成
 > * 基于nodejs,webpack和websocket的GM工具
@@ -182,11 +182,11 @@ noad: true
 
 编程语言: c/c++(11/14/17/20/23/26),bash,cmake,lua,python,javascript,typescript,c#,html,java,less,sass,php,sql,rust,go,markdown,restructuredtext
 
-框架和服务: redis,msgpack,protobuf,flatbuffers,ci,unity,cocos2d-x,cap’n proto,gRPC,mono/.net core,elasticsearch,logstash,kibana,nodejs,webpack
+框架和服务: redis,msgpack,protobuf,flatbuffers,ci,unity,cocos2d-x,cap’n proto,gRPC,mono/.net core,elasticsearch,logstash,kibana,nodejs,webpack,next.js,k8s,kubernates,prometheus,opentelemetry,litellm,lobechat
 
-主题: 计算机算法,分布式系统,游戏服务器架构设计和开发,linux环境编程,操作系统,编译原理,设计模式,协程,coroutine,vscode插件开发,wordpress插件及主题开发,github action
+主题: 计算机算法,分布式系统,计算机网络,游戏服务器架构设计和开发,分布式事务,可观测性,linux环境编程,操作系统,编译原理,设计模式,协程,coroutine,vscode插件开发,wordpress插件及主题开发,github action
 
-工具: git,svn,p4,pandoc,graphviz,valgrind,gdb/lldb,perf,gperf,binutils/readelf/tcpdump等,mingw,msys,wsl,qemu,kvm,docker 
+工具: git,svn,p4,pandoc,graphviz,valgrind,gdb/lldb,perf,gperf,binutils/readelf/tcpdump等,mingw,msys,wsl,qemu,kvm,docker,podman,coredns
 
 [1]: https://github.com/owent/libcopp
 [2]: https://xresloader.atframe.work/

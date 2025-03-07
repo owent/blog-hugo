@@ -71,6 +71,7 @@ noad: true
 > * 游戏服务器架构建设、优化，系统方案设计和部分实现
 >   * 基于 [libcopp][1] 的统一RPC框架，相关的监控、容灾体系。
 >   * 公共组件和各类分布式系统解决方案
+>   * 上云和HPA能力建设，可观测性能力建设
 > * 模板引擎和代码生器
 > * 转表工具链 [xresloader][2] 和相关编辑器(UnrealEngine)支持
 > * 跨平台开发支持（客户端、服务器共享模块）
@@ -148,11 +149,11 @@ noad: true
 
 编程语言: c/c++(11/14/17/20/23/26),bash,cmake,lua,python,javascript,typescript,c#,html,java,less,sass,php,sql,rust,go,markdown,restructuredtext
 
-框架和服务: redis,msgpack,protobuf,flatbuffers,ci,unity,cocos2d-x,cap’n proto,gRPC,mono/.net core,elasticsearch,logstash,kibana,nodejs,webpack
+框架和服务: redis,msgpack,protobuf,flatbuffers,ci,unity,cocos2d-x,cap’n proto,gRPC,mono/.net core,elasticsearch,logstash,kibana,nodejs,webpack,next.js,k8s,kubernates,prometheus,opentelemetry,litellm,lobechat
 
-主题: 计算机算法,分布式系统,游戏服务器架构设计和开发,linux环境编程,操作系统,编译原理,设计模式,协程,coroutine,vscode插件开发,wordpress插件及主题开发,github action
+主题: 计算机算法,分布式系统,计算机网络,游戏服务器架构设计和开发,分布式事务,可观测性,linux环境编程,操作系统,编译原理,设计模式,协程,coroutine,vscode插件开发,wordpress插件及主题开发,github action
 
-工具: git,svn,p4,pandoc,graphviz,valgrind,gdb/lldb,perf,gperf,binutils/readelf/tcpdump等,mingw,msys,wsl,qemu,kvm,docker 
+工具: git,svn,p4,pandoc,graphviz,valgrind,gdb/lldb,perf,gperf,binutils/readelf/tcpdump等,mingw,msys,wsl,qemu,kvm,docker,podman,coredns
 
 [1]: https://github.com/owent/libcopp
 [2]: https://xresloader.atframe.work/
