@@ -7,9 +7,6 @@ buildDrafts: false
 buildFuture: true
 # include content already expired
 buildExpired: true
-# enable this to make all relative URLs relative to content root. Note that this does not affect absolute URLs.
-relativeURLs: true
-canonifyURLs: true
 # config file (default is path/config.yaml|json|toml)
 config: "config.yaml"
 contentDir: "source"
@@ -259,20 +256,20 @@ params:
     #   # after_title:
     #   # after_summary:
 
-menu:
+menus:
   main:
     - Name: "Home"
       Weight: 1
       Identifier: "home"
-      URL: "/"
+      pageRef: "/"
     - Name: "Archives"
       Weight: 2
       Identifier: "archives"
-      URL: "/archives.html"
+      pageRef: "/archives"
     - Name: "About"
       Weight: 3
       Identifier: "about"
-      URL: "/about.html"
+      pageRef: "/about"
 
 author:
   name: "OWenT"
