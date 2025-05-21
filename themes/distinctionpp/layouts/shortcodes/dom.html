@@ -1,0 +1,10 @@
+{{- $name := or (.Get "name") "div" -}}
+{{- /* Render. */ -}}
+{{ "<" | safeHTML }}{{ $name }}
+{{- range $key, $value := .Params }}
+  {{- if (hasPrefix $key "html.") }} {{ slicestr $key 5 }}="{{ $value | safeHTMLAttr }}"
+  {{- end -}}
+{{- end -}}
+>
+{{ .Inner | .Page.RenderString (dict "display" "block") -}}
+{{ "<" | safeHTML }}/{{ $name }}>
