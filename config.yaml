@@ -144,30 +144,35 @@ params:
       js: "//unpkg.com/@popperjs/core@latest/dist/esm/popper.js"
   highlightjs:
     style: "vs2015" # style name
-    langs:
-      [
+    langs: [
+        "accesslog",
+        "armasm",
         "awk",
-        "bash",
-        "cpp",
+        "basic",
+        "bnf",
+        # "cpp",
         "capnproto",
         "cmake",
         "d",
-        "diff",
+        # "diff",
         "dockerfile",
         "dos",
         "erlang",
-        "go",
-        "less",
+        "ebnf",
+        # "go",
+        "latex",
+        # "less",
         "llvm",
         "lua",
-        "php",
+        # "php",
         "powershell",
         "protobuf",
-        "python",
+        # "python",
         "profile",
-        "typescript",
+        # "typescript",
         "vim",
-        "rust",
+        # "rust",
+        "x86asm",
         "yaml",
       ]
     selector: "pre>code"
