@@ -59,9 +59,15 @@ noad: true
 
 # 项目
 
+## 社区 2021年 - 至今： Opentelemetry社区（CNCF项目）
+
+* CPP核心贡献者: Approver
+
 ## 2017年09月 — 至今：腾讯科技（上海）有限公司
 
 * TGF - UE - PC,搜撤 - 服务端主程,专家工程师
+* 云观（可观测性标准和工具）OTeam - PMC成员(Project Management Committees,开源项目管理委员会)
+* 分布式事务TDXA OTeam - PMC成员(Project Management Committees,开源项目管理委员会)
 * Pix - UE - PC+手机,大乱斗 - 服务端主程
 * 《钢之炼金术师》 - 手游
 * 《疯狂动物城》 - 手游 - 三消+养成
@@ -149,16 +155,6 @@ noad: true
 4. 2012年09月 华东理工大学，校一等奖学金
 5. 专利：ZL 2021 1 0187616.4 :《一种远程过程调用RPC服务调用方法和相关装置》
 6. 专利：ZL 2019 1 0193906.2 :《应用复盘校验处理方法及系统》
-
-# 技术栈/关键字
-
-编程语言: c/c++(11/14/17/20/23/26),bash,cmake,lua,python,javascript,typescript,c#,html,java,less,sass,php,sql,rust,go,markdown,restructuredtext
-
-框架和服务: redis,msgpack,protobuf,flatbuffers,ci,unity,cocos2d-x,cap’n proto,gRPC,mono/.net core,elasticsearch,logstash,kibana,nodejs,webpack,next.js,k8s,kubernates,prometheus,opentelemetry,litellm,lobechat
-
-主题: 计算机算法,分布式系统,计算机网络,游戏服务器架构设计和开发,分布式事务,可观测性,linux环境编程,操作系统,编译原理,设计模式,协程,coroutine,vscode插件开发,wordpress插件及主题开发,github action
-
-工具: git,svn,p4,pandoc,graphviz,valgrind,gdb/lldb,perf,gperf,binutils/readelf/tcpdump等,mingw,msys,wsl,qemu,kvm,docker,podman,coredns
 
 [1]: https://github.com/owent/libcopp
 [2]: https://xresloader.atframe.work/
