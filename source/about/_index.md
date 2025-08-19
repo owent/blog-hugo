@@ -61,7 +61,7 @@ noad: true
 
 ## 社区 2021年 - 至今： Opentelemetry社区（CNCF项目）
 
-* CPP核心贡献者: Approver
+* C++/C++ Contrib核心贡献者: Approver
 
 ## 2017年09月 — 至今：腾讯科技（上海）有限公司
 
