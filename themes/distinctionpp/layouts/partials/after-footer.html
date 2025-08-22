@@ -2,7 +2,7 @@
 {{- $default_highlightjs_css := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/styles/%STYLE%.min.css" }}
 {{- $default_highlightjs_lang := "//cdnjs.cloudflare.com/ajax/libs/highlight.js/%VERSION%/languages/%LANG%.min.js" }}
 {{- $default_mathjax_js := "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" }}
-{{- $default_katex_js := "https://cdn.jsdelivr.net/npm/katex/+esm" }}
+{{- $default_katex_js := "https://cdn.jsdelivr.net/npm/katex/dist/katex.min.js" }}
 {{- $default_katex_css := "https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css" }}
 {{- $default_katex_autorender := "https://cdn.jsdelivr.net/npm/katex/dist/contrib/auto-render.min.js" }}
 {{- $default_chartjs_js := "https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js" }}
@@ -27,7 +27,7 @@
 document.addEventListener('DOMContentLoaded', (event) => {
     const hljs_style = document.createElement('link');
     hljs_style.rel = 'stylesheet';
-    hljs_style.href = '{{ replace (replace (default $default_highlightjs_css .url.style) "%VERSION%" .version) "%STYLE%" .style | safeJS  }}';
+    hljs_style.href = '{{ replace (replace (default $default_highlightjs_css .url.style) "%VERSION%" .version) "%STYLE%" .style | safeURL | safeJS  }}';
     document.querySelector('head').appendChild(hljs_style);
     if (window.JSON) {
         hljs.configure(JSON.parse({{ .options | jsonify }}));

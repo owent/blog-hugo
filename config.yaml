@@ -180,7 +180,7 @@ params:
     url:
       js: https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/highlight.min.js
       style: https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/styles/%STYLE%.min.css
-      lang: https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/languages/%LANG%.min.js
+      lang: https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/languages/%LANG%.min.js
     options: # options of highlight.js see http://highlightjs.readthedocs.io/en/latest/api.html#configure-options
       tabReplace: "    "
       useBR: false
@@ -189,13 +189,13 @@ params:
       ignoreUnescapedHTML: true
       throwUnescapedHTML: false
   katex:
-    js: https://cdn.jsdelivr.net/npm/katex/+esm
+    js: https://cdn.jsdelivr.net/npm/katex/dist/katex.min.js
     css: https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css
     autorender: https://cdn.jsdelivr.net/npm/katex/dist/contrib/auto-render.min.js
   chartjs:
     js: https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js
   mermaid:
-    js: https://cdn.jsdelivr.net/npm/mermaid/+esm
+    js: "https://cdn.jsdelivr.net/npm/mermaid/+esm"
     theme: neutral
   utteranc:
     repo: "owent/blog-website"
