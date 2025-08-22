@@ -117,8 +117,8 @@ params:
     siteprefix: "site:"
   modules:
     importmap:
-      "react": "//unpkg.com/react@latest"
-      "react-bootstrap": "//unpkg.com/react-bootstrap@latest"
+      "react": "https://cdn.jsdelivr.net/npm/react/+esm"
+      "react-bootstrap": "https://cdn.jsdelivr.net/npm/react-bootstrap/+esm"
     module:
       - |
         // import React from "react";
@@ -138,10 +138,10 @@ params:
             s.parentNode.appendChild(hm);
           })();
   bootstrap:
-    css: //unpkg.com/bootstrap@latest/dist/css/bootstrap.min.css
-    js: "//unpkg.com/bootstrap@latest/dist/js/bootstrap.esm.min.js"
+    css: https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css
+    js: "https://cdn.jsdelivr.net/npm/bootstrap/+esm"
     popper:
-      js: "//unpkg.com/@popperjs/core@latest/dist/esm/popper.js"
+      js: "https://cdn.jsdelivr.net/npm/popper.js/+esm"
   highlightjs:
     style: "vs2015" # style name
     langs: [
@@ -178,9 +178,9 @@ params:
     selector: "pre>code"
     version: "latest"
     url:
-      js: //unpkg.com/@highlightjs/cdn-assets@%VERSION%/highlight.min.js
-      style: //unpkg.com/@highlightjs/cdn-assets@%VERSION%/styles/%STYLE%.min.css
-      lang: //unpkg.com/@highlightjs/cdn-assets@%VERSION%/languages/%LANG%.min.js
+      js: https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/highlight.min.js
+      style: https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/styles/%STYLE%.min.css
+      lang: https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/languages/%LANG%.min.js
     options: # options of highlight.js see http://highlightjs.readthedocs.io/en/latest/api.html#configure-options
       tabReplace: "    "
       useBR: false
@@ -189,13 +189,13 @@ params:
       ignoreUnescapedHTML: true
       throwUnescapedHTML: false
   katex:
-    js: //unpkg.com/katex@latest/dist/katex.min.js
-    css: //unpkg.com/katex@latest/dist/katex.min.css
-    autorender: //unpkg.com/katex@latest/dist/contrib/auto-render.min.js
+    js: https://cdn.jsdelivr.net/npm/katex/+esm
+    css: https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css
+    autorender: https://cdn.jsdelivr.net/npm/katex/dist/contrib/auto-render.min.js
   chartjs:
-    js: //unpkg.com/chart.js@latest/dist/chart.umd.js
+    js: https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js
   mermaid:
-    js: //unpkg.com/mermaid@latest/dist/mermaid.esm.min.mjs
+    js: https://cdn.jsdelivr.net/npm/mermaid/+esm
     theme: neutral
   utteranc:
     repo: "owent/blog-website"
