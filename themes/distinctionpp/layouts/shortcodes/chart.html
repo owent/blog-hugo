@@ -1,7 +1,7 @@
 {{ if .IsNamedParams }}
-<canvas id="{{ .Get "id" | default (printf "charjs-chart-%d" .Ordinal) | safeHTMLAttr }}" {{ with .Get "class" }} class="{{ . | safeHTMLAttr }}" {{ end }}>{{ .Get "alt" | default (printf "Chart %d" .Ordinal) | safeHTML }}</canvas>{{ if .Inner }}<script type="text/javascript">
+<canvas id="{{ .Get "id" | default (printf "chartjs-chart-%d" .Ordinal) | safeHTMLAttr }}" {{ with .Get "class" }} class="{{ . | safeHTMLAttr }}" {{ end }}>{{ .Get "alt" | default (printf "Chart %d" .Ordinal) | safeHTML }}</canvas>{{ if .Inner }}<script type="text/javascript">
 document.addEventListener('DOMContentLoaded', (event) => {
-    var chart_id = "{{ .Get "id" | default (printf "charjs-chart-%d" .Ordinal) | safeHTMLAttr }}";
+    var chart_id = "{{ .Get "id" | default (printf "chartjs-chart-%d" .Ordinal) | safeHTMLAttr }}";
     const chart_dom = document.getElementById(chart_id);
     if(chart_dom) {
     {{- with .Get "style" }}
