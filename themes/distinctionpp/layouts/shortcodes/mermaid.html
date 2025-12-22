@@ -1,3 +1,4 @@
+{{ .Page.Store.Set "themeExtensionHasMermaid" true }}
 {{- if .IsNamedParams }}
 <pre id="{{ .Get "id" | default (printf "mermaid-diagram-%d" .Ordinal) | safeHTMLAttr }}" class="{{ with .Get "class" }}{{ . | safeHTMLAttr }} {{ end }}mermaid">
 {{ .Inner | safeHTML }}

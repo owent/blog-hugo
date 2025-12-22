@@ -70,6 +70,9 @@ params:
   mermaid:
     js: //unpkg.com/mermaid@latest/dist/mermaid.esm.min.mjs
     theme: default
+  excalidraw:
+    js: "https://esm.sh/@excalidraw/excalidraw"
+    css: "https://cdn.jsdelivr.net/npm/excalidraw/dist/excalidraw.min.css"
   styleimport:
     delay: 200
     urls: ['https://fonts.googleapis.com/css?family=Noto+Sans+SC:400,700&subset=chinese-simplified,japanese', 'https://fonts.googleapis.com/css?family=Roboto+Mono:400,400i,500,500i&subset=latin-ext', 'https://fonts.googleapis.com/css?family=Roboto:400,400i,500,500i&subset=latin-ext']

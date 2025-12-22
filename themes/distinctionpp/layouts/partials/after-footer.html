@@ -5,7 +5,58 @@
 {{- $default_katex_js := "https://cdn.jsdelivr.net/npm/katex/dist/katex.min.js" }}
 {{- $default_katex_css := "https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css" }}
 {{- $default_katex_autorender := "https://cdn.jsdelivr.net/npm/katex/dist/contrib/auto-render.min.js" }}
-{{- $default_chartjs_js := "https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js" }}
+{{- $default_chartjs_js := "https://cdn.jsdelivr.net/npm/chart.js" }}
+{{- $hasMermaid := .Store.Get "themeExtensionHasMermaid" -}}
+{{- if not $hasMermaid -}}
+  {{- with .Content -}}
+    {{- $hasMermaid = gt (len (findRE `language-(\{)?mermaid(\})?` .)) 0 -}}
+  {{- end -}}
+{{- end -}}
+{{- $hasExcalidraw := .Store.Get "themeExtensionHasExcalidraw" -}}
+{{- if not $hasExcalidraw -}}
+  {{- with .Content -}}
+    {{- $hasExcalidraw = gt (len (findRE `language-(\{)?excalidraw(\})?` .)) 0 -}}
+  {{- end -}}
+{{- end -}}
+{{- $imports := dict -}}
+{{- with $.Site.Params.modules -}}
+  {{- with .importmap -}}
+    {{- $imports = merge $imports . -}}
+  {{- end -}}
+  {{- if and $.Site.Params.bootstrap $.Site.Params.bootstrap.js -}}
+    {{- $imports = merge $imports (dict "bootstrap" $.Site.Params.bootstrap.js) -}}
+  {{- else -}}
+    {{- $imports = merge $imports (dict "bootstrap" "https://esm.run/bootstrap") -}}
+  {{- end -}}
+  {{- if and $.Site.Params.bootstrap $.Site.Params.bootstrap.popper $.Site.Params.bootstrap.popper.js -}}
+    {{- $imports = merge $imports (dict "@popperjs/core" $.Site.Params.bootstrap.popper.js) -}}
+  {{- else -}}
+    {{- $imports = merge $imports (dict "@popperjs/core" "https://esm.run/popper.js") -}}
+  {{- end -}}
+{{- end -}}
+{{- if $hasMermaid -}}
+  {{- $mermaidJs := "https://esm.sh/mermaid" -}}
+  {{- with $.Site.Params.mermaid -}}
+    {{- with .js -}}
+      {{- $mermaidJs = . -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $imports = merge $imports (dict "mermaid" $mermaidJs) -}}
+{{- end -}}
+{{- if $hasExcalidraw -}}
+  {{- $excalidrawJs := "https://esm.sh/@excalidraw/excalidraw" -}}
+  {{- with $.Site.Params.excalidraw -}}
+    {{- with .js -}}
+      {{- $excalidrawJs = . -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $imports = merge $imports (dict "@excalidraw/excalidraw" $excalidrawJs "excalidraw" $excalidrawJs) -}}
+{{- end -}}
+{{- if gt (len $imports) 0 -}}
+<script type="importmap">
+{{ dict "imports" $imports | jsonify | safeHTML }}
+</script>
+{{- end }}
 <script type="module">
 {{- "// import * as Popper from \"@popperjs/core\";" | safeJS }}
 {{- "// import * as bootstrap from \"bootstrap\";" | safeJS }}
@@ -43,6 +94,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
         try {
             if (block.className.match(/\bmermaid\b/i)) {
                 block.classList.add("mermaid");
+                continue;
+            }
+            if (block.className.match(/\bexcalidraw\b/i)) {
+                block.classList.add("excalidraw-root");
                 continue;
             }
             if (block.className.match(/\bnohighlight\b/i)) {
@@ -108,15 +163,27 @@ document.addEventListener('DOMContentLoaded', (event) => {
 </script>
 <!-- katex end -->
 {{- end }}
-{{- with $.Site.Params.chartjs }}<!-- chart.js begin -->
-<script type="text/javascript" src='{{ .js | default $default_chartjs_js | safeURL }}'></script>
+{{- if .Store.Get "themeExtensionHasChartJs" }}
+  {{- $chartJsUrl := $default_chartjs_js -}}
+  {{- with $.Site.Params.chartjs -}}
+    {{- with .js -}}
+      {{- $chartJsUrl = . -}}
+    {{- end -}}
+  {{- end -}}<!-- chart.js begin -->
+<script type="text/javascript" src='{{ $chartJsUrl | safeURL }}'></script>
 <!-- chart.js end -->
 {{- end }}
-{{- with $.Site.Params.mermaid }}<!-- mermaid begin -->
+{{- if $hasMermaid }}
+  {{- $mermaidTheme := "default" -}}
+  {{- with $.Site.Params.mermaid -}}
+    {{- with .theme -}}
+      {{- $mermaidTheme = . -}}
+    {{- end -}}
+  {{- end -}}<!-- mermaid begin -->
 <script type="module">
 import mermaid from "mermaid";
 const config = {
-    theme: '{{ .theme | default "default" }}',
+    theme: '{{ $mermaidTheme }}',
     logLevel: 'fatal',
     securityLevel: 'loose', // 'sandbox', 'strict', 'loose', 'antiscript'
     startOnLoad: true,
@@ -172,6 +239,203 @@ const config = {
 mermaid.initialize(config);
 </script>
 <!-- mermaid end -->
+{{- end }}
+{{- if $hasExcalidraw }}<!-- excalidraw begin -->
+  {{- $excalidrawCss := "https://cdn.jsdelivr.net/npm/@excalidraw/excalidraw/dist/excalidraw.min.css" -}}
+  {{- with $.Site.Params.excalidraw -}}
+    {{- with .css -}}
+      {{- $excalidrawCss = . -}}
+    {{- end -}}
+  {{- end -}}
+<script type="module">
+(async () => {
+    const ensureCss = () => {
+        const id = "excalidraw-css";
+        if (document.getElementById(id)) {
+            return;
+        }
+        const link = document.createElement("link");
+        link.id = id;
+        link.rel = "stylesheet";
+        link.href = "{{ $excalidrawCss | safeJS }}";
+        document.head.appendChild(link);
+    };
+
+    const isExcalidrawCodeBlock = (codeEl) => {
+        if (!codeEl || !codeEl.className) {
+            return false;
+        }
+        return /(^|\s)language-(\{)?excalidraw(\})?(\s|$)/i.test(codeEl.className) || /\bexcalidraw\b/i.test(codeEl.className);
+    };
+
+    const roots = [];
+    for (const el of document.querySelectorAll('.excalidraw-root')) {
+        const dataId = el.getAttribute && el.getAttribute("data-excalidraw-data-id");
+        if (!dataId) {
+            continue;
+        }
+        roots.push({
+            rootEl: el,
+            codeEl: null,
+            getInitialData: () => {
+                const jsonEl = document.getElementById(dataId);
+                return jsonEl ? (jsonEl.textContent || "{}") : null;
+            },
+        });
+    }
+    for (const codeEl of document.querySelectorAll('pre>code')) {
+        if (!isExcalidrawCodeBlock(codeEl)) {
+            continue;
+        }
+        const preEl = codeEl.parentElement;
+        if (!preEl) {
+            continue;
+        }
+        const raw = codeEl.textContent || "";
+        if (!raw.trim()) {
+            continue;
+        }
+        const rootEl = document.createElement("div");
+        rootEl.className = "excalidraw-root";
+        rootEl.style.width = "100%";
+        rootEl.style.height = "auto";
+        const container = document.createElement("div");
+        container.className = "excalidraw-container";
+        container.style.height = codeEl.style.height || "auto";
+        container.style.width = codeEl.style.width || "100%";
+        container.style.margin = codeEl.style.margin || "1rem 0";
+        container.appendChild(rootEl);
+        preEl.parentNode.insertBefore(container, preEl);
+        codeEl.textContent = "Loading excalidraw libraries...";
+        roots.push({ rootEl, codeEl, getInitialData: () => raw, sourceEl: preEl, containerEl: container });
+    }
+
+    if (roots.length <= 0) {
+        return;
+    }
+
+    const restoreFn = (reason, item) => {
+        if (item) {
+            if (item.codeEl) {
+                item.codeEl.textContent = item.getInitialData();
+            } else {
+                const reason = document.createElement("div");
+                reason.textContent = reason;
+                const preEl = document.createElement("pre");
+                const codeEl = document.createElement("code");
+                codeEl.textContent = item.getInitialData();
+                preEl.appendChild(codeEl);
+                item.rootEl.replaceChildren([reason, preEl]);
+            }
+            return;
+        }
+        for (const item of roots) {
+            if (item.codeEl) {
+                item.codeEl.textContent = item.getInitialData();
+            } else {
+                const reason = document.createElement("div");
+                reason.textContent = reason;
+                const preEl = document.createElement("pre");
+                const codeEl = document.createElement("code");
+                codeEl.textContent = item.getInitialData();
+                preEl.appendChild(codeEl);
+                item.rootEl.replaceChildren([reason, preEl]);
+            }
+        }
+    };
+
+    let exportToSvg;
+    try {
+        ensureCss();
+        let ExcalidrawPkg = await import("@excalidraw/excalidraw");
+        exportToSvg =
+            ExcalidrawPkg.exportToSvg ||
+            (ExcalidrawPkg.default && ExcalidrawPkg.default.exportToSvg) ||
+            null;
+        if (typeof exportToSvg !== "function") {
+            ExcalidrawPkg = await import("https://esm.sh/@excalidraw/excalidraw");
+            exportToSvg =
+                ExcalidrawPkg.exportToSvg ||
+                (ExcalidrawPkg.default && ExcalidrawPkg.default.exportToSvg) ||
+                null;
+        }
+    } catch (e) {
+        if (window.console) {
+            console.error("Failed to load excalidraw dependencies", e);
+        }
+        restoreFn("Failed to load excalidraw libraries");
+        return;
+    }
+
+    if (typeof exportToSvg !== "function") {
+        if (window.console) {
+            console.error("Invalid excalidraw module exports: missing exportToSvg");
+        }
+        restoreFn("Invalid excalidraw module exports: missing exportToSvg");
+        return;
+    }
+
+    for (const item of roots) {
+        const rootEl = item.rootEl;
+        const raw = item.getInitialData();
+        if (!raw) {
+            continue;
+        }
+        let sceneData = null;
+        try {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === "object" && parsed.type === "excalidraw" && Array.isArray(parsed.elements)) {
+                sceneData = {
+                    elements: parsed.elements,
+                    appState: parsed.appState || {},
+                    files: parsed.files || {},
+                };
+            } else {
+                sceneData = parsed;
+            }
+        } catch (e) {
+            if (window.console) {
+                console.error("Invalid excalidraw json", e);
+            }
+            restoreFn("Invalid excalidraw json", item);
+            continue;
+        }
+
+        try {
+            const elements = sceneData && sceneData.elements ? sceneData.elements : (Array.isArray(sceneData) ? sceneData : []);
+            const appState = sceneData && sceneData.appState ? sceneData.appState : {};
+            const files = sceneData && sceneData.files ? sceneData.files : {};
+
+            const svg = await exportToSvg({
+                elements,
+                appState,
+                files,
+                exportPadding: 10,
+            });
+            if (!svg) {
+                restoreFn("Invalid excalidraw json", item);
+                continue;
+            }
+            svg.style.width = "100%";
+            svg.style.height = "auto";
+            svg.style.display = "block";
+            rootEl.replaceChildren(svg);
+            if (item.sourceEl) {
+                item.sourceEl.style.display = "none";
+            }
+            if (item.containerEl) {
+                item.containerEl.style.height = "auto";
+            }
+        } catch (e) {
+            if (window.console) {
+                console.error("Failed to render excalidraw", e);
+            }
+            restoreFn("Failed to render excalidraw", item);
+        }
+    }
+})();
+</script>
+<!-- excalidraw end -->
 {{- end }}
 {{ with $.Site.Params.styleimport }}<!-- style import begin -->
 <script type="text/javascript">

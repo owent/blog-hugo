@@ -61,6 +61,7 @@ preserveTaxonomyNames: false
 # filesystem path to write files to
 publishDir: "public"
 # Set to true to enable syntax highlighting in code fences with a language tag in markdown
+# 这会禁用掉 layouts/_default/_markup/render-codeblock-*.html 渲染钩子
 pygmentsCodefences: false
 # enables syntax guessing for code fences without specified language
 pygmentsCodeFencesGuessSyntax: false
@@ -117,8 +118,8 @@ params:
     siteprefix: "site:"
   modules:
     importmap:
-      "react": "https://cdn.jsdelivr.net/npm/react/+esm"
-      "react-bootstrap": "https://cdn.jsdelivr.net/npm/react-bootstrap/+esm"
+      "react": "https://esm.run/react"
+      "react-bootstrap": "https://esm.run/react-bootstrap"
     module:
       - |
         // import React from "react";
@@ -139,9 +140,9 @@ params:
           })();
   bootstrap:
     css: https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css
-    js: "https://cdn.jsdelivr.net/npm/bootstrap/+esm"
+    js: "https://esm.run/bootstrap"
     popper:
-      js: "https://cdn.jsdelivr.net/npm/popper.js/+esm"
+      js: "https://esm.run/popper.js"
   highlightjs:
     style: "vs2015" # style name
     langs: [
@@ -193,10 +194,13 @@ params:
     css: https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css
     autorender: https://cdn.jsdelivr.net/npm/katex/dist/contrib/auto-render.min.js
   chartjs:
-    js: https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js
+    js: https://cdn.jsdelivr.net/npm/chart.js
   mermaid:
-    js: "https://cdn.jsdelivr.net/npm/mermaid/+esm"
+    js: "https://esm.sh/mermaid"
     theme: neutral
+  excalidraw:
+    js: "https://esm.sh/@excalidraw/excalidraw"
+    css: "https://cdn.jsdelivr.net/npm/excalidraw/dist/excalidraw.min.css"
   utteranc:
     repo: "owent/blog-website"
     issue_term: "pathname"
@@ -327,7 +331,7 @@ markup:
       typographer: true
     parser:
       attribute:
-        block: false
+        block: true
         title: true
       autoHeadingID: true
       autoHeadingIDType: github
