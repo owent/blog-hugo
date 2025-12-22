@@ -1,0 +1,24 @@
+# Lint/fix rules tuned for this Hugo blog content.
+# Focus on structural/compat issues while avoiding noisy rules for legacy posts.
+config:
+  # Only enforce a small set of structural rules that are safe to auto-fix across legacy posts.
+  default: false
+
+  # Headings and blank lines.
+  MD022: true  # blanks-around-headings
+  MD032: true  # blanks-around-lists
+
+  # Fenced code blocks.
+  MD031: true  # blanks-around-fences
+  MD040: true  # fenced-code-language
+
+  # General whitespace hygiene.
+  MD012: true  # no-multiple-blanks
+  MD047: true  # single-trailing-newline
+
+globs:
+  - "source/**/*.md"
+
+ignores:
+  - "public/**"
+  - "resources/**"

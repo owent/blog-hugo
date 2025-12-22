@@ -52,7 +52,7 @@ pagination:
   pagerSize: 20
   path: "page"
 permalinks:
-  post: /:year/:filename
+  post: /:year/:contentbasename
 
 # Pluralize titles in lists using inflect
 pluralizeListTitles: true
@@ -333,7 +333,7 @@ markup:
       autoHeadingIDType: github
     renderer:
       hardWraps: false
-      unsafe: false
+      unsafe: true
       xhtml: false
   highlight:
     anchorLineNos: false
