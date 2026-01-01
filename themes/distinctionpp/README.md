@@ -177,6 +177,46 @@ end
 {{< /mermaid >}}
 ```
 
+## Diagram & Chart Extensions
+
+This theme supports rendering diagrams and charts from various sources:
+
+### Supported Formats
+
+| Type | Image Syntax | Code Block | Shortcode (src) | Shortcode (inline) |
+|------|-------------|------------|-----------------|-------------------|
+| **Draw.io** | `![](file.drawio)` | ` ```drawio ` | `{{</* drawio src="file.drawio" */>}}` | `{{</* drawio */>}}XML{{</* /drawio */>}}` |
+| **Mermaid** | `![](file.mermaid)` | ` ```mermaid ` | `{{</* mermaid src="file.mermaid" */>}}` | `{{</* mermaid */>}}code{{</* /mermaid */>}}` |
+| **Excalidraw** | `![](file.excalidraw)` | ` ```excalidraw ` | `{{</* excalidraw src="file.excalidraw" */>}}` | `{{</* excalidraw */>}}JSON{{</* /excalidraw */>}}` |
+| **Chart.js** | `![](file.chart.json)` | ` ```chart ` or ` ```chartjs ` | `{{</* chart src="file.chart.json" */>}}` | `{{</* chart */>}}JSON{{</* /chart */>}}` |
+
+### Configuration
+
+Add the following to your `config.yaml`:
+
+```yaml
+params:
+  chartjs:
+    js: //unpkg.com/chart.js@latest/dist/chart.umd.js
+  mermaid:
+    js: //unpkg.com/mermaid@latest/dist/mermaid.esm.min.mjs
+    theme: default
+  excalidraw:
+    js: "https://esm.sh/@excalidraw/excalidraw"
+  drawio:
+    js: "https://viewer.diagrams.net/js/viewer-static.min.js"
+```
+
+### Examples
+
+See [examples/diagram-demo.md](examples/diagram-demo.md) for a comprehensive demonstration of all diagram and chart rendering methods.
+
+Example files included:
+- `examples/2509-test-diagram.drawio` - Draw.io diagram
+- `examples/2509-test-diagram.mermaid` - Mermaid diagram
+- `examples/2509-test-diagram.excalidraw` - Excalidraw diagram
+- `examples/2509-test-chart.chart.json` - Chart.js configuration
+
 ## Development
 
 Generate css files:

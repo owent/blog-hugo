@@ -1,0 +1,197 @@
+{{- $src := .Destination -}}
+{{- $alt := .Text -}}
+{{- $title := .Title -}}
+{{- $isExcalidraw := strings.HasSuffix (lower $src) ".excalidraw" -}}
+{{- $isMermaid := strings.HasSuffix (lower $src) ".mermaid" -}}
+{{- $isDrawio := or (strings.HasSuffix (lower $src) ".drawio") (strings.HasSuffix (lower $src) ".dio") -}}
+{{- $isChart := strings.HasSuffix (lower $src) ".chart.json" -}}
+
+{{- /* Parse attributes from title (format: "title {width=xxx height=xxx}") */ -}}
+{{- $width := "100%" -}}
+{{- $height := "auto" -}}
+{{- $class := "" -}}
+{{- $style := "" -}}
+{{- $actualTitle := $title -}}
+
+{{- if $title -}}
+  {{- $attrMatch := findRE `\{([^}]+)\}\s*$` $title -}}
+  {{- if $attrMatch -}}
+    {{- $actualTitle = replaceRE `\s*\{[^}]+\}\s*$` "" $title -}}
+    {{- $attrStr := index $attrMatch 0 -}}
+    {{- $attrStr = strings.TrimPrefix "{" $attrStr -}}
+    {{- $attrStr = strings.TrimSuffix "}" $attrStr -}}
+    {{- range split $attrStr " " -}}
+      {{- $pair := split . "=" -}}
+      {{- if eq (len $pair) 2 -}}
+        {{- $key := strings.TrimSpace (index $pair 0) -}}
+        {{- $val := strings.TrimSpace (index $pair 1) -}}
+        {{- if eq $key "width" -}}
+          {{- $width = $val -}}
+        {{- else if eq $key "height" -}}
+          {{- $height = $val -}}
+        {{- else if eq $key "class" -}}
+          {{- $class = $val -}}
+        {{- else if eq $key "style" -}}
+          {{- $style = $val -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if $isMermaid -}}
+  {{- /* Mark page as having mermaid content */ -}}
+  {{- .Page.Store.Set "themeExtensionHasMermaid" true -}}
+  
+  {{- /* Generate unique ID */ -}}
+  {{- $id := printf "mermaid-image-%d" .Ordinal -}}
+  
+  {{- /* Try to get the mermaid file content */ -}}
+  {{- $content := "" -}}
+  {{- $resource := "" -}}
+  
+  {{- /* Try page resource first */ -}}
+  {{- with .Page.Resources.Get $src -}}
+    {{- $resource = . -}}
+  {{- else -}}
+    {{- /* Try relative path from page bundle */ -}}
+    {{- $pagePath := path.Dir .Page.File.Path -}}
+    {{- $fullPath := path.Join $pagePath $src -}}
+    {{- with resources.Get $fullPath -}}
+      {{- $resource = . -}}
+    {{- else -}}
+      {{- /* Try as assets resource */ -}}
+      {{- with resources.Get $src -}}
+        {{- $resource = . -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+  
+  {{- if $resource -}}
+    {{- $content = $resource.Content -}}
+  {{- end -}}
+
+  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height (cond (ne $style "") (printf " %s" $style) "") -}}
+
+  {{- if $content -}}
+    {{- /* Inline the content directly */ -}}
+<div class="mermaid-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}"{{ with $actualTitle }} title="{{ . }}"{{ end }}>
+  <pre id="{{ $id | safeHTMLAttr }}" class="mermaid">{{ $content | safeHTML }}</pre>
+</div>
+  {{- else -}}
+    {{- /* Need to fetch at runtime - file might be in static folder or external */ -}}
+<div class="mermaid-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}"{{ with $actualTitle }} title="{{ . }}"{{ end }}>
+  <pre id="{{ $id | safeHTMLAttr }}" class="mermaid mermaid-pending" data-mermaid-src="{{ $src }}">{{ with $alt }}{{ . }}{{ else }}Loading mermaid diagram...{{ end }}</pre>
+</div>
+  {{- end -}}
+{{- else if $isExcalidraw -}}
+  {{- /* Mark page as having excalidraw content */ -}}
+  {{- .Page.Store.Set "themeExtensionHasExcalidraw" true -}}
+  
+  {{- /* Generate unique ID */ -}}
+  {{- $id := printf "excalidraw-image-%d" .Ordinal -}}
+  {{- $dataId := printf "%s-data" $id -}}
+  
+  {{- /* Try to get the excalidraw file content */ -}}
+  {{- $content := "" -}}
+  {{- $resource := "" -}}
+  
+  {{- /* Try page resource first */ -}}
+  {{- with .Page.Resources.Get $src -}}
+    {{- $resource = . -}}
+  {{- else -}}
+    {{- /* Try relative path from page bundle */ -}}
+    {{- $pagePath := path.Dir .Page.File.Path -}}
+    {{- $fullPath := path.Join $pagePath $src -}}
+    {{- with resources.Get $fullPath -}}
+      {{- $resource = . -}}
+    {{- else -}}
+      {{- /* Try as assets resource */ -}}
+      {{- with resources.Get $src -}}
+        {{- $resource = . -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+  
+  {{- if $resource -}}
+    {{- $content = $resource.Content -}}
+  {{- end -}}
+
+  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height (cond (ne $style "") (printf " %s" $style) "") -}}
+
+  {{- if $content -}}
+    {{- /* Inline the content directly */ -}}
+    {{- $json := $content | replaceRE `(?i)</script>` `<\/script>` -}}
+<div class="excalidraw-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}"{{ with $actualTitle }} title="{{ . }}"{{ end }}>
+  <div id="{{ $id | safeHTMLAttr }}" class="excalidraw-root" style="width: 100%; height: auto;" data-excalidraw-data-id="{{ $dataId | safeHTMLAttr }}">{{ with $alt }}{{ . }}{{ else }}Loading excalidraw...{{ end }}</div>
+</div>
+<script type="application/json" id="{{ $dataId | safeHTMLAttr }}">{{ $json | safeJS }}</script>
+  {{- else -}}
+    {{- /* Need to fetch at runtime - file might be in static folder or external */ -}}
+<div class="excalidraw-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}"{{ with $actualTitle }} title="{{ . }}"{{ end }}>
+  <div id="{{ $id | safeHTMLAttr }}" class="excalidraw-root" style="width: 100%; height: auto;" data-excalidraw-src="{{ $src }}" data-excalidraw-fetch-id="{{ $id | safeHTMLAttr }}">{{ with $alt }}{{ . }}{{ else }}Loading excalidraw...{{ end }}</div>
+</div>
+  {{- end -}}
+{{- else if $isDrawio -}}
+  {{- /* Mark page as having draw.io content */ -}}
+  {{- .Page.Store.Set "themeExtensionHasDrawio" true -}}
+  
+  {{- /* Generate unique ID */ -}}
+  {{- $id := printf "drawio-image-%d" .Ordinal -}}
+
+  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height (cond (ne $style "") (printf " %s" $style) "") -}}
+
+  {{- /* Use URL-based loading for draw.io - more reliable */ -}}
+<div class="drawio-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}"{{ with $actualTitle }} title="{{ . }}"{{ end }}>
+  <div id="{{ $id | safeHTMLAttr }}" class="drawio-root mxgraph" style="max-width: 100%; border: 1px solid transparent;" data-mxgraph='{"highlight":"#0000ff","nav":true,"resize":true,"toolbar":"zoom layers lightbox","edit":"_blank","url":"{{ $src }}"}'></div>
+</div>
+{{- else if $isChart -}}
+  {{- /* Mark page as having Chart.js content */ -}}
+  {{- .Page.Store.Set "themeExtensionHasChartJs" true -}}
+  
+  {{- /* Generate unique ID */ -}}
+  {{- $id := printf "chartjs-image-%d" .Ordinal -}}
+  
+  {{- /* Try to get the chart file content */ -}}
+  {{- $content := "" -}}
+  {{- $resource := "" -}}
+  
+  {{- /* Try page resource first */ -}}
+  {{- with .Page.Resources.Get $src -}}
+    {{- $resource = . -}}
+  {{- else -}}
+    {{- /* Try relative path from page bundle */ -}}
+    {{- $pagePath := path.Dir .Page.File.Path -}}
+    {{- $fullPath := path.Join $pagePath $src -}}
+    {{- with resources.Get $fullPath -}}
+      {{- $resource = . -}}
+    {{- else -}}
+      {{- /* Try as assets resource */ -}}
+      {{- with resources.Get $src -}}
+        {{- $resource = . -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+  
+  {{- if $resource -}}
+    {{- $content = $resource.Content -}}
+  {{- end -}}
+
+  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height (cond (ne $style "") (printf " %s" $style) "") -}}
+
+  {{- if $content -}}
+    {{- /* Inline the chart config */ -}}
+<div class="chartjs-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}"{{ with $actualTitle }} title="{{ . }}"{{ end }}>
+  <canvas id="{{ $id | safeHTMLAttr }}" data-chartjs-config-id="{{ $id }}-config">{{ with $alt }}{{ . }}{{ else }}Chart{{ end }}</canvas>
+</div>
+<script type="application/json" id="{{ $id }}-config">{{ $content | safeJS }}</script>
+  {{- else -}}
+    {{- /* Need to fetch at runtime */ -}}
+<div class="chartjs-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}"{{ with $actualTitle }} title="{{ . }}"{{ end }}>
+  <canvas id="{{ $id | safeHTMLAttr }}" class="chartjs-pending" data-chartjs-src="{{ $src }}">{{ with $alt }}{{ . }}{{ else }}Loading chart...{{ end }}</canvas>
+</div>
+  {{- end -}}
+{{- else -}}
+  {{- /* Normal image rendering */ -}}
+<img src="{{ $src | safeURL }}"{{ with $alt }} alt="{{ . }}"{{ end }}{{ with $title }} title="{{ . }}"{{ end }} loading="lazy" />
+{{- end -}}

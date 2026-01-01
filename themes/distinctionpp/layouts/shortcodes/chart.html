@@ -1,28 +1,30 @@
-{{ .Page.Store.Set "themeExtensionHasChartJs" true }}
-{{ if .IsNamedParams }}
-<canvas id="{{ .Get "id" | default (printf "chartjs-chart-%d" .Ordinal) | safeHTMLAttr }}" {{ with .Get "class" }} class="{{ . | safeHTMLAttr }}" {{ end }}>{{ .Get "alt" | default (printf "Chart %d" .Ordinal) | safeHTML }}</canvas>{{ if .Inner }}<script type="text/javascript">
-document.addEventListener('DOMContentLoaded', (event) => {
-    var chart_id = "{{ .Get "id" | default (printf "chartjs-chart-%d" .Ordinal) | safeHTMLAttr }}";
-    const chart_dom = document.getElementById(chart_id);
-    if(chart_dom) {
-    {{- with .Get "style" }}
-    chart_dom.style.cssText = "{{ . | safeJS }}";
-    {{- end }}
-        new Chart(
-            chart_dom,
-            {{ .Inner | safeJS }}
-        );
-    }
-});
-</script>
-{{ end }}{{ else }}
-<canvas id="{{ printf "charjs-chart-%d" .Ordinal }}">{{ printf "Chart %d" .Ordinal | safeHTML }}</canvas>{{ if .Inner }}
-<script type="text/javascript">
-document.addEventListener('DOMContentLoaded', (event) => {
-    var chart_id = "{{ printf "charjs-chart-%d" .Ordinal }}";
-    new Chart(
-        document.getElementById(chart_id),
-        {{ .Inner | safeJS }}
-    );
-});
-</script>{{ end }}{{ end }}
+{{- .Page.Store.Set "themeExtensionHasChartJs" true -}}
+{{- $id := .Get "id" | default (printf "chartjs-shortcode-%d" .Ordinal) -}}
+{{- $src := .Get "src" | default "" -}}
+{{- $alt := .Get "alt" | default (printf "Chart %d" .Ordinal) -}}
+{{- $class := .Get "class" | default "" -}}
+{{- $width := .Get "width" | default "100%" -}}
+{{- $height := .Get "height" | default "auto" -}}
+{{- $style := .Get "style" | default "" -}}
+{{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height (cond (ne $style "") (printf " %s" $style) "") -}}
+{{- $inner := "" -}}
+{{- with .Inner -}}
+  {{- $inner = . | replaceRE `(?s)^\s+|\s+$` "" -}}
+{{- end -}}
+
+{{- if $src -}}
+  {{- /* URL-based loading */ -}}
+<div class="chartjs-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}">
+  <canvas id="{{ $id | safeHTMLAttr }}" class="chartjs-pending" data-chartjs-src="{{ $src }}">{{ $alt | safeHTML }}</canvas>
+</div>
+{{- else if $inner -}}
+  {{- /* Inline JSON content */ -}}
+<div class="chartjs-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}">
+  <canvas id="{{ $id | safeHTMLAttr }}" data-chartjs-config-id="{{ $id }}-config">{{ $alt | safeHTML }}</canvas>
+</div>
+<script type="application/json" id="{{ $id }}-config">{{ $inner | safeJS }}</script>
+{{- else -}}
+<div class="chartjs-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}">
+  <canvas id="{{ $id | safeHTMLAttr }}" style="color: red;">Error: chart shortcode requires "src" attribute or inline JSON content.</canvas>
+</div>
+{{- end -}}

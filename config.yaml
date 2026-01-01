@@ -201,6 +201,8 @@ params:
   excalidraw:
     js: "https://esm.sh/@excalidraw/excalidraw"
     css: "https://cdn.jsdelivr.net/npm/excalidraw/dist/excalidraw.min.css"
+  drawio:
+    js: "https://viewer.diagrams.net/js/viewer-static.min.js"
   utteranc:
     repo: "owent/blog-website"
     issue_term: "pathname"

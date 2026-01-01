@@ -1,13 +1,30 @@
-{{ .Page.Store.Set "themeExtensionHasExcalidraw" true }}
-{{- $id := printf "excalidraw-diagram-%d" .Ordinal -}}
+{{- .Page.Store.Set "themeExtensionHasExcalidraw" true -}}
+{{- $id := printf "excalidraw-shortcode-%d" .Ordinal -}}
 {{- $dataId := printf "%s-data" $id -}}
-{{- $json := .Inner | replaceRE `(?i)</script>` `<\\/script>` -}}
+{{- $src := .Get "src" | default "" -}}
 {{- $width := .Get "width" | default "100%" -}}
 {{- $height := .Get "height" | default "auto" -}}
 {{- $style := .Get "style" | default "" -}}
 {{- $class := .Get "class" | default "" -}}
 {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height (cond (ne $style "") (printf " %s" $style) "") -}}
+{{- $inner := "" -}}
+{{- with .Inner -}}
+  {{- $inner = . | replaceRE `(?s)^\s+|\s+$` "" | replaceRE `(?i)</script>` `<\\/script>` -}}
+{{- end -}}
+
+{{- if $src -}}
+  {{- /* URL-based loading */ -}}
 <div class="excalidraw-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}">
-  <div id="{{ $id | safeHTMLAttr }}" class="excalidraw-root" style="width: 100%; height: auto;" data-excalidraw-data-id="{{ $dataId | safeHTMLAttr }}">Loading excalidraw libraries...</div>
+  <div id="{{ $id | safeHTMLAttr }}" class="excalidraw-root" style="width: 100%; height: auto;" data-excalidraw-src="{{ $src }}">Loading excalidraw...</div>
 </div>
-<script type="application/json" id="{{ $dataId | safeHTMLAttr }}">{{ $json | safeJS }}</script>
+{{- else if $inner -}}
+  {{- /* Inline JSON content */ -}}
+<div class="excalidraw-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}">
+  <div id="{{ $id | safeHTMLAttr }}" class="excalidraw-root" style="width: 100%; height: auto;" data-excalidraw-data-id="{{ $dataId | safeHTMLAttr }}">Loading excalidraw...</div>
+</div>
+<script type="application/json" id="{{ $dataId | safeHTMLAttr }}">{{ $inner | safeJS }}</script>
+{{- else -}}
+<div class="excalidraw-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}">
+  <div id="{{ $id | safeHTMLAttr }}" class="excalidraw-root" style="color: red;">Error: excalidraw shortcode requires "src" attribute or inline JSON content.</div>
+</div>
+{{- end -}}

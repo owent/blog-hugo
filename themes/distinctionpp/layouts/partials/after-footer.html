@@ -18,6 +18,18 @@
     {{- $hasExcalidraw = gt (len (findRE `language-(\{)?excalidraw(\})?` .)) 0 -}}
   {{- end -}}
 {{- end -}}
+{{- $hasDrawio := .Store.Get "themeExtensionHasDrawio" -}}
+{{- if not $hasDrawio -}}
+  {{- with .Content -}}
+    {{- $hasDrawio = gt (len (findRE `language-(\{)?drawio(\})?` .)) 0 -}}
+  {{- end -}}
+{{- end -}}
+{{- $hasChartJs := .Store.Get "themeExtensionHasChartJs" -}}
+{{- if not $hasChartJs -}}
+  {{- with .Content -}}
+    {{- $hasChartJs = gt (len (findRE `language-(\{)?(chart|chartjs)(\})?` .)) 0 -}}
+  {{- end -}}
+{{- end -}}
 {{- $imports := dict -}}
 {{- with $.Site.Params.modules -}}
   {{- with .importmap -}}
@@ -100,6 +112,15 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 block.classList.add("excalidraw-root");
                 continue;
             }
+            if (block.className.match(/\bdrawio\b/i)) {
+                block.classList.add("drawio-root");
+                block.classList.add("mxgraph");
+                continue;
+            }
+            if (block.className.match(/\bchart(js)?\b/i)) {
+                block.classList.add("chartjs-container");
+                continue;
+            }
             if (block.className.match(/\bnohighlight\b/i)) {
                 continue;
             }
@@ -163,7 +184,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 </script>
 <!-- katex end -->
 {{- end }}
-{{- if .Store.Get "themeExtensionHasChartJs" }}
+{{- if $hasChartJs }}
   {{- $chartJsUrl := $default_chartjs_js -}}
   {{- with $.Site.Params.chartjs -}}
     {{- with .js -}}
@@ -171,6 +192,90 @@ document.addEventListener('DOMContentLoaded', (event) => {
     {{- end -}}
   {{- end -}}<!-- chart.js begin -->
 <script type="text/javascript" src='{{ $chartJsUrl | safeURL }}'></script>
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', async (event) => {
+    // Helper function to check if element is a chart codeblock
+    const isChartCodeBlock = (el) => {
+        if (!el || !el.className) return false;
+        return /(^|\s)language-(\{)?(chart|chartjs)(\})?(\s|$)/i.test(el.className) || 
+               /\b(chart|chartjs)-container\b/i.test(el.className);
+    };
+
+    // Process code blocks with chart/chartjs language
+    for (const codeEl of document.querySelectorAll('pre>code')) {
+        if (!isChartCodeBlock(codeEl)) continue;
+        const preEl = codeEl.parentElement;
+        if (!preEl) continue;
+        
+        const jsonContent = codeEl.textContent || '{}';
+        try {
+            const config = JSON.parse(jsonContent.trim());
+            
+            // Create container and canvas
+            const container = document.createElement('div');
+            container.className = 'chartjs-container';
+            container.style.cssText = 'width: 100%; margin: 1rem 0;';
+            
+            const canvas = document.createElement('canvas');
+            canvas.id = 'chartjs-codeblock-' + Math.random().toString(36).substr(2, 9);
+            container.appendChild(canvas);
+            
+            // Replace pre with container
+            preEl.parentNode.insertBefore(container, preEl);
+            preEl.style.display = 'none';
+            
+            // Initialize chart
+            new Chart(canvas, config);
+        } catch (e) {
+            if (window.console) {
+                console.error('Failed to parse chart JSON from codeblock:', e);
+            }
+        }
+    }
+
+    // Initialize charts with inline config (data-chartjs-config-id)
+    for (const canvas of document.querySelectorAll('canvas[data-chartjs-config-id]')) {
+        const configId = canvas.getAttribute('data-chartjs-config-id');
+        if (!configId) continue;
+        const configEl = document.getElementById(configId);
+        if (!configEl) continue;
+        try {
+            const config = JSON.parse(configEl.textContent || '{}');
+            new Chart(canvas, config);
+        } catch (e) {
+            if (window.console) {
+                console.error('Failed to parse chart config:', e);
+            }
+        }
+    }
+    
+    // Fetch and initialize charts with external src (data-chartjs-src)
+    for (const canvas of document.querySelectorAll('canvas.chartjs-pending[data-chartjs-src]')) {
+        const src = canvas.getAttribute('data-chartjs-src');
+        if (!src) continue;
+        try {
+            const response = await fetch(src);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch ${src}: ${response.status}`);
+            }
+            const config = await response.json();
+            canvas.classList.remove('chartjs-pending');
+            new Chart(canvas, config);
+        } catch (e) {
+            if (window.console) {
+                console.error('Failed to load chart:', src, e);
+            }
+            canvas.classList.remove('chartjs-pending');
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.fillStyle = 'red';
+                ctx.font = '14px sans-serif';
+                ctx.fillText(`Failed to load: ${src}`, 10, 30);
+            }
+        }
+    }
+});
+</script>
 <!-- chart.js end -->
 {{- end }}
 {{- if $hasMermaid }}
@@ -186,7 +291,7 @@ const config = {
     theme: '{{ $mermaidTheme }}',
     logLevel: 'fatal',
     securityLevel: 'loose', // 'sandbox', 'strict', 'loose', 'antiscript'
-    startOnLoad: true,
+    startOnLoad: false, // We'll manually run after fetching pending diagrams
     arrowMarkerAbsolute: false,
     /*
     er: {
@@ -237,6 +342,33 @@ const config = {
     },*/
 };
 mermaid.initialize(config);
+
+// Fetch pending mermaid diagrams (from .mermaid files)
+(async () => {
+    const pendingElements = document.querySelectorAll('.mermaid-pending[data-mermaid-src]');
+    for (const el of pendingElements) {
+        const src = el.getAttribute('data-mermaid-src');
+        if (!src) continue;
+        try {
+            const response = await fetch(src);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch ${src}: ${response.status}`);
+            }
+            const content = await response.text();
+            el.textContent = content;
+            el.classList.remove('mermaid-pending');
+        } catch (e) {
+            if (window.console) {
+                console.error("Failed to fetch mermaid file:", src, e);
+            }
+            el.textContent = `Failed to load: ${src}`;
+            el.classList.remove('mermaid');
+            el.classList.remove('mermaid-pending');
+        }
+    }
+    // Now run mermaid on all diagrams
+    await mermaid.run();
+})();
 </script>
 <!-- mermaid end -->
 {{- end }}
@@ -271,17 +403,29 @@ mermaid.initialize(config);
     const roots = [];
     for (const el of document.querySelectorAll('.excalidraw-root')) {
         const dataId = el.getAttribute && el.getAttribute("data-excalidraw-data-id");
-        if (!dataId) {
+        const dataSrc = el.getAttribute && el.getAttribute("data-excalidraw-src");
+        if (!dataId && !dataSrc) {
             continue;
         }
-        roots.push({
-            rootEl: el,
-            codeEl: null,
-            getInitialData: () => {
-                const jsonEl = document.getElementById(dataId);
-                return jsonEl ? (jsonEl.textContent || "{}") : null;
-            },
-        });
+        if (dataId) {
+            roots.push({
+                rootEl: el,
+                codeEl: null,
+                getInitialData: () => {
+                    const jsonEl = document.getElementById(dataId);
+                    return jsonEl ? (jsonEl.textContent || "{}") : null;
+                },
+            });
+        } else if (dataSrc) {
+            // For external/static file sources, fetch at runtime
+            roots.push({
+                rootEl: el,
+                codeEl: null,
+                dataSrc: dataSrc,
+                getInitialData: null, // Will be set after fetch
+                needsFetch: true,
+            });
+        }
     }
     for (const codeEl of document.querySelectorAll('pre>code')) {
         if (!isExcalidrawCodeBlock(codeEl)) {
@@ -314,32 +458,63 @@ mermaid.initialize(config);
         return;
     }
 
+    // Fetch external excalidraw files
+    for (const item of roots) {
+        if (item.needsFetch && item.dataSrc) {
+            try {
+                const response = await fetch(item.dataSrc);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch ${item.dataSrc}: ${response.status}`);
+                }
+                const content = await response.text();
+                item.getInitialData = () => content;
+                item.needsFetch = false;
+            } catch (e) {
+                if (window.console) {
+                    console.error("Failed to fetch excalidraw file:", item.dataSrc, e);
+                }
+                item.rootEl.textContent = `Failed to load: ${item.dataSrc}`;
+                item.failed = true;
+            }
+        }
+    }
+
+    // Filter out failed items
+    const validRoots = roots.filter(item => !item.failed);
+    if (validRoots.length <= 0) {
+        return;
+    }
+
     const restoreFn = (reason, item) => {
         if (item) {
             if (item.codeEl) {
-                item.codeEl.textContent = item.getInitialData();
-            } else {
-                const reason = document.createElement("div");
-                reason.textContent = reason;
+                item.codeEl.textContent = item.getInitialData ? item.getInitialData() : "";
+            } else if (item.getInitialData) {
+                const reasonEl = document.createElement("div");
+                reasonEl.textContent = reason;
                 const preEl = document.createElement("pre");
                 const codeEl = document.createElement("code");
                 codeEl.textContent = item.getInitialData();
                 preEl.appendChild(codeEl);
-                item.rootEl.replaceChildren([reason, preEl]);
+                item.rootEl.replaceChildren(reasonEl, preEl);
+            } else {
+                item.rootEl.textContent = reason;
             }
             return;
         }
-        for (const item of roots) {
+        for (const item of validRoots) {
             if (item.codeEl) {
-                item.codeEl.textContent = item.getInitialData();
-            } else {
-                const reason = document.createElement("div");
-                reason.textContent = reason;
+                item.codeEl.textContent = item.getInitialData ? item.getInitialData() : "";
+            } else if (item.getInitialData) {
+                const reasonEl = document.createElement("div");
+                reasonEl.textContent = reason;
                 const preEl = document.createElement("pre");
                 const codeEl = document.createElement("code");
                 codeEl.textContent = item.getInitialData();
                 preEl.appendChild(codeEl);
-                item.rootEl.replaceChildren([reason, preEl]);
+                item.rootEl.replaceChildren(reasonEl, preEl);
+            } else {
+                item.rootEl.textContent = reason;
             }
         }
     };
@@ -375,9 +550,9 @@ mermaid.initialize(config);
         return;
     }
 
-    for (const item of roots) {
+    for (const item of validRoots) {
         const rootEl = item.rootEl;
-        const raw = item.getInitialData();
+        const raw = item.getInitialData ? item.getInitialData() : null;
         if (!raw) {
             continue;
         }
@@ -436,6 +611,137 @@ mermaid.initialize(config);
 })();
 </script>
 <!-- excalidraw end -->
+{{- end }}
+{{- if $hasDrawio }}<!-- draw.io begin -->
+  {{- $drawioViewerJs := "https://viewer.diagrams.net/js/viewer-static.min.js" -}}
+  {{- with $.Site.Params.drawio -}}
+    {{- with .js -}}
+      {{- $drawioViewerJs = . -}}
+    {{- end -}}
+  {{- end -}}
+<script type="text/javascript">
+// Process drawio code blocks and shortcode inline elements
+window.drawioViewerLoaded = false;
+window.drawioCodeBlocksProcessed = false;
+
+window.processDrawioCodeBlocks = function() {
+    if (window.drawioCodeBlocksProcessed) return;
+    window.drawioCodeBlocksProcessed = true;
+    
+    const isDrawioCodeBlock = (el) => {
+        if (!el || !el.className) return false;
+        return /(^|\s)language-(\{)?drawio(\})?(\s|$)/i.test(el.className) || 
+               /\bdrawio-root\b/i.test(el.className);
+    };
+
+    // Process code blocks
+    for (const codeEl of document.querySelectorAll('pre>code')) {
+        if (!isDrawioCodeBlock(codeEl)) continue;
+        const preEl = codeEl.parentElement;
+        if (!preEl) continue;
+        
+        const xmlContent = codeEl.textContent || '';
+        if (!xmlContent.trim()) continue;
+        
+        // Create container
+        const container = document.createElement('div');
+        container.className = 'drawio-container';
+        container.style.cssText = 'width: 100%; margin: 1rem 0;';
+        
+        // Create mxgraph div with data URL
+        const mxDiv = document.createElement('div');
+        mxDiv.className = 'mxgraph';
+        mxDiv.style.cssText = 'max-width: 100%; border: 1px solid transparent;';
+        
+        // Create data URL with base64 encoded XML
+        const base64Xml = btoa(unescape(encodeURIComponent(xmlContent.trim())));
+        const dataUrl = 'data:text/xml;base64,' + base64Xml;
+        mxDiv.setAttribute('data-mxgraph', JSON.stringify({
+            highlight: '#0000ff',
+            nav: true,
+            resize: true,
+            toolbar: 'zoom layers lightbox',
+            edit: '_blank',
+            url: dataUrl
+        }));
+        
+        container.appendChild(mxDiv);
+        
+        // Replace pre with container
+        preEl.parentNode.insertBefore(container, preEl);
+        preEl.style.display = 'none';
+    }
+    
+    // Process pending shortcode inline elements (with data-drawio-config-id)
+    for (const el of document.querySelectorAll('.drawio-pending[data-drawio-config-id]')) {
+        const configId = el.getAttribute('data-drawio-config-id');
+        if (!configId) continue;
+        const configEl = document.getElementById(configId);
+        if (!configEl) continue;
+        
+        try {
+            // Get the raw XML content from the script tag
+            const xmlContent = configEl.textContent || '';
+            if (!xmlContent.trim()) continue;
+            
+            const page = el.getAttribute('data-drawio-page') || '0';
+            
+            // Create data URL with base64 encoded XML
+            const base64Xml = btoa(unescape(encodeURIComponent(xmlContent.trim())));
+            const dataUrl = 'data:text/xml;base64,' + base64Xml;
+            
+            // Set the data-mxgraph attribute
+            el.setAttribute('data-mxgraph', JSON.stringify({
+                highlight: '#0000ff',
+                nav: true,
+                resize: true,
+                toolbar: 'zoom layers lightbox',
+                edit: '_blank',
+                page: parseInt(page),
+                url: dataUrl
+            }));
+            el.classList.remove('drawio-pending');
+            el.classList.add('mxgraph');
+        } catch (e) {
+            if (window.console) {
+                console.error('Failed to process drawio config:', e);
+            }
+        }
+    }
+};
+
+window.initDrawioViewer = function() {
+    if (typeof GraphViewer !== 'undefined') {
+        GraphViewer.processElements();
+    }
+};
+
+window.onDrawioReady = function() {
+    window.drawioViewerLoaded = true;
+    // If DOM is already loaded, init viewer now
+    if (document.readyState !== 'loading') {
+        window.processDrawioCodeBlocks();
+        window.initDrawioViewer();
+    }
+};
+
+// Process on DOMContentLoaded and init viewer if loaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        window.processDrawioCodeBlocks();
+        if (window.drawioViewerLoaded) {
+            window.initDrawioViewer();
+        }
+    });
+} else {
+    window.processDrawioCodeBlocks();
+    if (window.drawioViewerLoaded) {
+        window.initDrawioViewer();
+    }
+}
+</script>
+<script type="text/javascript" src="{{ $drawioViewerJs | safeURL }}" onload="window.onDrawioReady();"></script>
+<!-- draw.io end -->
 {{- end }}
 {{ with $.Site.Params.styleimport }}<!-- style import begin -->
 <script type="text/javascript">

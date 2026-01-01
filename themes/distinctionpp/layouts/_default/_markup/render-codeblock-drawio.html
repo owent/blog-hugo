@@ -1,0 +1,16 @@
+{{ .Page.Store.Set "themeExtensionHasDrawio" true }}
+{{- $id := printf "drawio-codeblock-%d" .Ordinal -}}
+{{- $attrs := .Attributes -}}
+{{- $width := index $attrs "width" | default "100%" -}}
+{{- $height := index $attrs "height" | default "auto" -}}
+{{- $style := index $attrs "style" | default "" -}}
+{{- $class := index $attrs "class" | default "" -}}
+{{- $page := index $attrs "page" | default "0" -}}
+{{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height (cond (ne $style "") (printf " %s" $style) "") -}}
+
+{{- $content := .Inner | replaceRE `(?s)^\s+|\s+$` "" -}}
+
+{{- /* Inline XML content */ -}}
+<div class="drawio-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}">
+  <div id="{{ $id | safeHTMLAttr }}" class="drawio-root mxgraph" style="max-width: 100%; border: 1px solid transparent;" data-mxgraph='{"highlight":"#0000ff","nav":true,"resize":true,"toolbar":"zoom layers lightbox","edit":"_blank","page":{{ $page }},"xml":"{{ $content | base64Encode }}"}'></div>
+</div>

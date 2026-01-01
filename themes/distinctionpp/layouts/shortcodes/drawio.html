@@ -1,0 +1,31 @@
+{{- .Page.Store.Set "themeExtensionHasDrawio" true -}}
+{{- $id := printf "drawio-shortcode-%d" .Ordinal -}}
+{{- $src := .Get "src" | default "" -}}
+{{- $width := .Get "width" | default "100%" -}}
+{{- $height := .Get "height" | default "auto" -}}
+{{- $style := .Get "style" | default "" -}}
+{{- $class := .Get "class" | default "" -}}
+{{- $page := .Get "page" | default "0" -}}
+{{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height (cond (ne $style "") (printf " %s" $style) "") -}}
+{{- $inner := "" -}}
+{{- with .Inner -}}
+  {{- $inner = . | replaceRE `(?s)^\s+|\s+$` "" -}}
+{{- end -}}
+
+{{- if $src -}}
+  {{- /* URL-based loading */ -}}
+<div class="drawio-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}">
+  <div id="{{ $id | safeHTMLAttr }}" class="drawio-root mxgraph" style="max-width: 100%; border: 1px solid transparent;" data-mxgraph='{"highlight":"#0000ff","nav":true,"resize":true,"toolbar":"zoom layers lightbox","edit":"_blank","page":{{ $page }},"url":"{{ $src }}"}'></div>
+</div>
+{{- else if $inner -}}
+  {{- /* Inline XML content - store raw XML for JavaScript processing */ -}}
+  {{- $configId := printf "%s-config" $id -}}
+<div class="drawio-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}">
+  <div id="{{ $id | safeHTMLAttr }}" class="drawio-root mxgraph drawio-pending" style="max-width: 100%; border: 1px solid transparent;" data-drawio-config-id="{{ $configId | safeHTMLAttr }}" data-drawio-page="{{ $page }}"></div>
+  <script type="text/xml" id="{{ $configId | safeHTMLAttr }}">{{ $inner | safeHTML }}</script>
+</div>
+{{- else -}}
+<div class="drawio-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}">
+  <div id="{{ $id | safeHTMLAttr }}" class="drawio-root" style="color: red;">Error: drawio shortcode requires "src" attribute or inline XML content.</div>
+</div>
+{{- end -}}

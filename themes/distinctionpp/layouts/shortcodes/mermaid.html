@@ -1,10 +1,30 @@
-{{ .Page.Store.Set "themeExtensionHasMermaid" true }}
-{{- if .IsNamedParams }}
-<pre id="{{ .Get "id" | default (printf "mermaid-diagram-%d" .Ordinal) | safeHTMLAttr }}" class="{{ with .Get "class" }}{{ . | safeHTMLAttr }} {{ end }}mermaid">
-{{ .Inner | safeHTML }}
-</pre>
-{{- else }}
-<pre id="{{ printf "mermaid-diagram-%d" .Ordinal }}" class="mermaid">
-{{ .Inner | safeHTML }}
-</pre>
-{{- end }}
+{{- .Page.Store.Set "themeExtensionHasMermaid" true -}}
+{{- $id := .Get "id" | default (printf "mermaid-shortcode-%d" .Ordinal) -}}
+{{- $src := .Get "src" | default "" -}}
+{{- $class := .Get "class" | default "" -}}
+{{- $width := .Get "width" | default "100%" -}}
+{{- $height := .Get "height" | default "auto" -}}
+{{- $style := .Get "style" | default "" -}}
+{{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height (cond (ne $style "") (printf " %s" $style) "") -}}
+{{- $inner := "" -}}
+{{- with .Inner -}}
+  {{- $inner = . | replaceRE `(?s)^\s+|\s+$` "" -}}
+{{- end -}}
+
+{{- if $src -}}
+  {{- /* URL-based loading */ -}}
+<div class="mermaid-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}">
+  <pre id="{{ $id | safeHTMLAttr }}" class="mermaid mermaid-pending" data-mermaid-src="{{ $src }}">Loading mermaid diagram...</pre>
+</div>
+{{- else if $inner -}}
+  {{- /* Inline mermaid content */ -}}
+<div class="mermaid-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}">
+  <pre id="{{ $id | safeHTMLAttr }}" class="{{ with $class }}{{ . | safeHTMLAttr }} {{ end }}mermaid">
+{{ $inner | safeHTML }}
+  </pre>
+</div>
+{{- else -}}
+<div class="mermaid-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}">
+  <pre id="{{ $id | safeHTMLAttr }}" class="mermaid" style="color: red;">Error: mermaid shortcode requires "src" attribute or inline content.</pre>
+</div>
+{{- end -}}
