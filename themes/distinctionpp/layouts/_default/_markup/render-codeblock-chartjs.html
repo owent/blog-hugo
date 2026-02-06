@@ -1,0 +1,16 @@
+{{ .Page.Store.Set "themeExtensionHasChartJs" true }}
+{{- $id := printf "chartjs-codeblock-%d" .Ordinal -}}
+{{- $attrs := .Attributes -}}
+{{- $width := index $attrs "width" | default "100%" -}}
+{{- $height := index $attrs "height" | default "auto" -}}
+{{- $style := index $attrs "style" | default "" -}}
+{{- $class := index $attrs "class" | default "" -}}
+{{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height (cond (ne $style "") (printf " %s" $style) "") -}}
+
+{{- $content := .Inner | replaceRE `(?s)^\s+|\s+$` "" -}}
+
+{{- /* Inline JSON content */ -}}
+<div class="chartjs-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}">
+  <canvas id="{{ $id | safeHTMLAttr }}" data-chartjs-config-id="{{ $id }}-config">Chart</canvas>
+</div>
+<script type="application/json" id="{{ $id }}-config">{{ $content | safeJS }}</script>

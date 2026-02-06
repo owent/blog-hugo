@@ -60,19 +60,10 @@ pluralizeListTitles: true
 preserveTaxonomyNames: false
 # filesystem path to write files to
 publishDir: "public"
-# Set to true to enable syntax highlighting in code fences with a language tag in markdown
-# 这会禁用掉 layouts/_default/_markup/render-codeblock-*.html 渲染钩子
-pygmentsCodefences: false
-# enables syntax guessing for code fences without specified language
-pygmentsCodeFencesGuessSyntax: false
-# color-codes for highlighting derived from this style
-pygmentsStyle: "github"
-# true: use pygments-css or false: color-codes directly
-pygmentsUseClasses: false
-# A comma separated list of options.
-pygmentsOptions: ""
-# Set to true to use Pygments instead of the much faster Chroma.
-pygmentsUseClassic: false
+# 已弃用的 pygmentsCodefences 等设置已移除
+# 使用 markup.highlight.codeFences: true (见下方 markup 配置) 来启用代码围栏处理
+# 这样 layouts/_default/_markup/render-codeblock-*.html 渲染钩子才能正常工作
+# 对于不需要特殊处理的语言，使用 render-codeblock.html 默认钩子输出标准格式供 highlight.js 处理
 # maximum number of items in the RSS feed
 rssLimit: 100
 # default sitemap configuration map
@@ -358,4 +349,3 @@ markup:
     ordered: false
     startLevel: 2
 ---
-

@@ -1,0 +1,5 @@
+{{- /* Default code block render hook: outputs standard <pre><code> for highlight.js processing */ -}}
+{{- /* Specific languages (mermaid, excalidraw, drawio, chart, chartjs) have their own render hooks */ -}}
+<pre><code class="language-{{ .Type }}">
+{{- .Inner | htmlEscape -}}
+</code></pre>

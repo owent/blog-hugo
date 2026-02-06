@@ -10,7 +10,7 @@
 
 {{- $content := .Inner | replaceRE `(?s)^\s+|\s+$` "" -}}
 
-{{- /* Inline XML content */ -}}
+{{- /* Inline XML content - use data URI in url field, since xml field expects deflate+base64 */ -}}
 <div class="drawio-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}">
-  <div id="{{ $id | safeHTMLAttr }}" class="drawio-root mxgraph" style="max-width: 100%; border: 1px solid transparent;" data-mxgraph='{"highlight":"#0000ff","nav":true,"resize":true,"toolbar":"zoom layers lightbox","edit":"_blank","page":{{ $page }},"xml":"{{ $content | base64Encode }}"}'></div>
+  <div id="{{ $id | safeHTMLAttr }}" class="drawio-root mxgraph" style="max-width: 100%; border: 1px solid transparent;" data-mxgraph='{"highlight":"#0000ff","nav":true,"resize":true,"toolbar":"zoom layers lightbox","edit":"_blank","page":{{ $page }},"url":"data:text/xml;base64,{{ $content | base64Encode }}"}'></div>
 </div>
