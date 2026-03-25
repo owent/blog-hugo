@@ -7,14 +7,13 @@ buildDrafts: false
 buildFuture: true
 # include content already expired
 buildExpired: true
-# config file (default is path/config.yaml|json|toml)
-config: "config.yaml"
 contentDir: "source"
 dataDir: "data"
 defaultExtension: "html"
 defaultLayout: "post"
 # Missing translations will default to this content language
 defaultContentLanguage: "zh-cn"
+# locale replaces the deprecated languageCode
 # Renders the default content language in subdir, e.g. /en/. The root directory / will redirect to /en/
 defaultContentLanguageInSubdir: false
 # The below example will disable all page types and will render nothing.
@@ -31,19 +30,9 @@ disableHugoGeneratorInject: false
 enableEmoji: false
 # Show a placeholder instead of the default value or an empty string if a translation is missing
 enableMissingTranslationPlaceholders: false
-footnoteAnchorPrefix: ""
-footnoteReturnLinkContents: ""
-
-languageCode: "zh-cn"
+locale: "zh-cn"
 layoutDir: "layouts"
-# Enable Logging
-log: false
-# Log File path (if set, logging enabled automatically)
-logFile: ""
-# "yaml", "toml", "json"
-metaDataFormat: "yaml"
-# Edit new content with this editor, if provided
-newContentEditor: ""
+
 # Don't sync permission mode of files
 noChmod: false
 # Don't sync modification time of files
@@ -54,27 +43,24 @@ pagination:
 permalinks:
   post: /:year/:contentbasename
 
-# Pluralize titles in lists using inflect
 pluralizeListTitles: true
-# Preserve special characters in taxonomy names ("Gérard Depardieu" vs "Gerard Depardieu")
-preserveTaxonomyNames: false
 # filesystem path to write files to
 publishDir: "public"
+# Chart.js 配置使用 JS 对象语法（非严格 JSON），禁用 JSON minify 避免解析失败
+minify:
+  disableJSON: true
 # 已弃用的 pygmentsCodefences 等设置已移除
 # 使用 markup.highlight.codeFences: true (见下方 markup 配置) 来启用代码围栏处理
 # 这样 layouts/_default/_markup/render-codeblock-*.html 渲染钩子才能正常工作
 # 对于不需要特殊处理的语言，使用 render-codeblock.html 默认钩子输出标准格式供 highlight.js 处理
-# maximum number of items in the RSS feed
-rssLimit: 100
 # default sitemap configuration map
-sitemap: sitemap.xml
+sitemap:
+  filename: sitemap.xml
 # filesystem path to read files relative from
 source: ""
 staticDir:
   - "source/post"
   - "source/static"
-# display memory and timing of different steps of the program
-stepAnalysis: false
 # theme to use (located by default in /themes/THEMENAME/)
 themesDir: "themes"
 theme: "distinctionpp"
@@ -83,10 +69,6 @@ title: "I'm OWenT"
 uglyURLs: true
 # if true, auto-detect Chinese/Japanese/Korean Languages in the content. (.Summary and .WordCount can work properly in CJKLanguage)
 hasCJKLanguage: true
-# verbose output
-verbose: false
-# verbose logging
-verboseLog: false
 # watch filesystem for changes and recreate as needed
 watch: true
 ignoreFiles:
@@ -286,6 +268,8 @@ taxonomies:
 # services:
 
 services:
+  rss:
+    limit: 100
   # disqus:
   #   shortname: owent
   googleAnalytics:
@@ -293,26 +277,6 @@ services:
 
 markup:
   defaultMarkdownHandler: goldmark
-  blackfriday:
-    taskLists: true
-    smartypants: true
-    angledQuotes: false
-    fractions: true
-    smartDashes: true
-    latexDashes: true
-    hrefTargetBlank: true
-    plainIDAnchors: true
-    extensions:
-      - noIntraEmphasis
-      - tables
-      - fencedCode
-      - autolink
-      - strikethrough
-      - laxHtmlBlocks
-      - hardLineBreak
-      - footnotes
-      - noEmptyLineBeforeBlock
-    extensionsmask:
   goldmark:
     extensions:
       definitionList: true
