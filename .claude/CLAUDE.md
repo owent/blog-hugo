@@ -1,6 +1,6 @@
 # Claude Code bootstrap
 
-> **版本**: 1.2.0  
+> **版本**: 1.2.2  
 > **更新日期**: 2026-03-27
 
 ## Quick Start
@@ -28,6 +28,7 @@ This repository uses [`/AGENTS.md`](../AGENTS.md) as the canonical project guide
 - Never invent benchmarks, issue links, or compatibility claims
 - Mark uncertain facts with `> **待确认**: ...`
 - Keep diffs minimal when editing
+- If Mermaid is embedded inline, carefully review and validate the Mermaid syntax and rendering before finishing; prefer external `.mermaid` files for complex diagrams, and wrap HTML-like text such as `<...>` in quotes when keeping it inline
 
 ## Diagram Support
 
@@ -39,6 +40,8 @@ This repo supports embedding for:
 - **Draw.io**: formal diagrams (`*.drawio`)
 
 See [`/AGENTS.md`](../AGENTS.md) for detailed embedding conventions.
+
+When Mermaid is embedded inline, carefully verify the syntax and rendering result before finishing. If inline text includes `<...>`-style placeholders, wrap them in quotes before validation.
 
 ## Maintenance
 

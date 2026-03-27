@@ -7,7 +7,7 @@ metadata:
   audience: experienced-engineers
   default-language: zh-cn
   repo: blog-hugo
-  version: 1.2.0
+  version: 1.2.2
   last-updated: 2026-03-27
   trigger-phrases:
     - 润色文章
@@ -131,6 +131,7 @@ metadata:
 - 内部链接和资源引用是否完整
 - front matter 仍然合法
 - 图表紧贴首次需要它的段落，有 alt 文本和说明
+- 若使用 inline Mermaid，是否已经逐行仔细核对并验证语法和渲染结果
 
 ## Diagram Decisions
 
@@ -142,6 +143,8 @@ metadata:
 - 图表只是重复正文、没有新增理解价值时，删除它
 
 选型规则和嵌入语法详见 [`AGENTS.md`](../../../AGENTS.md) "图表使用指南" 和 [`references/embedding-syntax.md`](references/embedding-syntax.md)。
+
+若使用 inline Mermaid（围栏代码块），必须仔细核对并验证语法；若图较长、可复用、包含较多 `<br/>` / 引号 / 复杂注释，可优先拆成外部 `.mermaid` 文件。若必须保留 `<...>` 这类 HTML 风格文本，优先用引号包裹后再验证渲染结果。
 
 ## Default Output Format
 
@@ -219,7 +222,8 @@ metadata:
 2. 有没有新增的"看起来像真的"但实际上未经验证的说法？
 3. 修改后的 diff 是否集中在真正有改进的地方？
 4. 图表是否真正增加了理解价值（而不是重复正文）？
-5. 如果我是作者，会认可这些修改吗？
+5. 若使用 inline Mermaid，我是否已经仔细核对并验证语法/渲染结果，且对 `<...>` 这类文本采用了引号包裹等安全写法？
+6. 如果我是作者，会认可这些修改吗？
 
 ## Maintenance
 
