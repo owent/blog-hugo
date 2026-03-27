@@ -32,7 +32,7 @@ author: owent
 
 ## Writing Structure
 
-```
+```text
 背景/问题 → 现象或约束 → 方案设计 → 关键示例 → 边界条件/坑点 → 总结
 ```
 

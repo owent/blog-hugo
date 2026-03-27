@@ -49,7 +49,7 @@ flowchart TD
 
 新增资源放在同一年目录下，与文章编号同前缀：
 
-```
+```text
 source/post/2025/
 ├── 2601.md              # 文章正文
 ├── 2601-flow.mermaid    # 流程图

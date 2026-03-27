@@ -2,13 +2,15 @@
 
 > **版本**: 1.2.0  
 > **更新日期**: 2026-03-27  
-> **适用范围**: Claude Code, KiloCode, Roo Code, OpenCode, VS Code + AI 扩展
+> **适用范围**: Claude Code, KiloCode, Roo Code, OpenCode,  
+> VS Code + AI 扩展
 
 ## 项目定位
 
 - 这是一个 Hugo 技术博客仓库，主要内容源文件位于 `source/`，最终生成目录为 `public/`。
 - 文章正文主要位于 `source/post/<year>/<id>.md`。
-- `config.yaml` 当前启用了 `defaultContentLanguage: zh-cn`、`permalinks.post: /:year/:contentbasename`、`uglyURLs: true`。
+- `config.yaml` 当前启用了 `defaultContentLanguage: zh-cn`、
+    `permalinks.post: /:year/:contentbasename`、`uglyURLs: true`。
 - 这意味着文章的年份目录、数字文件名和 `id` 会直接影响最终链接；**除非用户明确要求，否则不要改已有文章的编号、年份目录或文件名**。
 
 ## 写作默认值
@@ -42,8 +44,13 @@ author: owent
 ```
 
 **约束：**
+
 - 修改已有文章时，优先保留现有 front matter、引用链接、脚注编号、资源文件名和整体章节骨架
 - 不要擅自修改 `id`、文件名、年份目录
+
+### 代码块语言标注
+
+所有非 inline 的代码块（围栏代码块）**必须标注语言**，不允许使用无语言标注的裸代码块。纯文本或日志输出使用 ` ```text `。
 
 ### 图表使用指南
 
@@ -65,16 +72,19 @@ author: owent
 本仓库支持 2 种嵌入方式：代码块内嵌和图片语法引用外部文件。
 
 **默认优先级：**
+
 1. 简短图表：优先代码块（`mermaid`、`chart`/`chartjs`、`drawio`、`excalidraw`）
 2. 较长或可复用的图表：优先拆成外部文件，用图片语法引用
 
-> **不要**使用 Shortcode 方式（`{{< type src="..." >}}` 或 `{{< type >}}...{{< /type >}}`）。虽然主题支持 Shortcode，但代码块和图片语法已能覆盖所有场景，且更通用、更易维护。
+> **不要**使用 Shortcode 方式（`{{< type src="..." >}}` 或
+> `{{< type >}}...{{< /type >}}`）。虽然主题支持 Shortcode，但代码块和
+> 图片语法已能覆盖所有场景，且更通用、更易维护。
 
 #### 资源文件命名规范
 
 新增配套资源时，请放在同一年目录下，并与文章编号保持同一前缀：
 
-```
+```text
 source/post/2025/
 ├── 2601.md              # 文章正文
 ├── 2601-flow.mermaid    # 流程图
@@ -87,6 +97,7 @@ source/post/2025/
 文件型图表的图片语法要写有意义的 alt 文本；正文中也要用 1-2 句说明"这张图要帮助读者看什么"，不要只丢一个图让读者自己悟。
 
 **示例：**
+
 ```markdown
 ![MPG 调度模型](2601-mpg-model.mermaid)
 *图 1：MPG 调度模型。M（Machine）是操作系统线程，P（Processor）是逻辑处理器，
@@ -105,6 +116,7 @@ G（Goroutine）是待执行任务。*
 交付前必须逐项确认以下检查项：
 
 ### Content Quality
+
 - [ ] 标题具体、不标题党，能概括核心结论
 - [ ] 摘要忠实反映正文，不夸大
 - [ ] 开头 1-3 段说清问题、收益、边界
@@ -113,25 +125,29 @@ G（Goroutine）是待执行任务。*
 - [ ] 没有"正确的废话"（如"我们需要平衡性能与可用性"）
 
 ### Technical Accuracy
+
 - [ ] 不编造 benchmark、Issue 编号、官方结论、版本支持矩阵
 - [ ] 结论依赖版本/平台/编译器/时间点时，**必须显式写出前提**
 - [ ] 不确定的信息标注"待确认"或"需要验证"
 - [ ] 代码示例经过验证或明确标注"示意代码"
 
 ### Hugo/Markdown Compliance
+
 - [ ] YAML front matter 合法，包含必要字段（title, date, type）
-- [ ] 代码块标注语言，缩进正确
+- [ ] **所有**围栏代码块都标注了语言（纯文本/日志用 `text`），无裸代码块
 - [ ] 图表说明文字有意义（不只是"如图"）
 - [ ] 资源文件命名符合 `<id>-*.ext` 格式
 - [ ] 内部链接格式正确（`[文字](/year/id/)`）
 
 ### Readability
+
 - [ ] 段落尽量短（3-4 行以内）
 - [ ] 流程/枚举/对比优先用列表或表格
 - [ ] H2/H3 标题描述性足够，只看标题能判断相关性
 - [ ] 长段落是否可拆成 bullet points？
 
 ### Editorial
+
 - [ ] 没有错别字或明显语法错误
 - [ ] 中英文混排符合规范（中文与英文/数字间留空格）
 - [ ] 标点符号使用正确
@@ -147,6 +163,7 @@ G（Goroutine）是待执行任务。*
 3. 询问用户需要补充哪些信息
 
 **示例回复：**
+
 ```markdown
 根据现有材料，以下信息需要补充：
 1. 目标读者是谁？（初学者/中级/专家）
@@ -170,6 +187,7 @@ G（Goroutine）是待执行任务。*
 4. 必要时在文章中添加链接
 
 **示例：**
+
 ```markdown
 ## 与已有文章的关联
 
@@ -218,13 +236,14 @@ G（Goroutine）是待执行任务。*
 | `.roo/skills/` | Roo Code 专用 | 同步自 `.agents/` |
 
 **修改策略：**
+
 1. 所有修改在 `.agents/skills/` 进行（含 `SKILL.md` 和 `references/` 子目录）
 2. 运行 `sync-skills.ps1` 同步到其他目录
 3. 确保 compatibility 字段涵盖所有支持的 Agent
 
 ### 配置文件关系
 
-```
+```text
 AGENTS.md (本文件，全局规范的唯一真相)
 ├── 被 .claude/CLAUDE.md 引用
 ├── 被 .github/instructions/hugo-articles.instructions.md 引用
@@ -254,9 +273,9 @@ AGENTS.md (本文件，全局规范的唯一真相)
 
 ### 相关资源
 
-- Hugo 官方文档: https://gohugo.io/documentation/
-- Mermaid 语法: https://mermaid.js.org/syntax/flowchart.html
-- Chart.js 文档: https://www.chartjs.org/docs/
+- Hugo 官方文档: <https://gohugo.io/documentation/>
+- Mermaid 语法: <https://mermaid.js.org/syntax/flowchart.html>
+- Chart.js 文档: <https://www.chartjs.org/docs/>
 
 ### 版本历史
 
@@ -264,6 +283,6 @@ AGENTS.md (本文件，全局规范的唯一真相)
 |------|------|------|
 | 1.0.0 | 2024 | 初始版本 |
 | 1.1.0 | 2025-03-27 | 增加质量检查清单、错误处理指引、Skill 边界说明、图表嵌入语法 |
-| 1.2.0 | 2026-03-27 | 消除跨文件重复内容，Skill 抽取 references/ 目录，增加 negative triggers、allowed-tools、trigger-phrases |
+| 1.2.0 | 2026-03-27 | 消除跨文件重复内容，Skill 抽取 references/ 目录，并补充触发短语 |
 | 1.0.0 | 2024 | 初始版本 |
 | 1.1.0 | 2025-03-27 | 增加质量检查清单、错误处理指引、Skill 边界说明 |

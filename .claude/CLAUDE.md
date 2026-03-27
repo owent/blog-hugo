@@ -5,7 +5,8 @@
 
 ## Quick Start
 
-This repository uses [`/AGENTS.md`](../AGENTS.md) as the canonical project guide. **Read `/AGENTS.md` before drafting or revising any article.**
+This repository uses [`/AGENTS.md`](../AGENTS.md) as the canonical project guide.
+**Read `/AGENTS.md` before drafting or revising any article.**
 
 ## Available Skills
 
@@ -31,6 +32,7 @@ This repository uses [`/AGENTS.md`](../AGENTS.md) as the canonical project guide
 ## Diagram Support
 
 This repo supports embedding for:
+
 - **Mermaid**: flowcharts, sequence diagrams (`*.mermaid`)
 - **Chart.js**: data visualization (`*.chart.json`)
 - **Excalidraw**: sketches (`*.excalidraw`)
@@ -40,8 +42,10 @@ See [`/AGENTS.md`](../AGENTS.md) for detailed embedding conventions.
 
 ## Maintenance
 
-Skills in `.claude/skills/` are **synced from `.agents/skills/`** (including `references/` subdirectories). Do not edit directly.
+Skills in `.claude/skills/` are **synced from `.agents/skills/`**
+(including `references/` subdirectories). Do not edit directly.
 
 To update skills:
+
 1. Edit `.agents/skills/<skill>/SKILL.md` or `references/`
 2. Run `sync-skills.ps1` to sync

@@ -90,13 +90,17 @@ metadata:
 
 ### Step 7: 质量检查（交付前必做）
 
-按 [`AGENTS.md`](../../../AGENTS.md) "交付质量检查清单" 逐项确认（Content Quality / Technical Accuracy / Hugo Compliance / Readability / Editorial）。
+按 [`AGENTS.md`](../../../AGENTS.md) "交付质量检查清单" 逐项确认
+（Content Quality / Technical Accuracy / Hugo Compliance /
+Readability / Editorial）。
 
 ## Diagram Decisions
 
 仅在图表能显著降低理解成本时使用。选型规则和落地方式详见 [`AGENTS.md`](../../../AGENTS.md) "图表使用指南"。嵌入语法详见 [`references/embedding-syntax.md`](references/embedding-syntax.md)。
 
-**速查：** Mermaid → 流程/时序/状态；Chart.js → 数值对比/趋势；Excalidraw → 概念草图；Draw.io → 正式架构图。短内容用代码块，复杂内容拆外部文件。
+**速查：** Mermaid → 流程/时序/状态；Chart.js → 数值对比/趋势；
+Excalidraw → 概念草图；Draw.io → 正式架构图。短内容用代码块，
+复杂内容拆外部文件。
 
 ## Default Output Format
 
@@ -121,7 +125,7 @@ metadata:
 
 **示例回复：**
 
-```
+```text
 根据现有材料，以下信息需要补充：
 1. 目标读者是谁？（初学者/中级/专家）
 2. 核心结论是什么？（读者应该获得什么）

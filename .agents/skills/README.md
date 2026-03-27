@@ -2,11 +2,13 @@
 
 ## 概述
 
-本目录包含针对 blog-hugo 仓库的 AI Agent Skills 配置，用于指导不同 AI 工具（Claude Code、KiloCode、Roo、OpenCode 等）在撰写和润色技术博客文章时的行为。
+本目录包含针对 blog-hugo 仓库的 AI Agent Skills 配置，用于指导不同
+AI 工具（Claude Code、KiloCode、Roo、OpenCode 等）在撰写和润色技术博客
+文章时的行为。
 
 ## 文件结构
 
-```
+```text
 .agents/skills/
 ├── README.md                 # 本文件
 ├── article-writer/
@@ -22,12 +24,14 @@
 **用途**：从零创建技术博客文章
 
 **触发条件**：
+
 - 用户说"写篇关于 XXX 的文章"
 - 将笔记整理成博客草稿
 - 生成标题/摘要/front matter
 - 添加图表到文章
 
 **核心能力**：
+
 - 生成 3 个标题候选 + 推荐
 - 生成合法 YAML front matter
 - 创建结构化正文
@@ -40,12 +44,14 @@
 **用途**：润色、完善已有文章
 
 **触发条件**：
+
 - 用户说"润色这篇文章"
 - 修正事实错误
 - 优化结构和表达
 - 发布前校对
 
 **核心能力**：
+
 - 按优先级分类改进（P0-P3）
 - 保留作者核心观点
 - 补充边界条件和坑点
@@ -71,13 +77,13 @@
 
 在与 AI 对话时，可以直接引用 skill：
 
-```
+```text
 使用 article-writer 帮我写篇关于 Go 并发模型的文章
 ```
 
 或让 AI 自动选择：
 
-```
+```text
 请帮我完善这篇草稿
 ```
 
@@ -97,7 +103,7 @@ AI 会根据任务类型自动选择合适的 skill。
 .\sync-skills.ps1
 ```
 
-3. **验证同步结果**：脚本会自动检查所有文件的哈希值
+1. **验证同步结果**：脚本会自动检查所有文件的哈希值
 
 ### 注意事项
 
@@ -125,7 +131,7 @@ Get-FileHash .agents\skills\article-refiner\SKILL.md,
 
 ## 与其他配置的关系
 
-```
+```text
 AGENTS.md (项目主指南)
     ├── 被 .claude/CLAUDE.md 引用
     ├── 被 .github/instructions/hugo-articles.instructions.md 引用
