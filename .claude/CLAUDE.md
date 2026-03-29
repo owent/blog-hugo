@@ -18,7 +18,7 @@ This repository uses [`/AGENTS.md`](../AGENTS.md) as the canonical project guide
 ## Default Guidelines
 
 1. **Language**: Simplified Chinese (unless user explicitly requests English or bilingual)
-2. **Tone**: Pragmatic technical, experienced-engineer oriented
+2. **Tone**: Pragmatic technical, experienced-engineer oriented, with a natural and polished blog voice; avoid outline-like phrasing, translationese, and obvious AI-sounding prose
 3. **Structure**: Problem → Constraints → Solution → Examples → Pitfalls → Summary
 4. **Quality**: Always run through the quality checklist before finishing
 
