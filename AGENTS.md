@@ -237,20 +237,18 @@ G（Goroutine）是待执行任务。*
 
 ### 多 Agent 兼容性
 
-本仓库的 Skills 配置位于以下位置，保持同步：
+本仓库的 Skills 配置采用“共享主副本 + 最小兼容镜像”的策略：
 
 | 目录 | 用途 | 状态 |
 |------|------|------|
-| `.agents/skills/` | 通用 Agent 目录（Agent Skills 规范），主副本 | ✅ 主源 |
-| `.claude/skills/` | Claude Code 专用 | 同步自 `.agents/` |
-| `.kilocode/skills/` | KiloCode 专用 | 同步自 `.agents/` |
-| `.roo/skills/` | Roo Code 专用 | 同步自 `.agents/` |
+| `.agents/skills/` | Agent Skills 规范主副本；GitHub Copilot / VS Code、Kilo Code、Roo Code、OpenCode 可直接使用 | ✅ 主源 |
+| `.claude/skills/` | Claude Code 兼容镜像 | 同步自 `.agents/` |
 
 **修改策略：**
 
 1. 所有修改在 `.agents/skills/` 进行（含 `SKILL.md` 和 `references/` 子目录）
-2. 运行 `sync-skills.ps1` 同步到其他目录
-3. 确保 compatibility 字段涵盖所有支持的 Agent
+2. 仅在需要兼容 Claude Code 时，运行 `sync-skills.ps1` 同步到 `.claude/skills/`
+3. 不再维护与 `.agents/skills/` 内容完全相同的 `.kilocode/skills/`、`.roo/skills/` 镜像；只有在某工具需要**标准规范无法表达的私有扩展**时，才单独创建工具专用 skill
 
 ### 配置文件关系
 

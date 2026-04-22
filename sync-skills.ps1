@@ -1,16 +1,14 @@
 # Skill 同步脚本
-# 将 .agents/skills/ 作为主副本，同步到所有 Agent 目录
-# 自动扫描 .agents/skills/ 下的所有 skill 目录，无需硬编码
+# 将 .agents/skills/ 作为主副本，仅同步到 Claude Code 兼容目录
+# GitHub Copilot / VS Code、Kilo Code、Roo Code、OpenCode 已可直接读取 .agents/skills/
 
 $agents = @(
-    ".claude/skills",
-    ".kilocode/skills",
-    ".roo/skills"
+    ".claude/skills"
 )
 
 $source = ".agents/skills"
 
-Write-Host "Syncing skills from $source to all agent directories..." -ForegroundColor Green
+Write-Host "Syncing skills from $source to the Claude Code compatibility mirror..." -ForegroundColor Green
 
 # 动态扫描所有 skill 目录
 $skills = Get-ChildItem -Path $source -Directory | Select-Object -ExpandProperty Name
@@ -23,7 +21,7 @@ if ($skills.Count -eq 0) {
 Write-Host "Found skills: $($skills -join ', ')" -ForegroundColor Cyan
 
 foreach ($agent in $agents) {
-    Write-Host "`nSyncing to $agent..." -ForegroundColor Cyan
+    Write-Host "`nSyncing compatibility mirror to $agent..." -ForegroundColor Cyan
     
     # 确保目录存在
     if (-not (Test-Path $agent)) {
