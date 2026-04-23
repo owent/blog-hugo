@@ -1,6 +1,7 @@
 {{- $src := .Destination -}}
 {{- $alt := .Text -}}
 {{- $title := .Title -}}
+
 {{- $isExcalidraw := strings.HasSuffix (lower $src) ".excalidraw" -}}
 {{- $isMermaid := strings.HasSuffix (lower $src) ".mermaid" -}}
 {{- $isDrawio := or (strings.HasSuffix (lower $src) ".drawio") (strings.HasSuffix (lower $src) ".dio") -}}
@@ -193,5 +194,29 @@
   {{- end -}}
 {{- else -}}
   {{- /* Normal image rendering */ -}}
-<img src="{{ $src | safeURL }}"{{ with $alt }} alt="{{ . }}"{{ end }}{{ with $title }} title="{{ . }}"{{ end }} loading="lazy" />
+  {{- /*
+    Resolve relative image paths against the page's permalink directory so the
+    image still loads when the rendered HTML appears in a different URL context
+    (home page, list/taxonomy pages, RSS feeds, etc.). Skip absolute URLs,
+    protocol-relative URLs, root-relative paths, fragments, and data/mailto URIs.
+  */ -}}
+  {{- $resolvedSrc := $src -}}
+  {{- $lowerSrc := lower $src -}}
+  {{- if and $src (not (or
+      (strings.HasPrefix $src "/")
+      (strings.HasPrefix $src "#")
+      (strings.HasPrefix $lowerSrc "http://")
+      (strings.HasPrefix $lowerSrc "https://")
+      (strings.HasPrefix $lowerSrc "data:")
+      (strings.HasPrefix $lowerSrc "mailto:")
+    )) -}}
+    {{- with .Page.RelPermalink -}}
+      {{- $pageDir := . -}}
+      {{- if not (strings.HasSuffix $pageDir "/") -}}
+        {{- $pageDir = printf "%s/" (path.Dir .) -}}
+      {{- end -}}
+      {{- $resolvedSrc = printf "%s%s" $pageDir $src -}}
+    {{- end -}}
+  {{- end -}}
+<img src="{{ $resolvedSrc | safeURL }}"{{ with $alt }} alt="{{ . }}"{{ end }}{{ with $title }} title="{{ . }}"{{ end }} loading="lazy" />
 {{- end -}}
