@@ -74,6 +74,11 @@ watch: true
 ignoreFiles:
   - "README\\.md$"
 
+security:
+  allowContent:
+    - '^text/html$'
+    - '^text/markdown$'
+
 # custom options
 
 params:
