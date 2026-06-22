@@ -1,14 +1,13 @@
 ---
 name: article-refiner
 description: Refine, expand, polish, or review an existing technical share-style article / 润色 / 完善 / 改写 / 校对 this Hugo repo's Markdown posts. Use when improving structure, clarity, accuracy, tone, examples, front matter, publish readiness, or when Mermaid, Chart.js, Excalidraw, or Draw.io visuals should be added or fixed under source/post/. Do NOT use for writing articles from scratch — use article-writer instead.
-compatibility: Works in .agents/skills for GitHub Copilot, Kilo Code, Roo Code, and OpenCode; sync to .claude/skills for Claude Code compatibility. No extra dependencies.
 allowed-tools: Read Grep Glob
 metadata:
   audience: experienced-engineers
   default-language: zh-cn
   repo: blog-hugo
-  version: 1.2.9
-  last-updated: 2026-04-30
+  version: 1.2.10
+  last-updated: 2026-06-22
   trigger-phrases:
     - 润色文章
     - 完善草稿
@@ -50,6 +49,7 @@ metadata:
 3. **按优先级改**：P0 事实/术语错误；P1 结构跳跃、标题含糊、长段和重复；P2 补前提、边界、坑点、验证方法；P3 打磨措辞和节奏
 4. **语气优先像作者本人**：能保留第一人称时尽量保留，不要把明确的个人判断、体感、犹豫点、取舍理由抹平成中性摘要
 5. **保持 diff 克制**：不要顺手重写整篇；优先修改真正影响可读性、可信度和作者感的部分
+6. **先扫 AI 腔模式**：如果用户指出某类 AI 味、过度解释或提示词式表达，先在全文找同类句式，再统一压缩；不要只改用户点名的单句
 
 ## Tone Calibration
 
@@ -64,6 +64,9 @@ metadata:
 - 开头不只要交代范围，还要让读者感受到作者为什么写、为什么亲自去测
 - 转场少用“本文将… / 基于以上… / 作为基线…”这类官话
 - 少用声明式自证和过度解释，例如“这不是…而是…”、“先把边界说清楚”、“读完你会看到…”；能自然进入主题就直接进入
+- 重点扫描“不是 A 而是 B”“不只是 A”“从 X 到 Y”“更稳 / 更安全 / 更像”“不猜测”这类 AI 常用句式；保留必要判断，但换成具体名词、动作和工程条件
+- 样例代码、粗略数字、模型路径、实验前提只保留必要边界。把长免责声明压成一句话，例如“下面四段代码只是帮助理解训练骨架”
+- 比喻和拟人化要少。遇到“大脑”“拷出来”“像可上线助手”这类表达，优先判断是否能改成准确术语、任务行为或部署约束
 - 不要把与文章主体无关的项目背景、工具目的、实现细节展开成说明书；只保留理解正文结论必需的信息
 - 如果文章中心依赖量化数据、测试记录、成本、耗时、错误数量或修复占比，优先保留原始表格和关键数值；可以调整位置和表达，但不要为了“更简洁”删掉证据
 - 对数据型文章，正文可以先给结论和趋势，再保留“明细表 / 原始记录 / 逐轮数据”；不要只留下抽象总结
@@ -71,6 +74,7 @@ metadata:
 - 保留一点作者体感和取舍，不要把所有段落磨成均匀、无情绪、无个人判断的中性报告
 - 作者更偏好直接、带个人判断的工程复盘口吻；不要把观点包装成“客观中立分析”，也不要自动替作者弱化成温和、乐观、产品化表达
 - 对评测、实测复盘类文章，少写“我关心的不是…而是…”、“这些数字不适合…”这类自我解释；如果作者已经给出数据，直接进入数据和判断
+- 对入门解释类文章，不要为了显得谨慎而反复强调“只是示例”“不能直接用”“真实工程还要补很多细节”；读者需要边界，但不需要连续免责声明
 - 原因分析要贴近作者自己的猜测和经历，例如“上下文变大后幻觉更严重”“测试可能靠巧合通过”；不要改写成泛泛的管理学式解释
 - 合并原因相近的小节，避免为了结构完整而拆出“上下文 / 长链路 / 工具适配”这类机械标题；能一句话说清就不要拆成多段说明
 - 可以保留作者偏口语的风险表达，如“删库跑路”“业务 GG”“不能全信”，不要全部改成书面化的“存在生产风险”
@@ -92,6 +96,9 @@ metadata:
 - 有没有把作者原本有价值的判断磨没？
 - 这版读起来像作者本人在复盘，还是像整理过的说明稿？
 - 有没有“AI 味”的声明、铺垫、解释和长标题？能删就删，能短就短
+- 有没有密集出现“不是 A 而是 B”“不只是 A”“从 X 到 Y”“更稳/更安全/更像”这类句式？能否改成直接判断？
+- 样例代码、粗略数字、假设路径的说明是否过长？能否压成一句短边界？
+- 有没有泛比喻或拟人化太多，导致文章像 AI 在解释概念？能否换成具体场景和技术名词？
 - 有没有把测试用例、项目背景或辅助材料讲得比正文主题还多？
 - 如果结论靠数据支撑，原始表格、成本、耗时、数量、占比是否还在？是否因为润色过度丢了论据？
 - 有没有把作者明确的怀疑、担心、负面判断改得太圆滑？这类“人味”通常应该保留

@@ -1,7 +1,7 @@
 # Claude Code bootstrap
 
-> **版本**: 1.2.2  
-> **更新日期**: 2026-03-27
+> **版本**: 1.2.3
+> **更新日期**: 2026-06-22
 
 ## Quick Start
 
@@ -18,7 +18,7 @@ This repository uses [`/AGENTS.md`](../AGENTS.md) as the canonical project guide
 ## Default Guidelines
 
 1. **Language**: Simplified Chinese (unless user explicitly requests English or bilingual)
-2. **Tone**: Pragmatic technical, experienced-engineer oriented, with a natural and polished blog voice; avoid outline-like phrasing, translationese, and obvious AI-sounding prose
+2. **Tone**: Pragmatic technical, experienced-engineer oriented, with a natural and polished blog voice; avoid outline-like phrasing, translationese, obvious AI-sounding prose, prompt-like slogans, repeated disclaimers, and dense metaphors
 3. **Structure**: Problem → Constraints → Solution → Examples → Pitfalls → Summary
 4. **Quality**: Always run through the quality checklist before finishing
 
@@ -28,6 +28,8 @@ This repository uses [`/AGENTS.md`](../AGENTS.md) as the canonical project guide
 - Never invent benchmarks, issue links, or compatibility claims
 - Mark uncertain facts with `> **待确认**: ...`
 - Keep diffs minimal when editing
+- Avoid dense AI-style patterns such as “不是 A 而是 B”, “不只是 A”, “更稳/更安全/更像”, and “不猜测”; use concrete engineering terms, constraints, and validation methods instead
+- Keep sample-code and rough-number caveats short; do not expand one boundary sentence into a full disclaimer paragraph
 - If Mermaid is embedded inline, carefully review and validate the Mermaid syntax and rendering before finishing; prefer external `.mermaid` files for complex diagrams, and wrap HTML-like text such as `<...>` in quotes when keeping it inline
 
 ## Diagram Support

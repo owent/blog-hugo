@@ -117,6 +117,8 @@ AI 会根据任务类型自动选择合适的 skill。
 - `.claude/skills/` 是通过脚本从 `.agents/skills/` 同步的
 - `.kilocode/skills/` 和 `.roo/skills/` 的纯重复镜像已移除；优先复用 `.agents/skills/`
 - 修改后务必更新 front matter 中的 `version` 和 `last-updated` 字段
+- 写作语气类规则优先放在 `AGENTS.md`；Skill 中只保留任务场景下必须执行的补充规则，避免重复成说明书
+- 若用户指出“AI 腔”“过度解释”“提示词味”，同步检查 `article-writer` 和 `article-refiner` 是否都覆盖了同类反模式
 
 ## 配置一致性
 
@@ -154,6 +156,7 @@ sync-skills.ps1 (同步脚本)
 |------|------|------|
 | 1.0.0 | 2024 | 初始版本 |
 | 1.1.0 | 2025-03-27 | 增加质量检查清单、错误处理指引、明确 Skill 边界、添加使用示例 |
+| 1.1.1 | 2026-06-22 | 增加反 AI 腔维护要求，要求写作语气变化同步覆盖 writer/refiner |
 
 ## 维护者
 

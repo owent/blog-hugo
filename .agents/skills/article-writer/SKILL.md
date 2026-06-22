@@ -1,14 +1,13 @@
 ---
 name: article-writer
 description: Draft or heavily rewrite a technical share-style blog post / 技术分享 / 技术文章 / 博客文章 for this Hugo repository. Use when the user wants a new article, wants notes turned into a post, needs title options, summary, front matter, outline, or wants Mermaid, Chart.js, Excalidraw, or Draw.io visuals added under source/post/. Do NOT use for polishing or minor edits to existing articles — use article-refiner instead.
-compatibility: Works in .agents/skills for GitHub Copilot, Kilo Code, Roo Code, and OpenCode; sync to .claude/skills for Claude Code compatibility. No extra dependencies.
 allowed-tools: Read Grep Glob
 metadata:
   audience: experienced-engineers
   default-language: zh-cn
   repo: blog-hugo
-  version: 1.2.9
-  last-updated: 2026-04-30
+  version: 1.2.10
+  last-updated: 2026-06-22
   trigger-phrases:
     - 写篇文章
     - 起草博客
@@ -70,6 +69,9 @@ metadata:
 - 数据很多时，可以用“结论先行 + 明细表保留”的结构；不要因为追求短文而删掉支撑结论的量化记录
 - 作者偏好直接、带个人体感和工程风险判断的表达，不喜欢过度中立、过度圆润、过度解释的 AI 腔
 - 少写自我声明式句子，例如“我关心的不是…而是…”、“这些数字不是用来…”；真实文章可以直接给数据、给判断
+- 写样例代码、粗略数字和假设路径时，边界说明控制在一两句。优先写“下面四段代码只是帮助理解训练骨架”，不要反复解释“不是生产脚本、普通机器不能跑、真实落地还要补很多工程细节”
+- 避免提示词式短语堆叠，例如“更稳”“不猜测”“更安全”“更像助手”“守住边界”“收敛输出”；改成具体工程对象，如拒答边界、偏好数据、评估集、长尾 case、版本前提
+- 比喻只在确实降低理解成本时使用。不要频繁写“大脑”“拷出来”“像一个可上线助手”这类泛比喻，能用准确术语和具体场景说明时优先直写
 - 如果作者在实测类文章里给出主观猜测、负面评价或口语化风险表达，优先保留；不要全部改成书面化的“风险提示”或乐观结论
 - 原因相近的分析不要拆太散。上下文、长链路、幻觉、退化如果本质是同一个判断，可以合在一节里写
 - 结尾可以更直接，允许保留“不能全信”“重要代码要人工 Review”“业务 GG”这类作者式落点，不要自动改成公文式总结
@@ -99,6 +101,9 @@ metadata:
 - 是否保留了作者自己的判断、怀疑和口语化风险感，而不是写成无情绪的客观报告？
 - 是否把同一原因拆成了多个机械小节？能否合并？
 - 是否出现“锁住、守住、不变量、收敛、语义”等偏书面抽象词？能否换成更直接、更像作者本人说话的表达？
+- 是否密集出现“不是 A 而是 B”“不只是 A”“从 X 到 Y”“更稳/更安全/更像”这类 AI 常用句式？
+- 样例、数字、占位路径的边界说明是否已经足够短？有没有把一句提醒写成一整段免责声明？
+- 有没有为了显得通俗而堆比喻？能否改成更准确的技术名词和场景判断？
 - 读者看完这篇，能据此做出判断或行动吗？
 
 ## Maintenance
