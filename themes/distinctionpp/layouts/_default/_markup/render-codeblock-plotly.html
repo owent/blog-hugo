@@ -3,10 +3,22 @@
 {{- $attrs := .Attributes -}}
 {{- $width := index $attrs "width" | default "100%" -}}
 {{- $height := index $attrs "height" | default "400px" -}}
+{{- $maxWidth := index $attrs "max-width" | default "" -}}
+{{- $maxHeight := index $attrs "max-height" | default "" -}}
 {{- $style := index $attrs "style" | default "" -}}
 {{- $class := index $attrs "class" | default "" -}}
 {{- $extensions := index $attrs "extensions" | default "" -}}
-{{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height (cond (ne $style "") (printf " %s" $style) "") -}}
+{{- $styleSuffix := "" -}}
+{{- if ne $maxWidth "" -}}
+  {{- $styleSuffix = printf "%s max-width: %s;" $styleSuffix $maxWidth -}}
+{{- end -}}
+{{- if ne $maxHeight "" -}}
+  {{- $styleSuffix = printf "%s max-height: %s;" $styleSuffix $maxHeight -}}
+{{- end -}}
+{{- if ne $style "" -}}
+  {{- $styleSuffix = printf "%s %s" $styleSuffix $style -}}
+{{- end -}}
+{{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height $styleSuffix -}}
 {{- $content := .Inner | replaceRE `(?s)^\s+|\s+$` "" -}}
 
 {{- /* Inline JSON option (data/layout/config) */ -}}

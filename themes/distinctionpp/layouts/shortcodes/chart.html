@@ -5,8 +5,20 @@
 {{- $class := .Get "class" | default "" -}}
 {{- $width := .Get "width" | default "100%" -}}
 {{- $height := .Get "height" | default "auto" -}}
+{{- $maxWidth := .Get "max-width" | default "" -}}
+{{- $maxHeight := .Get "max-height" | default "" -}}
 {{- $style := .Get "style" | default "" -}}
-{{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height (cond (ne $style "") (printf " %s" $style) "") -}}
+{{- $styleSuffix := "" -}}
+{{- if ne $maxWidth "" -}}
+  {{- $styleSuffix = printf "%s max-width: %s;" $styleSuffix $maxWidth -}}
+{{- end -}}
+{{- if ne $maxHeight "" -}}
+  {{- $styleSuffix = printf "%s max-height: %s;" $styleSuffix $maxHeight -}}
+{{- end -}}
+{{- if ne $style "" -}}
+  {{- $styleSuffix = printf "%s %s" $styleSuffix $style -}}
+{{- end -}}
+{{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height $styleSuffix -}}
 {{- $inner := "" -}}
 {{- with .Inner -}}
   {{- $inner = . | replaceRE `(?s)^\s+|\s+$` "" -}}

@@ -90,7 +90,7 @@ author: owent
 3. **需要复用外部文件且图片语法不满足时** → Shortcode 引用外部文件
 4. **需要在 Markdown 中保留结构化参数或嵌入非 JSON/文本内容时** → Shortcode 内联
 
-> **推荐**：优先使用代码块或图片语法；Shortcode 仅在需要显式传参（如 `extensions="gl"`、`width`、`class`）或复用同一文件但渲染方式不同时使用。
+> **推荐**：优先使用代码块或图片语法；Shortcode 仅在需要显式传参（如 `extensions="gl"`、`width`、`max-width`、`max-height`、`class`）或复用同一文件但渲染方式不同时使用。
 
 #### 资源文件命名规范
 

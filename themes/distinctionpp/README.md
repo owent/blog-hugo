@@ -182,7 +182,7 @@ end
 See https://echarts.apache.org/ for more detail.
 
 ```
-{{</* echarts id="ID" style="css styles" class="class" extensions="gl" alt="text before rendered" */>}}
+{{</* echarts id="ID" width="100%" max-width="720px" height="500px" style="css styles" class="class" extensions="gl" alt="text before rendered" */>}}
 {
   "title": { "text": "Line Chart" },
   "xAxis": { "type": "category", "data": ["Mon", "Tue", "Wed"] },
@@ -199,7 +199,7 @@ Use `extensions="gl"` to load the ECharts-GL extension for 3D charts.
 See https://plotly.com/javascript/ for more detail.
 
 ```
-{{</* plotly id="ID" style="css styles" class="class" extensions="gl3d" alt="text before rendered" */>}}
+{{</* plotly id="ID" width="100%" max-width="720px" height="500px" style="css styles" class="class" extensions="gl3d" alt="text before rendered" */>}}
 {
   "data": [{ "type": "scatter", "mode": "lines", "x": [1, 2, 3], "y": [2, 4, 3] }],
   "layout": { "title": "Line Chart" }
@@ -212,6 +212,8 @@ Use `extensions="gl3d"` (or `cartesian`, `geo`, `gl2d`, `mapbox`, `finance`) to 
 ## Diagram & Chart Extensions
 
 This theme supports rendering diagrams and charts from various sources:
+
+All diagram and chart renderers accept `width`, `height`, `max-width`, `max-height`, `class`, and `style`. ECharts and Plotly.js also accept `extensions` for optional bundles.
 
 ### Supported Formats
 

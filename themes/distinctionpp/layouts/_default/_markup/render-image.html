@@ -12,6 +12,8 @@
 {{- /* Parse attributes from title (format: "title {width=xxx height=xxx}") */ -}}
 {{- $width := "100%" -}}
 {{- $height := "auto" -}}
+{{- $maxWidth := "" -}}
+{{- $maxHeight := "" -}}
 {{- $class := "" -}}
 {{- $style := "" -}}
 {{- $extensions := "" -}}
@@ -33,6 +35,10 @@
           {{- $width = $val -}}
         {{- else if eq $key "height" -}}
           {{- $height = $val -}}
+        {{- else if eq $key "max-width" -}}
+          {{- $maxWidth = $val -}}
+        {{- else if eq $key "max-height" -}}
+          {{- $maxHeight = $val -}}
         {{- else if eq $key "class" -}}
           {{- $class = $val -}}
         {{- else if eq $key "style" -}}
@@ -43,6 +49,17 @@
       {{- end -}}
     {{- end -}}
   {{- end -}}
+{{- end -}}
+
+{{- $styleSuffix := "" -}}
+{{- if ne $maxWidth "" -}}
+  {{- $styleSuffix = printf "%s max-width: %s;" $styleSuffix $maxWidth -}}
+{{- end -}}
+{{- if ne $maxHeight "" -}}
+  {{- $styleSuffix = printf "%s max-height: %s;" $styleSuffix $maxHeight -}}
+{{- end -}}
+{{- if ne $style "" -}}
+  {{- $styleSuffix = printf "%s %s" $styleSuffix $style -}}
 {{- end -}}
 
 {{- if $isMermaid -}}
@@ -77,7 +94,7 @@
     {{- $content = $resource.Content -}}
   {{- end -}}
 
-  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height (cond (ne $style "") (printf " %s" $style) "") -}}
+  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height $styleSuffix -}}
 
   {{- if $content -}}
     {{- /* Inline the content directly */ -}}
@@ -123,7 +140,7 @@
     {{- $content = $resource.Content -}}
   {{- end -}}
 
-  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height (cond (ne $style "") (printf " %s" $style) "") -}}
+  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height $styleSuffix -}}
 
   {{- if $content -}}
     {{- /* Inline the content directly */ -}}
@@ -145,7 +162,7 @@
   {{- /* Generate unique ID */ -}}
   {{- $id := printf "drawio-image-%d" .Ordinal -}}
 
-  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height (cond (ne $style "") (printf " %s" $style) "") -}}
+  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height $styleSuffix -}}
 
   {{- /* Use URL-based loading for draw.io - more reliable */ -}}
 <div class="drawio-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}"{{ with $actualTitle }} title="{{ . }}"{{ end }}>
@@ -183,7 +200,7 @@
     {{- $content = $resource.Content -}}
   {{- end -}}
 
-  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height (cond (ne $style "") (printf " %s" $style) "") -}}
+  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height $styleSuffix -}}
 
   {{- if $content -}}
     {{- /* Inline the chart config */ -}}
@@ -230,7 +247,7 @@
     {{- $content = $resource.Content -}}
   {{- end -}}
 
-  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $echartsHeight (cond (ne $style "") (printf " %s" $style) "") -}}
+  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $echartsHeight $styleSuffix -}}
 
   {{- if $content -}}
     {{- /* Inline the option */ -}}
@@ -277,7 +294,7 @@
     {{- $content = $resource.Content -}}
   {{- end -}}
 
-  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $plotlyHeight (cond (ne $style "") (printf " %s" $style) "") -}}
+  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $plotlyHeight $styleSuffix -}}
 
   {{- if $content -}}
     {{- /* Inline the option */ -}}
