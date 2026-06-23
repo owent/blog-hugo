@@ -30,6 +30,24 @@
     {{- $hasChartJs = gt (len (findRE `language-(\{)?(chart|chartjs)(\})?` .)) 0 -}}
   {{- end -}}
 {{- end -}}
+{{- $hasEcharts := .Store.Get "themeExtensionHasEcharts" -}}
+{{- if not $hasEcharts -}}
+  {{- with .Content -}}
+    {{- $hasEcharts = or
+      (gt (len (findRE `language-(\{)?echarts(\})?` .)) 0)
+      (gt (len (findRE `\becharts-(container|chart)\b` .)) 0)
+    -}}
+  {{- end -}}
+{{- end -}}
+{{- $hasPlotly := .Store.Get "themeExtensionHasPlotly" -}}
+{{- if not $hasPlotly -}}
+  {{- with .Content -}}
+    {{- $hasPlotly = or
+      (gt (len (findRE `language-(\{)?plotly(\})?` .)) 0)
+      (gt (len (findRE `\bplotly-(container|chart)\b` .)) 0)
+    -}}
+  {{- end -}}
+{{- end -}}
 {{- $imports := dict -}}
 {{- with $.Site.Params.modules -}}
   {{- with .importmap -}}
@@ -119,6 +137,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
             }
             if (block.className.match(/\bchart(js)?\b/i)) {
                 block.classList.add("chartjs-container");
+                continue;
+            }
+            if (block.className.match(/\b(echarts|plotly)\b/i)) {
                 continue;
             }
             if (block.className.match(/\bnohighlight\b/i)) {
@@ -277,6 +298,199 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 });
 </script>
 <!-- chart.js end -->
+{{- end }}
+{{- if $hasEcharts }}
+  {{- $echartsJs := "https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js" -}}
+  {{- with $.Site.Params.echarts -}}
+    {{- with .js -}}
+      {{- $echartsJs = . -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $echartsExtensions := dict -}}
+  {{- with $.Site.Params.echarts -}}{{- with .extensions -}}{{- $echartsExtensions = . -}}{{- end -}}{{- end -}}
+  {{- $echartsExtensionsDefault := dict
+    "gl" "https://cdn.jsdelivr.net/npm/echarts-gl/dist/echarts-gl.min.js"
+    "wordcloud" "https://cdn.jsdelivr.net/npm/echarts-wordcloud/dist/echarts-wordcloud.min.js"
+    "liquidfill" "https://cdn.jsdelivr.net/npm/echarts-liquidfill/dist/echarts-liquidfill.min.js"
+  -}}
+  {{- $echartsExtensions = merge $echartsExtensionsDefault $echartsExtensions -}}<!-- echarts begin -->
+<script src="{{ $echartsJs | safeURL }}"></script>
+<script type="text/javascript">
+window.__themeLoadScript = window.__themeLoadScript || function (src) {
+    return new Promise(function (resolve, reject) {
+        var s = document.createElement('script');
+        s.src = src;
+        s.onload = function () { resolve(); };
+        s.onerror = function () { reject(new Error('Failed to load script: ' + src)); };
+        document.head.appendChild(s);
+    });
+};
+document.addEventListener('DOMContentLoaded', async () => {
+    if (typeof echarts === 'undefined') {
+        if (window.console) { console.error('echarts core failed to load'); }
+        return;
+    }
+    // Collect requested extensions across all charts (data-echarts-extensions).
+    // echarts extensions are additive: load the union after the core.
+    const needed = new Set();
+    document.querySelectorAll('[data-echarts-extensions]').forEach((el) => {
+        (el.getAttribute('data-echarts-extensions') || '').split(/\s+/).forEach((name) => {
+            if (name) { needed.add(name); }
+        });
+    });
+    const ECHARTS_EXTENSIONS = {{ $echartsExtensions | jsonify | safeJS }};
+    for (const name of needed) {
+        const url = ECHARTS_EXTENSIONS[name];
+        if (!url) {
+            if (window.console) { console.warn('Unknown echarts extension (not configured):', name); }
+            continue;
+        }
+        try { await window.__themeLoadScript(url); }
+        catch (e) { if (window.console) { console.error('echarts extension load failed:', name, e); } }
+    }
+
+    const instances = [];
+    // Initialize charts with inline option (data-echarts-option-id)
+    for (const el of document.querySelectorAll('.echarts-chart[data-echarts-option-id]')) {
+        const configId = el.getAttribute('data-echarts-option-id');
+        const configEl = document.getElementById(configId);
+        if (!configEl) { continue; }
+        try {
+            const option = JSON.parse(configEl.textContent || '{}');
+            const chart = echarts.init(el);
+            chart.setOption(option);
+            instances.push(chart);
+        } catch (e) {
+            if (window.console) { console.error('Failed to parse echarts option:', e); }
+        }
+    }
+
+    // Fetch and initialize charts with external src (data-echarts-src)
+    for (const el of document.querySelectorAll('.echarts-chart.echarts-pending[data-echarts-src]')) {
+        const src = el.getAttribute('data-echarts-src');
+        try {
+            const response = await fetch(src);
+            if (!response.ok) { throw new Error(`Failed to fetch ${src}: ${response.status}`); }
+            const option = await response.json();
+            const chart = echarts.init(el);
+            chart.setOption(option);
+            instances.push(chart);
+            el.classList.remove('echarts-pending');
+        } catch (e) {
+            if (window.console) { console.error('Failed to load echarts:', src, e); }
+            el.classList.remove('echarts-pending');
+            el.textContent = `Failed to load: ${src}`;
+        }
+    }
+
+    // echarts does not auto-resize; re-render on window resize.
+    window.addEventListener('resize', () => {
+        for (const chart of instances) { chart.resize(); }
+    });
+});
+</script>
+<!-- echarts end -->
+{{- end }}
+{{- if $hasPlotly }}
+  {{- $plotlyMinimalJs := "https://cdn.jsdelivr.net/npm/plotly.js-basic-dist-min" -}}
+  {{- with $.Site.Params.plotly -}}
+    {{- with .js -}}
+      {{- $plotlyMinimalJs = . -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $plotlyFullJs := "https://cdn.jsdelivr.net/npm/plotly.js-dist-min" -}}
+  {{- with $.Site.Params.plotly -}}{{- with .full -}}{{- $plotlyFullJs = . -}}{{- end -}}{{- end -}}
+  {{- $plotlyBundles := dict -}}
+  {{- with $.Site.Params.plotly -}}{{- with .bundles -}}{{- $plotlyBundles = . -}}{{- end -}}{{- end -}}
+  {{- $plotlyBundlesDefault := dict
+    "cartesian" "https://cdn.jsdelivr.net/npm/plotly.js-cartesian-dist-min"
+    "geo" "https://cdn.jsdelivr.net/npm/plotly.js-geo-dist-min"
+    "gl3d" "https://cdn.jsdelivr.net/npm/plotly.js-gl3d-dist-min"
+    "gl2d" "https://cdn.jsdelivr.net/npm/plotly.js-gl2d-dist-min"
+    "mapbox" "https://cdn.jsdelivr.net/npm/plotly.js-mapbox-dist-min"
+    "finance" "https://cdn.jsdelivr.net/npm/plotly.js-finance-dist-min"
+  -}}
+  {{- $plotlyBundles = merge $plotlyBundlesDefault $plotlyBundles -}}<!-- plotly begin -->
+<script type="text/javascript">
+window.__themeLoadScript = window.__themeLoadScript || function (src) {
+    return new Promise(function (resolve, reject) {
+        var s = document.createElement('script');
+        s.src = src;
+        s.onload = function () { resolve(); };
+        s.onerror = function () { reject(new Error('Failed to load script: ' + src)); };
+        document.head.appendChild(s);
+    });
+};
+document.addEventListener('DOMContentLoaded', async () => {
+    // Plotly partial bundles each redefine the global `Plotly`, so they CANNOT
+    // be stacked. Decide which SINGLE bundle to load for the whole page:
+    //   - no extensions declared            -> minimal bundle (params.plotly.js)
+    //   - exactly one partial, none minimal -> that partial bundle
+    //   - mixed needs                       -> full bundle (params.plotly.full)
+    const elements = Array.from(document.querySelectorAll('.plotly-chart'));
+    if (elements.length === 0) { return; }
+    const needed = new Set();
+    let usesDefault = false;
+    for (const el of elements) {
+        const ext = (el.getAttribute('data-plotly-extensions') || '').trim();
+        if (ext) {
+            ext.split(/\s+/).forEach((name) => { if (name) { needed.add(name); } });
+        } else {
+            usesDefault = true;
+        }
+    }
+    const PLOTLY_MINIMAL = {{ $plotlyMinimalJs | jsonify | safeJS }};
+    const PLOTLY_FULL = {{ $plotlyFullJs | jsonify | safeJS }};
+    const PLOTLY_BUNDLES = {{ $plotlyBundles | jsonify | safeJS }};
+    let bundleUrl = PLOTLY_MINIMAL;
+    if (needed.size === 1 && !usesDefault) {
+        bundleUrl = PLOTLY_BUNDLES[Array.from(needed)[0]] || PLOTLY_FULL;
+    } else if (needed.size > 1 || (needed.size >= 1 && usesDefault)) {
+        bundleUrl = PLOTLY_FULL;
+    }
+    try { await window.__themeLoadScript(bundleUrl); }
+    catch (e) { if (window.console) { console.error('plotly bundle load failed:', bundleUrl, e); } return; }
+    if (typeof Plotly === 'undefined') {
+        if (window.console) { console.error('Plotly global not found after load'); }
+        return;
+    }
+
+    // Initialize charts with inline option (data-plotly-option-id)
+    for (const el of document.querySelectorAll('.plotly-chart[data-plotly-option-id]')) {
+        const configId = el.getAttribute('data-plotly-option-id');
+        const configEl = document.getElementById(configId);
+        if (!configEl) { continue; }
+        try {
+            const opt = JSON.parse(configEl.textContent || '{}');
+            const config = Object.assign({ responsive: true, displaylogo: false }, opt.config || {});
+            const layout = Object.assign({ paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)' }, opt.layout || {});
+            await Plotly.newPlot(el, opt.data || [], layout, config);
+            el.classList.remove('plotly-pending');
+        } catch (e) {
+            if (window.console) { console.error('Failed to parse plotly option:', e); }
+        }
+    }
+
+    // Fetch and initialize charts with external src (data-plotly-src)
+    for (const el of document.querySelectorAll('.plotly-chart.plotly-pending[data-plotly-src]')) {
+        const src = el.getAttribute('data-plotly-src');
+        try {
+            const response = await fetch(src);
+            if (!response.ok) { throw new Error(`Failed to fetch ${src}: ${response.status}`); }
+            const opt = await response.json();
+            const config = Object.assign({ responsive: true, displaylogo: false }, opt.config || {});
+            const layout = Object.assign({ paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)' }, opt.layout || {});
+            await Plotly.newPlot(el, opt.data || [], layout, config);
+            el.classList.remove('plotly-pending');
+        } catch (e) {
+            if (window.console) { console.error('Failed to load plotly:', src, e); }
+            el.classList.remove('plotly-pending');
+            el.textContent = `Failed to load: ${src}`;
+        }
+    }
+});
+</script>
+<!-- plotly end -->
 {{- end }}
 {{- if $hasMermaid }}
   {{- $mermaidTheme := "default" -}}

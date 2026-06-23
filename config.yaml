@@ -181,6 +181,28 @@ params:
     css: "https://cdn.jsdelivr.net/npm/excalidraw/dist/excalidraw.min.css"
   drawio:
     js: "https://viewer.diagrams.net/js/viewer-static.min.js"
+  echarts:
+    # 默认只加载最小包（dist/echarts.min.js，含所有 2D 图表，不含 3D）
+    js: "https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"
+    # 扩展包是增量加载的，在图表声明 extensions="gl" 时按需追加
+    extensions:
+      gl: "https://cdn.jsdelivr.net/npm/echarts-gl/dist/echarts-gl.min.js"
+      wordcloud: "https://cdn.jsdelivr.net/npm/echarts-wordcloud/dist/echarts-wordcloud.min.js"
+      liquidfill: "https://cdn.jsdelivr.net/npm/echarts-liquidfill/dist/echarts-liquidfill.min.js"
+  plotly:
+    # 默认最小包（plotly.js-basic-dist-min，仅含 scatter/bar/pie）
+    js: "https://cdn.jsdelivr.net/npm/plotly.js-basic-dist-min"
+    # 完整包：当同一页面同时出现最小特性图表（bar/pie）和扩展图表（如 gl3d）时自动升级到这里
+    full: "https://cdn.jsdelivr.net/npm/plotly.js-dist-min"
+    # Plotly 的 partial bundle 之间互相覆盖全局 Plotly，无法叠加；
+    # 单一 partial 需求时按 extensions="gl3d" 选择对应包
+    bundles:
+      cartesian: "https://cdn.jsdelivr.net/npm/plotly.js-cartesian-dist-min"
+      geo: "https://cdn.jsdelivr.net/npm/plotly.js-geo-dist-min"
+      gl3d: "https://cdn.jsdelivr.net/npm/plotly.js-gl3d-dist-min"
+      gl2d: "https://cdn.jsdelivr.net/npm/plotly.js-gl2d-dist-min"
+      mapbox: "https://cdn.jsdelivr.net/npm/plotly.js-mapbox-dist-min"
+      finance: "https://cdn.jsdelivr.net/npm/plotly.js-finance-dist-min"
   utteranc:
     repo: "owent/blog-website"
     issue_term: "pathname"

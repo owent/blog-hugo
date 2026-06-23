@@ -177,6 +177,38 @@ end
 {{< /mermaid >}}
 ```
 
+### echarts
+
+See https://echarts.apache.org/ for more detail.
+
+```
+{{</* echarts id="ID" style="css styles" class="class" extensions="gl" alt="text before rendered" */>}}
+{
+  "title": { "text": "Line Chart" },
+  "xAxis": { "type": "category", "data": ["Mon", "Tue", "Wed"] },
+  "yAxis": { "type": "value" },
+  "series": [{ "type": "line", "data": [120, 200, 150] }]
+}
+{{</* /echarts */>}}
+```
+
+Use `extensions="gl"` to load the ECharts-GL extension for 3D charts.
+
+### plotly
+
+See https://plotly.com/javascript/ for more detail.
+
+```
+{{</* plotly id="ID" style="css styles" class="class" extensions="gl3d" alt="text before rendered" */>}}
+{
+  "data": [{ "type": "scatter", "mode": "lines", "x": [1, 2, 3], "y": [2, 4, 3] }],
+  "layout": { "title": "Line Chart" }
+}
+{{</* /plotly */>}}
+```
+
+Use `extensions="gl3d"` (or `cartesian`, `geo`, `gl2d`, `mapbox`, `finance`) to load a Plotly.js partial bundle. Plotly.js partial bundles redefine the global `Plotly` object and cannot be stacked; when a page mixes minimal charts with extended charts, the loader falls back to the full bundle.
+
 ## Diagram & Chart Extensions
 
 This theme supports rendering diagrams and charts from various sources:
@@ -189,6 +221,8 @@ This theme supports rendering diagrams and charts from various sources:
 | **Mermaid** | `![](file.mermaid)` | ` ```mermaid ` | `{{</* mermaid src="file.mermaid" */>}}` | `{{</* mermaid */>}}code{{</* /mermaid */>}}` |
 | **Excalidraw** | `![](file.excalidraw)` | ` ```excalidraw ` | `{{</* excalidraw src="file.excalidraw" */>}}` | `{{</* excalidraw */>}}JSON{{</* /excalidraw */>}}` |
 | **Chart.js** | `![](file.chart.json)` | ` ```chart ` or ` ```chartjs ` | `{{</* chart src="file.chart.json" */>}}` | `{{</* chart */>}}JSON{{</* /chart */>}}` |
+| **ECharts** | `![](file.echarts.json)` | ` ```echarts ` | `{{</* echarts src="file.echarts.json" */>}}` | `{{</* echarts */>}}JSON{{</* /echarts */>}}` |
+| **Plotly.js** | `![](file.plotly.json)` | ` ```plotly ` | `{{</* plotly src="file.plotly.json" */>}}` | `{{</* plotly */>}}JSON{{</* /plotly */>}}` |
 
 ### Configuration
 
@@ -205,6 +239,25 @@ params:
     js: "https://esm.sh/@excalidraw/excalidraw"
   drawio:
     js: "https://viewer.diagrams.net/js/viewer-static.min.js"
+  echarts:
+    # Default minimal bundle (all 2D charts, no 3D). Add extensions="gl" on a chart to load echarts-gl.
+    js: "https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"
+    extensions:
+      gl: "https://cdn.jsdelivr.net/npm/echarts-gl/dist/echarts-gl.min.js"
+      wordcloud: "https://cdn.jsdelivr.net/npm/echarts-wordcloud/dist/echarts-wordcloud.min.js"
+      liquidfill: "https://cdn.jsdelivr.net/npm/echarts-liquidfill/dist/echarts-liquidfill.min.js"
+  plotly:
+    # Default minimal bundle (scatter/bar/pie). Declare extensions="gl3d" etc. to use a partial bundle.
+    js: "https://cdn.jsdelivr.net/npm/plotly.js-basic-dist-min"
+    # Full bundle used as fallback when minimal and extended charts are mixed on the same page.
+    full: "https://cdn.jsdelivr.net/npm/plotly.js-dist-min"
+    bundles:
+      cartesian: "https://cdn.jsdelivr.net/npm/plotly.js-cartesian-dist-min"
+      geo: "https://cdn.jsdelivr.net/npm/plotly.js-geo-dist-min"
+      gl3d: "https://cdn.jsdelivr.net/npm/plotly.js-gl3d-dist-min"
+      gl2d: "https://cdn.jsdelivr.net/npm/plotly.js-gl2d-dist-min"
+      mapbox: "https://cdn.jsdelivr.net/npm/plotly.js-mapbox-dist-min"
+      finance: "https://cdn.jsdelivr.net/npm/plotly.js-finance-dist-min"
 ```
 
 ### Examples
@@ -216,6 +269,10 @@ Example files included:
 - `examples/2509-test-diagram.mermaid` - Mermaid diagram
 - `examples/2509-test-diagram.excalidraw` - Excalidraw diagram
 - `examples/2509-test-chart.chart.json` - Chart.js configuration
+- `examples/2509-test-echarts-sin.echarts.json` - ECharts 2D function chart
+- `examples/2509-test-echarts-3d.echarts.json` - ECharts 3D surface chart
+- `examples/2509-test-plotly-sin.plotly.json` - Plotly.js 2D function chart
+- `examples/2509-test-plotly-3d.plotly.json` - Plotly.js 3D surface chart
 
 ## Development
 

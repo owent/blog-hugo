@@ -152,3 +152,17 @@
         color: rgb(64, 128, 255);
     }
 }
+
+// Chart / diagram containers should establish their own stacking context
+// and clip any internal overflow to avoid overlapping following content.
+.echarts-container,
+.plotly-container,
+.chartjs-container,
+.mermaid-container,
+.excalidraw-container,
+.drawio-container {
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    max-width: 100%;
+}

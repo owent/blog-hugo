@@ -1,0 +1,31 @@
+{{- .Page.Store.Set "themeExtensionHasPlotly" true -}}
+{{- $id := .Get "id" | default (printf "plotly-shortcode-%d" .Ordinal) -}}
+{{- $src := .Get "src" | default "" -}}
+{{- $alt := .Get "alt" | default (printf "Plotly %d" .Ordinal) -}}
+{{- $class := .Get "class" | default "" -}}
+{{- $width := .Get "width" | default "100%" -}}
+{{- $height := .Get "height" | default "400px" -}}
+{{- $style := .Get "style" | default "" -}}
+{{- $extensions := .Get "extensions" | default "" -}}
+{{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height (cond (ne $style "") (printf " %s" $style) "") -}}
+{{- $inner := "" -}}
+{{- with .Inner -}}
+  {{- $inner = . | replaceRE `(?s)^\s+|\s+$` "" -}}
+{{- end -}}
+
+{{- if $src -}}
+  {{- /* URL-based loading */ -}}
+<div class="plotly-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}">
+  <div id="{{ $id | safeHTMLAttr }}" class="plotly-chart plotly-pending" data-plotly-src="{{ $src }}" data-plotly-extensions="{{ $extensions }}" style="width: 100%; height: 100%;">{{ $alt | safeHTML }}</div>
+</div>
+{{- else if $inner -}}
+  {{- /* Inline JSON option (data/layout/config) */ -}}
+<div class="plotly-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}">
+  <div id="{{ $id | safeHTMLAttr }}" class="plotly-chart" data-plotly-option-id="{{ $id }}-config" data-plotly-extensions="{{ $extensions }}" style="width: 100%; height: 100%;">{{ $alt | safeHTML }}</div>
+</div>
+<script type="application/json" id="{{ $id }}-config">{{ $inner | safeJS }}</script>
+{{- else -}}
+<div class="plotly-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}">
+  <div id="{{ $id | safeHTMLAttr }}" class="plotly-chart" style="color: red;">Error: plotly shortcode requires "src" attribute or inline JSON content.</div>
+</div>
+{{- end -}}

@@ -64,7 +64,7 @@ author: owent
 
 ### 图表使用指南
 
-代码块、Mermaid、KaTeX、Draw.io、Excalidraw、Chart.js 仅在确实能降低理解成本时使用；不要为了"看起来更专业"而机械加图。
+代码块、Mermaid、KaTeX、Draw.io、Excalidraw、Chart.js、ECharts、Plotly.js 仅在确实能降低理解成本时使用；不要为了"看起来更专业"而机械加图。
 
 **如果纯文字会迫使读者脑内模拟**流程、状态机、调用时序、组件关系、跨区拓扑或数据变化，AI 应主动在对应段落附近补图，而不是等用户点名。
 
@@ -74,28 +74,23 @@ author: owent
 |------|----------|------------|
 | **Mermaid** | 流程图、时序图、状态图、类图、ER 图、甘特图、象限图、简单文本驱动架构图 | 需要复杂布局的架构图 |
 | **Chart.js** | 有数值的比较、趋势、占比、分布、混合折线/柱状对比 | 系统结构图、概念关系图 |
+| **ECharts** | 复杂交互图表、地图、3D 可视化、富定制选项的数据图 | 只需简单静态图表、对包大小敏感且无按需扩展的场景 |
+| **Plotly.js** | 统计/科学可视化、3D 曲面、交互式探索型图表 | 简单流程图、概念草图、对包大小敏感且只需基础图表的场景 |
 | **Excalidraw** | 概念草图、粗粒度架构、角色/组件关系、需要"白板感"的解释型图示 | 需要精确几何关系的图 |
 | **Draw.io** | 布局更规整、节点更多、需要稳定几何关系或更正式观感的架构/网络/部署图 | 简单流程、快速草图 |
 
 #### 嵌入方式优先级
 
-本仓库支持 2 种嵌入方式：代码块内嵌和图片语法引用外部文件。
+本仓库支持 4 种嵌入方式：代码块内嵌、图片语法引用外部文件、Shortcode 引用外部文件、Shortcode 内联。
 
 **默认优先级：**
 
-1. 简短图表：优先代码块（`mermaid`、`chart`/`chartjs`、`drawio`、`excalidraw`）
-2. 较长或可复用的图表：优先拆成外部文件，用图片语法引用
+1. **简短图表** → 代码块（`mermaid`、`chart`/`chartjs`、`drawio`、`excalidraw`、`echarts`、`plotly`）
+2. **较长或可复用** → 拆成外部文件，用图片语法引用
+3. **需要复用外部文件且图片语法不满足时** → Shortcode 引用外部文件
+4. **需要在 Markdown 中保留结构化参数或嵌入非 JSON/文本内容时** → Shortcode 内联
 
-#### Mermaid inline 校验规则
-
-- **只要使用 inline Mermaid（围栏代码块）**，就必须逐行仔细核对语法，并在交付前确认它可以被正确渲染；不要只凭肉眼觉得“像是对的”。
-- 若图较长、可复用、包含较多引号、`<br/>` 或复杂注释，仍可优先拆成外部 `.mermaid` 文件；但不要仅仅因为出现 `<client_pubkey>` 这类文本就强制外拆。
-- inline Mermaid 中尽量避免裸写 `<...>` 形式的占位符或标签风格文本；若必须保留，优先用引号包裹，再验证渲染结果，避免渲染链路把它当成 HTML 片段处理。
-- Mermaid 只在确实降低理解成本时使用；如果为了规避 inline 风险拆成外部文件，正文里仍要补一句图的用途。
-
-> **不要**使用 Shortcode 方式（`{{< type src="..." >}}` 或
-> `{{< type >}}...{{< /type >}}`）。虽然主题支持 Shortcode，但代码块和
-> 图片语法已能覆盖所有场景，且更通用、更易维护。
+> **推荐**：优先使用代码块或图片语法；Shortcode 仅在需要显式传参（如 `extensions="gl"`、`width`、`class`）或复用同一文件但渲染方式不同时使用。
 
 #### 资源文件命名规范
 
@@ -297,3 +292,5 @@ AGENTS.md (本文件，全局规范的唯一真相)
 - Hugo 官方文档: <https://gohugo.io/documentation/>
 - Mermaid 语法: <https://mermaid.js.org/syntax/flowchart.html>
 - Chart.js 文档: <https://www.chartjs.org/docs/>
+- ECharts 文档: <https://echarts.apache.org/handbook/en/>
+- Plotly.js 文档: <https://plotly.com/javascript/>

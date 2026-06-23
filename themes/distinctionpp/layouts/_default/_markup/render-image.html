@@ -6,12 +6,15 @@
 {{- $isMermaid := strings.HasSuffix (lower $src) ".mermaid" -}}
 {{- $isDrawio := or (strings.HasSuffix (lower $src) ".drawio") (strings.HasSuffix (lower $src) ".dio") -}}
 {{- $isChart := strings.HasSuffix (lower $src) ".chart.json" -}}
+{{- $isEcharts := strings.HasSuffix (lower $src) ".echarts.json" -}}
+{{- $isPlotly := strings.HasSuffix (lower $src) ".plotly.json" -}}
 
 {{- /* Parse attributes from title (format: "title {width=xxx height=xxx}") */ -}}
 {{- $width := "100%" -}}
 {{- $height := "auto" -}}
 {{- $class := "" -}}
 {{- $style := "" -}}
+{{- $extensions := "" -}}
 {{- $actualTitle := $title -}}
 
 {{- if $title -}}
@@ -34,6 +37,8 @@
           {{- $class = $val -}}
         {{- else if eq $key "style" -}}
           {{- $style = $val -}}
+        {{- else if eq $key "extensions" -}}
+          {{- $extensions = $val -}}
         {{- end -}}
       {{- end -}}
     {{- end -}}
@@ -190,6 +195,100 @@
     {{- /* Need to fetch at runtime */ -}}
 <div class="chartjs-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}"{{ with $actualTitle }} title="{{ . }}"{{ end }}>
   <canvas id="{{ $id | safeHTMLAttr }}" class="chartjs-pending" data-chartjs-src="{{ $src }}">{{ with $alt }}{{ . }}{{ else }}Loading chart...{{ end }}</canvas>
+</div>
+  {{- end -}}
+{{- else if $isEcharts -}}
+  {{- /* Mark page as having ECharts content */ -}}
+  {{- .Page.Store.Set "themeExtensionHasEcharts" true -}}
+
+  {{- /* ECharts needs an explicit height; fall back from "auto" to a usable default */ -}}
+  {{- $echartsHeight := cond (eq $height "auto") "400px" $height -}}
+  {{- $id := printf "echarts-image-%d" .Ordinal -}}
+
+  {{- /* Try to get the option file content */ -}}
+  {{- $content := "" -}}
+  {{- $resource := "" -}}
+
+  {{- /* Try page resource first */ -}}
+  {{- with .Page.Resources.Get $src -}}
+    {{- $resource = . -}}
+  {{- else -}}
+    {{- /* Try relative path from page bundle */ -}}
+    {{- $pagePath := path.Dir .Page.File.Path -}}
+    {{- $fullPath := path.Join $pagePath $src -}}
+    {{- with resources.Get $fullPath -}}
+      {{- $resource = . -}}
+    {{- else -}}
+      {{- /* Try as assets resource */ -}}
+      {{- with resources.Get $src -}}
+        {{- $resource = . -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- if $resource -}}
+    {{- $content = $resource.Content -}}
+  {{- end -}}
+
+  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $echartsHeight (cond (ne $style "") (printf " %s" $style) "") -}}
+
+  {{- if $content -}}
+    {{- /* Inline the option */ -}}
+<div class="echarts-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}"{{ with $actualTitle }} title="{{ . }}"{{ end }}>
+  <div id="{{ $id | safeHTMLAttr }}" class="echarts-chart" data-echarts-option-id="{{ $id }}-config" data-echarts-extensions="{{ $extensions }}" style="width: 100%; height: 100%;">{{ with $alt }}{{ . }}{{ else }}Loading ECharts...{{ end }}</div>
+</div>
+<script type="application/json" id="{{ $id }}-config">{{ $content | safeJS }}</script>
+  {{- else -}}
+    {{- /* Need to fetch at runtime */ -}}
+<div class="echarts-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}"{{ with $actualTitle }} title="{{ . }}"{{ end }}>
+  <div id="{{ $id | safeHTMLAttr }}" class="echarts-chart echarts-pending" data-echarts-src="{{ $src }}" data-echarts-extensions="{{ $extensions }}" style="width: 100%; height: 100%;">{{ with $alt }}{{ . }}{{ else }}Loading ECharts...{{ end }}</div>
+</div>
+  {{- end -}}
+{{- else if $isPlotly -}}
+  {{- /* Mark page as having Plotly content */ -}}
+  {{- .Page.Store.Set "themeExtensionHasPlotly" true -}}
+
+  {{- /* Plotly needs an explicit height; fall back from "auto" to a usable default */ -}}
+  {{- $plotlyHeight := cond (eq $height "auto") "400px" $height -}}
+  {{- $id := printf "plotly-image-%d" .Ordinal -}}
+
+  {{- /* Try to get the option file content */ -}}
+  {{- $content := "" -}}
+  {{- $resource := "" -}}
+
+  {{- /* Try page resource first */ -}}
+  {{- with .Page.Resources.Get $src -}}
+    {{- $resource = . -}}
+  {{- else -}}
+    {{- /* Try relative path from page bundle */ -}}
+    {{- $pagePath := path.Dir .Page.File.Path -}}
+    {{- $fullPath := path.Join $pagePath $src -}}
+    {{- with resources.Get $fullPath -}}
+      {{- $resource = . -}}
+    {{- else -}}
+      {{- /* Try as assets resource */ -}}
+      {{- with resources.Get $src -}}
+        {{- $resource = . -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- if $resource -}}
+    {{- $content = $resource.Content -}}
+  {{- end -}}
+
+  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $plotlyHeight (cond (ne $style "") (printf " %s" $style) "") -}}
+
+  {{- if $content -}}
+    {{- /* Inline the option */ -}}
+<div class="plotly-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}"{{ with $actualTitle }} title="{{ . }}"{{ end }}>
+  <div id="{{ $id | safeHTMLAttr }}" class="plotly-chart" data-plotly-option-id="{{ $id }}-config" data-plotly-extensions="{{ $extensions }}" style="width: 100%; height: 100%;">{{ with $alt }}{{ . }}{{ else }}Loading Plotly...{{ end }}</div>
+</div>
+<script type="application/json" id="{{ $id }}-config">{{ $content | safeJS }}</script>
+  {{- else -}}
+    {{- /* Need to fetch at runtime */ -}}
+<div class="plotly-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}"{{ with $actualTitle }} title="{{ . }}"{{ end }}>
+  <div id="{{ $id | safeHTMLAttr }}" class="plotly-chart plotly-pending" data-plotly-src="{{ $src }}" data-plotly-extensions="{{ $extensions }}" style="width: 100%; height: 100%;">{{ with $alt }}{{ . }}{{ else }}Loading Plotly...{{ end }}</div>
 </div>
   {{- end -}}
 {{- else -}}

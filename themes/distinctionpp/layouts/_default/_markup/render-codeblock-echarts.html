@@ -1,0 +1,16 @@
+{{ .Page.Store.Set "themeExtensionHasEcharts" true }}
+{{- $id := printf "echarts-codeblock-%d" .Ordinal -}}
+{{- $attrs := .Attributes -}}
+{{- $width := index $attrs "width" | default "100%" -}}
+{{- $height := index $attrs "height" | default "400px" -}}
+{{- $style := index $attrs "style" | default "" -}}
+{{- $class := index $attrs "class" | default "" -}}
+{{- $extensions := index $attrs "extensions" | default "" -}}
+{{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height (cond (ne $style "") (printf " %s" $style) "") -}}
+{{- $content := .Inner | replaceRE `(?s)^\s+|\s+$` "" -}}
+
+{{- /* Inline JSON option */ -}}
+<div class="echarts-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}">
+  <div id="{{ $id | safeHTMLAttr }}" class="echarts-chart" data-echarts-option-id="{{ $id }}-config" data-echarts-extensions="{{ $extensions }}" style="width: 100%; height: 100%;">ECharts</div>
+</div>
+<script type="application/json" id="{{ $id }}-config">{{ $content | safeJS }}</script>
