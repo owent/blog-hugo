@@ -1,0 +1,223 @@
+{
+  "backgroundColor": "#050505",
+  "title": {
+    "text": "Embedding update after one gradient step",
+    "left": "center",
+    "top": 12,
+    "textStyle": {
+      "color": "#f1f5f9",
+      "fontSize": 16,
+      "fontWeight": 600
+    }
+  },
+  "legend": {
+    "top": 44,
+    "left": "center",
+    "itemGap": 18,
+    "textStyle": {
+      "color": "#cbd5e1"
+    }
+  },
+  "tooltip": {
+    "trigger": "item"
+  },
+  "grid": {
+    "left": 56,
+    "right": 40,
+    "top": 96,
+    "bottom": 56,
+    "containLabel": true
+  },
+  "xAxis": {
+    "type": "value",
+    "name": "dim 1",
+    "min": -1,
+    "max": 0.85,
+    "interval": 0.25,
+    "axisLine": {
+      "lineStyle": {
+        "color": "#64748b"
+      }
+    },
+    "axisLabel": {
+      "color": "#94a3b8"
+    },
+    "nameTextStyle": {
+      "color": "#cbd5e1"
+    },
+    "splitLine": {
+      "lineStyle": {
+        "color": "rgba(148, 163, 184, 0.16)"
+      }
+    }
+  },
+  "yAxis": {
+    "type": "value",
+    "name": "dim 2",
+    "min": -0.75,
+    "max": 0.9,
+    "interval": 0.25,
+    "axisLine": {
+      "lineStyle": {
+        "color": "#64748b"
+      }
+    },
+    "axisLabel": {
+      "color": "#94a3b8"
+    },
+    "nameTextStyle": {
+      "color": "#cbd5e1"
+    },
+    "splitLine": {
+      "lineStyle": {
+        "color": "rgba(148, 163, 184, 0.16)"
+      }
+    }
+  },
+  "series": [
+    {
+      "name": "Old target",
+      "type": "scatter",
+      "symbol": "diamond",
+      "symbolSize": 24,
+      "itemStyle": {
+        "color": "rgba(91, 42, 105, 0.12)",
+        "borderColor": "#6d2d7b",
+        "borderWidth": 3
+      },
+      "label": {
+        "show": true,
+        "formatter": "Happiness old",
+        "position": "left",
+        "distance": 10,
+        "color": "#a16ab8",
+        "fontFamily": "Segoe Print, Comic Sans MS, sans-serif",
+        "fontSize": 15,
+        "fontWeight": 600
+      },
+      "data": [
+        {
+          "name": "Happiness",
+          "value": [0.2, -0.6]
+        }
+      ]
+    },
+    {
+      "name": "New target",
+      "type": "scatter",
+      "symbol": "diamond",
+      "symbolSize": 24,
+      "itemStyle": {
+        "color": "#7d2a91",
+        "borderColor": "#a855f7",
+        "borderWidth": 2
+      },
+      "label": {
+        "show": true,
+        "formatter": "{b}",
+        "position": "right",
+        "distance": 10,
+        "color": "#9b55bb",
+        "fontFamily": "Segoe Print, Comic Sans MS, sans-serif",
+        "fontSize": 17,
+        "fontWeight": 700
+      },
+      "data": [
+        {
+          "name": "Happiness",
+          "value": [0.7, -0.6]
+        }
+      ]
+    },
+    {
+      "name": "Old context",
+      "type": "scatter",
+      "symbol": "circle",
+      "symbolSize": 22,
+      "itemStyle": {
+        "color": "rgba(214, 137, 107, 0.08)",
+        "borderColor": "#d6896b",
+        "borderWidth": 3
+      },
+      "data": [
+        {
+          "name": "can",
+          "value": [0.6, 0.8]
+        },
+        {
+          "name": "light",
+          "value": [0.3, 0.6]
+        },
+        {
+          "name": "even",
+          "value": [-0.9, -0.2]
+        }
+      ]
+    },
+    {
+      "name": "New context",
+      "type": "scatter",
+      "symbol": "circle",
+      "symbolSize": 18,
+      "itemStyle": {
+        "color": "#d6896b",
+        "borderColor": "#f0b08f",
+        "borderWidth": 1
+      },
+      "label": {
+        "show": true,
+        "formatter": "{b}",
+        "position": "right",
+        "distance": 10,
+        "color": "#d89374",
+        "fontFamily": "Segoe Print, Comic Sans MS, sans-serif",
+        "fontSize": 17,
+        "fontWeight": 700
+      },
+      "data": [
+        {
+          "name": "can",
+          "value": [0.7, 0.7]
+        },
+        {
+          "name": "light",
+          "value": [0.2, 0.8]
+        },
+        {
+          "name": "even",
+          "value": [-0.9, -0.2]
+        }
+      ]
+    },
+    {
+      "name": "Update direction",
+      "type": "lines",
+      "coordinateSystem": "cartesian2d",
+      "z": 1,
+      "silent": true,
+      "symbol": ["none", "arrow"],
+      "symbolSize": 10,
+      "lineStyle": {
+        "color": "#e2e8f0",
+        "width": 2,
+        "type": "dashed",
+        "opacity": 0.72,
+        "curveness": 0
+      },
+      "data": [
+        {
+          "name": "Happiness",
+          "coords": [[0.2, -0.6], [0.7, -0.6]]
+        },
+        {
+          "name": "can",
+          "coords": [[0.6, 0.8], [0.7, 0.7]]
+        },
+        {
+          "name": "light",
+          "coords": [[0.3, 0.6], [0.2, 0.8]]
+        }
+      ]
+    }
+  ]
+}

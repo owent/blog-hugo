@@ -41,8 +41,11 @@ img {
   display: inherit;
 }
 
+strong {
+  color: $strong-color
+}
+
 canvas {
-  max-width: 80%;
   width: 60%;
   margin: auto;
 }

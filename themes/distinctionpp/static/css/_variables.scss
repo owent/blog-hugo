@@ -1,15 +1,19 @@
 // Config
-$font-content: "Sarasa Gothic SC Semibold", "Sarasa Gothic SC",
-  "Sarasa Fixed SC Semibold", "Sarasa Fixed SC", "Noto Sans Mono", "Noto Mono",
-  "Noto Sans SC", "Noto Sans", "Noto Sans CJK SC", Roboto, "Microsoft YaHei",
+$font-content: "更纱黑体", "Sarasa Gothic SC",
+  "等距更纱黑体", "Sarasa Fixed SC", "Noto Sans Mono", "Noto Mono",
+  "Noto Sans SC", "Noto Sans", "Noto Sans CJK SC",
+  "Maple Mono Normal NF CN", "Maple Mono Normal CN",
+  Roboto, "Microsoft YaHei",
   "Apple LiGothic Medium", Consolas, monospace, sans;
-$font-code: "Sarasa Mono SC Semibold", "Sarasa Mono SC",
-  "Sarasa Mono CL Semibold", "Sarasa Mono CL", "Noto Sans Mono", "Noto Mono",
+$font-code: "Maple Mono Normal NF CN", "Maple Mono Normal CN",
+  "等距更纱黑体", "Sarasa Mono SC","Sarasa Mono CL",
+  "Noto Sans Mono", "Noto Mono",
   "Noto Sans Mono SC", "Noto Sans Mono CJK SC", "Roboto Mono", "Microsoft YaHei",
   Consolas, monospace, sans;
-$font-title: "Sarasa UI SC", "Sarasa Gothic SC", "Sarasa Fixed SC",
-  "Noto Sans Mono", "Noto Mono", "Noto Sans SC", "Noto Sans", "Noto Sans CJK SC",
-  Roboto, "Microsoft YaHei", "Apple LiGothic Medium", Consolas, monospace, sans;
+$font-title: "更纱黑体", "Sarasa UI SC", "Sarasa Gothic SC", "Sarasa Fixed SC",
+  "等距更纱黑体", "Noto Sans Mono", "Noto Mono", "Noto Sans SC", "Noto Sans", "Noto Sans CJK SC",
+  "Maple Mono Normal NF CN", "Maple Mono Normal CN", Roboto, "Microsoft YaHei", "Apple LiGothic Medium", Consolas, monospace, sans;
+
 $font-weight-title: Bold;
 
 $title-color: #ffffff;
@@ -22,6 +26,7 @@ $gray-dark: DarkGray;
 $gray-lighter: LightGray;
 $gray: Gray;
 $border-width: 0.05rem;
+$strong-color: #096734;
 
 // CSS3 transition
 $transition-base: all 0.2s ease-in-out !default;
