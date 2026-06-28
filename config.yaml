@@ -309,6 +309,19 @@ markup:
       definitionList: true
       footnote: true
       linkify: true
+      passthrough:
+        delimiters:
+          inline:
+            - - '\('
+              - '\)'
+            - - '$'
+              - '$'
+          block:
+            - - '\['
+              - '\]'
+            - - '$$'
+              - '$$'
+        enable: true
       strikethrough: true
       table: true
       taskList: true
