@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             // Create container and canvas
             const container = document.createElement('div');
             container.className = 'chartjs-container';
-            container.style.cssText = 'width: 100%; margin: 1rem 0;';
+            container.style.cssText = 'width: 100%; margin: 1rem auto;';
             
             const canvas = document.createElement('canvas');
             canvas.id = 'chartjs-codeblock-' + Math.random().toString(36).substr(2, 9);
@@ -661,7 +661,7 @@ mermaid.initialize(config);
         container.className = "excalidraw-container";
         container.style.height = codeEl.style.height || "auto";
         container.style.width = codeEl.style.width || "100%";
-        container.style.margin = codeEl.style.margin || "1rem 0";
+        container.style.margin = codeEl.style.margin || "1rem auto";
         container.appendChild(rootEl);
         preEl.parentNode.insertBefore(container, preEl);
         codeEl.textContent = "Loading excalidraw libraries...";
@@ -860,7 +860,7 @@ window.processDrawioCodeBlocks = function() {
         // Create container
         const container = document.createElement('div');
         container.className = 'drawio-container';
-        container.style.cssText = 'width: 100%; margin: 1rem 0;';
+        container.style.cssText = 'width: 100%; margin: 1rem auto;';
         
         // Create mxgraph div with data URL
         const mxDiv = document.createElement('div');

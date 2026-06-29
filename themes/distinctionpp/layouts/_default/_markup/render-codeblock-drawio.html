@@ -18,7 +18,7 @@
 {{- if ne $style "" -}}
   {{- $styleSuffix = printf "%s %s" $styleSuffix $style -}}
 {{- end -}}
-{{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height $styleSuffix -}}
+{{- $containerStyle := printf "width: %s; height: %s; margin: 1rem auto;%s" $width $height $styleSuffix -}}
 
 {{- $content := .Inner | replaceRE `(?s)^\s+|\s+$` "" -}}
 

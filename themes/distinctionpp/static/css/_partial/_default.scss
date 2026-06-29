@@ -9,9 +9,18 @@ ol {
   padding: 0;
 }
 
+html {
+  box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
 body {
   font-family: $font-content;
-  min-width: $body-min-width;
   @media (min-width: 1200px) {
     font-size: 1.25rem;
   }
@@ -36,9 +45,10 @@ h6 {
 }
 
 img {
-  max-width: 60%;
+  max-width: 100%;
+  height: auto;
+  display: block;
   margin: 0 auto;
-  display: inherit;
 }
 
 strong {
@@ -46,8 +56,10 @@ strong {
 }
 
 canvas {
-  width: 60%;
+  max-width: 100%;
+  height: auto;
   margin: auto;
+  display: block;
 }
 
 #container:before {
@@ -55,8 +67,11 @@ canvas {
 }
 
 #main {
-  padding: 2rem;
+  padding: 1rem;
   margin: 0 auto;
+  @media (min-width: 768px) {
+    padding: 2rem;
+  }
 }
 
 #main-content {
@@ -129,13 +144,12 @@ blockquote {
 }
 
 table {
-  width: 100%;
   max-width: 100%;
   margin-bottom: 1rem;
   display: block;
-  overflow-x: scroll;
+  overflow-x: auto;
 
-  border: $table-border-width solid $table-border-color;
+  // border: $table-border-width solid $table-border-color;
   th,
   td {
     padding: $table-cell-padding;

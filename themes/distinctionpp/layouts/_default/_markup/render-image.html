@@ -94,7 +94,7 @@
     {{- $content = $resource.Content -}}
   {{- end -}}
 
-  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height $styleSuffix -}}
+  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem auto;%s" $width $height $styleSuffix -}}
 
   {{- if $content -}}
     {{- /* Inline the content directly */ -}}
@@ -140,7 +140,7 @@
     {{- $content = $resource.Content -}}
   {{- end -}}
 
-  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height $styleSuffix -}}
+  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem auto;%s" $width $height $styleSuffix -}}
 
   {{- if $content -}}
     {{- /* Inline the content directly */ -}}
@@ -162,7 +162,7 @@
   {{- /* Generate unique ID */ -}}
   {{- $id := printf "drawio-image-%d" .Ordinal -}}
 
-  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height $styleSuffix -}}
+  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem auto;%s" $width $height $styleSuffix -}}
 
   {{- /* Use URL-based loading for draw.io - more reliable */ -}}
 <div class="drawio-container{{ with $class }} {{ . }}{{ end }}" style="{{ $containerStyle | safeCSS }}"{{ with $actualTitle }} title="{{ . }}"{{ end }}>
@@ -200,7 +200,7 @@
     {{- $content = $resource.Content -}}
   {{- end -}}
 
-  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $height $styleSuffix -}}
+  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem auto;%s" $width $height $styleSuffix -}}
 
   {{- if $content -}}
     {{- /* Inline the chart config */ -}}
@@ -247,7 +247,7 @@
     {{- $content = $resource.Content -}}
   {{- end -}}
 
-  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $echartsHeight $styleSuffix -}}
+  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem auto;%s" $width $echartsHeight $styleSuffix -}}
 
   {{- if $content -}}
     {{- /* Inline the option */ -}}
@@ -294,7 +294,7 @@
     {{- $content = $resource.Content -}}
   {{- end -}}
 
-  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem 0;%s" $width $plotlyHeight $styleSuffix -}}
+  {{- $containerStyle := printf "width: %s; height: %s; margin: 1rem auto;%s" $width $plotlyHeight $styleSuffix -}}
 
   {{- if $content -}}
     {{- /* Inline the option */ -}}
@@ -334,5 +334,24 @@
       {{- $resolvedSrc = printf "%s%s" $pageDir $src -}}
     {{- end -}}
   {{- end -}}
-<img src="{{ $resolvedSrc | safeURL }}"{{ with $alt }} alt="{{ . }}"{{ end }}{{ with $title }} title="{{ . }}"{{ end }} loading="lazy" />
+
+  {{- /* Apply parsed width/max-width/max-height/style to the <img>. When any of
+       these is set, render as a centered block (matching the SCSS default of
+       margin: 0 auto) so a narrow image does not stick to the left edge. */ -}}
+  {{- $hasImageStyle := or (ne $maxWidth "") (ne $maxHeight "") (ne $style "") (ne $class "") -}}
+  {{- $imageStyle := "" -}}
+  {{- if $hasImageStyle -}}
+    {{- if ne $maxWidth "" -}}
+      {{- $imageStyle = printf "%s max-width: %s;" $imageStyle $maxWidth -}}
+    {{- end -}}
+    {{- if ne $maxHeight "" -}}
+      {{- $imageStyle = printf "%s max-height: %s;" $imageStyle $maxHeight -}}
+    {{- end -}}
+    {{- if ne $style "" -}}
+      {{- $imageStyle = printf "%s %s" $imageStyle $style -}}
+    {{- end -}}
+    {{- /* display:block + margin:auto keeps narrow images centered. */ -}}
+    {{- $imageStyle = printf "%s display: block; margin: 1rem auto;" (strings.TrimSpace $imageStyle) -}}
+  {{- end -}}
+<img src="{{ $resolvedSrc | safeURL }}"{{ with $alt }} alt="{{ . }}"{{ end }}{{ with $actualTitle }} title="{{ . }}"{{ end }}{{ with $class }} class="{{ . }}"{{ end }}{{ with $imageStyle }} style="{{ . | safeCSS }}"{{ end }} loading="lazy" />
 {{- end -}}

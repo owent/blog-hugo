@@ -2,20 +2,41 @@
 @use '../_utils/mixin' as *;
 
 #archive-content, #index-content {
-    @include column-count(auto);
-    @include column-width(26rem);
-    @include column-gap(1rem);
+    // Distribute cards into as many equal-width columns as fit, with a fixed
+    // gap in both directions. To keep the grid visually regular, every card is
+    // forced to the same height; longer summaries are clipped.
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+
+    @media (min-width: 576px) {
+        grid-template-columns: repeat(auto-fill, minmax(min(26rem, 100%), 1fr));
+    }
 }
 
 .archive-article {
-    display: inline-block;
-    @include break-inside(avoid);
+    display: flex;
+    flex-direction: column;
+    height: 30rem;
+    overflow: hidden;
+
+    &.article-panel {
+        margin: 0;
+    }
 
     .archive-article-inner {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
         overflow: hidden;
 
         .article-title {
             word-wrap: break-word;
+        }
+
+        .article-summary {
+            flex: 1 1 auto;
+            min-height: 0;
         }
     }
 }

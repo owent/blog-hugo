@@ -44,8 +44,10 @@
 
 .article-summary {
     color: rgb(123, 125, 131);
-    max-height: 24rem;
-    overflow-y: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 6;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .article-more {

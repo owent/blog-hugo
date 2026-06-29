@@ -274,6 +274,19 @@ AGENTS.md (本文件，全局规范的唯一真相)
     └── references/embedding-syntax.md
 ```
 
+## 主题与样式开发
+
+- 主题源码位于 `themes/distinctionpp/`。
+- 样式源文件是 SCSS，入口为 `themes/distinctionpp/static/css/style.scss`；**不要直接编辑生成的 `themes/distinctionpp/static/css/style.css`**。
+- 修改 SCSS 后，在 `themes/distinctionpp` 目录下重新生成 CSS：
+
+  ```bash
+  sass -s compressed --source-map -c static/css/style.scss static/css/style.css
+  ```
+
+- 首页/归档页文章列表使用 CSS Grid 布局；默认单列，在 `576px` 以上切换为响应式多列。
+- 为保证网格整齐、行列间距一致，归档卡片使用固定高度，过长摘要通过 `-webkit-line-clamp` 截断。
+
 ## 禁止事项
 
 以下行为**严格禁止**：
