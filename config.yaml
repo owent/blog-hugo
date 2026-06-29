@@ -61,6 +61,8 @@ source: ""
 staticDir:
   - "source/post"
   - "source/static"
+# Maximum word (or CJK character) count of the auto-generated .Summary.
+summaryLength: 100
 # theme to use (located by default in /themes/THEMENAME/)
 themesDir: "themes"
 theme: "distinctionpp"

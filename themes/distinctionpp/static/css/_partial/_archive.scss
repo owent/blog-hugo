@@ -17,7 +17,7 @@
 .archive-article {
     display: flex;
     flex-direction: column;
-    height: 30rem;
+    height: 34rem;
     overflow: hidden;
 
     &.article-panel {
@@ -30,13 +30,45 @@
         flex-direction: column;
         overflow: hidden;
 
+        // Clamp the title so a long title cannot squeeze the summary out of the
+        // fixed-height card. h1 is the block-level clamp target; the <a> inside
+        // must also be block so the box model applies.
+        .article-header.archive-article-title {
+            flex: 0 0 auto;
+        }
+
+        .article-header.archive-article-title h1 {
+            display: -webkit-box;
+            line-clamp: 4;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
         .article-title {
+            display: block;
             word-wrap: break-word;
+            overflow-wrap: anywhere;
         }
 
         .article-summary {
-            flex: 1 1 auto;
+            flex: 0 1 auto;
             min-height: 0;
+        }
+
+        // Pin the "read more" link and the date footer to the bottom of the
+        // fixed-height card. The summary no longer grows to fill leftover
+        // space (it is capped by max-height), so margin-top:auto on the footer
+        // absorbs the remainder and keeps the date aligned across all cards
+        // regardless of how much summary text each one has.
+        .article-more {
+            flex: 0 0 auto;
+            margin-top: auto;
+        }
+
+        .article-panel-footer,
+        .archive-article-footer {
+            flex: 0 0 auto;
         }
     }
 }

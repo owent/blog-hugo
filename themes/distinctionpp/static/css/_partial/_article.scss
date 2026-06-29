@@ -44,10 +44,34 @@
 
 .article-summary {
     color: rgb(123, 125, 131);
-    display: -webkit-box;
-    -webkit-line-clamp: 6;
-    -webkit-box-orient: vertical;
     overflow: hidden;
+
+    // Keep the summary compact: tight spacing between paragraphs and lists so
+    // the fixed max-height shows as much text as possible.
+    p,
+    ul,
+    ol,
+    pre {
+        margin: 0 0 0.35rem;
+    }
+
+    ul,
+    ol {
+        padding-left: 1.2rem;
+    }
+
+    li {
+        margin: 0;
+    }
+
+    // Soft wrap long unbreakable tokens (code, URLs) instead of overflowing
+    // the card.
+    code,
+    pre {
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
 }
 
 .article-more {
