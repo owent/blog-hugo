@@ -11,7 +11,7 @@ noad: true
 img[src*="img.shields.io"] { display: inline-block !important; vertical-align: middle; margin: 0 2px; }
 </style>
 
-| 欧文韬 / OWenT | TEL. 18601690140 |
+| 欧文韬 / OWenT |
 | ------------------------------------------------------- | --------------------------------------------------------------- |
 | Blog：<https://owent.net>                               | Github：<https://github.com/owent>                              |
 | 地点： 上海                                             | ORCID：<https://orcid.org/0009-0005-4478-9343>                  |
