@@ -6,7 +6,12 @@ date: 2009-09-01
 noad: true
 ---
 
-| 欧文韬 / OWenT                                          | TEL. 18601690140                                                |
+<style>
+/* shields.io 徽章按内联显示，避免被主题默认的 display:block 拆到单独一行 */
+img[src*="img.shields.io"] { display: inline-block !important; vertical-align: middle; margin: 0 2px; }
+</style>
+
+| 欧文韬 / OWenT | TEL. 18601690140 |
 | ------------------------------------------------------- | --------------------------------------------------------------- |
 | Blog：<https://owent.net>                               | Github：<https://github.com/owent>                              |
 | 地点： 上海                                             | ORCID：<https://orcid.org/0009-0005-4478-9343>                  |
