@@ -1,164 +1,43 @@
-# Agent Skills 配置说明
+# blog-hugo Agent Skills
 
-## 概述
+`.agents/skills/` 是仓库 Skill 主副本。全局项目约束和写作基线只放在
+[AGENTS.md](../../AGENTS.md)；Skill 只保留任务独有流程。
 
-本目录包含针对 blog-hugo 仓库的 Agent Skills 主副本，用于指导不同
-AI 工具（GitHub Copilot / VS Code、Claude Code、Kilo Code、Roo Code、OpenCode 等）在撰写和润色技术博客文章时的行为。
+## Skills
 
-## 文件结构
+| Skill | 使用场景 | 不适用场景 |
+| --- | --- | --- |
+| [article-writer](article-writer/SKILL.md) | 新写文章、把笔记整理成新稿、生成新稿的标题和 front matter | 局部修改已有文章 |
+| [article-refiner](article-refiner/SKILL.md) | 润色、扩写、校对、事实修复或发布前检查已有文章 | 从零创建新文章 |
 
-```text
+快速分流：
+
+- “把这些笔记写成一篇新博客” → `article-writer`
+- “润色 `2610.md`，顺便修正事实错误” → `article-refiner`
+- “给现有文章补一张图” → `article-refiner`
+- “修改主题 SCSS”或“解释 Hugo 配置” → 不触发文章 Skill
+
+## Layout
+
+~~~text
 .agents/skills/
-├── README.md                 # 本文件
+├── README.md
 ├── article-writer/
-│   └── SKILL.md             # 起草新文章的 Skill
+│   ├── SKILL.md
+│   └── references/embedding-syntax.md
 └── article-refiner/
-    └── SKILL.md             # 润色已有文章的 Skill
-```
+    ├── SKILL.md
+    └── references/embedding-syntax.md
+~~~
 
-## Skill 列表
+`references/embedding-syntax.md` 仅在任务涉及图表嵌入时读取，不默认加载。
 
-### article-writer
+## Maintenance
 
-**用途**：从零创建技术博客文章
+1. 只编辑 `.agents/skills/` 主副本，不直接编辑 `.claude/skills/`。
+2. `description` 写清用户意图、适用场景和相邻 Skill 边界；正文只保留任务独有流程、易错点和验收差异。
+3. 删除版本历史、维护日期、重复的全局写作规则和 Agent 可从仓库直接推断的内容。
+4. 使用可用的 Agent Skills 校验器检查目录名、`name`、`description` 和 YAML。
+5. 在仓库根目录运行 `sync-skills.ps1`，再检查哈希和 `git diff --check`。
 
-**触发条件**：
-
-- 用户说"写篇关于 XXX 的文章"
-- 将笔记整理成博客草稿
-- 生成标题/摘要/front matter
-- 添加图表到文章
-
-**核心能力**：
-
-- 生成 3 个标题候选 + 推荐
-- 生成合法 YAML front matter
-- 创建结构化正文
-- 建议合适的图表
-
-**文件**：[`article-writer/SKILL.md`](article-writer/SKILL.md)
-
-### article-refiner
-
-**用途**：润色、完善已有文章
-
-**触发条件**：
-
-- 用户说"润色这篇文章"
-- 修正事实错误
-- 优化结构和表达
-- 发布前校对
-
-**核心能力**：
-
-- 按优先级分类改进（P0-P3）
-- 保留作者核心观点
-- 补充边界条件和坑点
-- 优化图表
-
-**文件**：[`article-refiner/SKILL.md`](article-refiner/SKILL.md)
-
-## 使用方式
-
-### 对于 AI Agent
-
-各 AI Agent 工具会从各自支持的 Skill 目录加载 `SKILL.md`。当前仓库采用：
-
-| 工具 | Skill 目录 |
-|------|-----------|
-| GitHub Copilot / VS Code / Copilot CLI / cloud agent | `.agents/skills/`（也支持 `.github/skills/`、`.claude/skills/`） |
-| Claude Code | `.claude/skills/` |
-| Kilo Code | `.agents/skills/`（官方也支持 `.claude/skills/` 兼容目录） |
-| Roo Code | `.agents/skills/`（`.roo/skills/` 仅在需要 Roo 专用覆盖时再用） |
-| OpenCode | `.agents/skills/`（官方也支持 `.claude/skills/` 兼容目录） |
-
-因此，本仓库只保留：
-
-- `.agents/skills/`：共享主副本
-- `.claude/skills/`：Claude Code 兼容镜像
-
-不再维护与主副本完全相同的 `.kilocode/skills/`、`.roo/skills/` 重复镜像。
-
-### 对于用户
-
-在与 AI 对话时，可以直接引用 skill：
-
-```text
-使用 article-writer 帮我写篇关于 Go 并发模型的文章
-```
-
-或让 AI 自动选择：
-
-```text
-请帮我完善这篇草稿
-```
-
-AI 会根据任务类型自动选择合适的 skill。
-
-## 修改流程
-
-**重要**：本目录（`.agents/skills/`）是所有 Skill 的**主副本**。
-
-### 修改步骤
-
-1. **编辑主副本**：修改 `.agents/skills/` 下的文件
-2. **同步 Claude 兼容镜像**：运行同步脚本
-
-```powershell
-# 在仓库根目录执行
-.\sync-skills.ps1
-```
-
-1. **验证同步结果**：脚本会自动检查所有文件的哈希值
-
-### 注意事项
-
-- 不要直接修改 `.claude/skills/` 下的文件
-- `.claude/skills/` 是通过脚本从 `.agents/skills/` 同步的
-- `.kilocode/skills/` 和 `.roo/skills/` 的纯重复镜像已移除；优先复用 `.agents/skills/`
-- 修改后务必更新 front matter 中的 `version` 和 `last-updated` 字段
-- 写作语气类规则优先放在 `AGENTS.md`；Skill 中只保留任务场景下必须执行的补充规则，避免重复成说明书
-- 若用户指出“AI 腔”“过度解释”“提示词味”，同步检查 `article-writer` 和 `article-refiner` 是否都覆盖了同类反模式
-
-## 配置一致性
-
-当前只校验 Claude 兼容镜像与主副本一致：
-
-```powershell
-# 验证 article-writer
-Get-FileHash .agents\skills\article-writer\SKILL.md,
-             .claude\skills\article-writer\SKILL.md
-
-# 验证 article-refiner
-Get-FileHash .agents\skills\article-refiner\SKILL.md,
-             .claude\skills\article-refiner\SKILL.md
-```
-
-## 与其他配置的关系
-
-```text
-AGENTS.md (项目主指南)
-    ├── 被 .claude/CLAUDE.md 引用
-    ├── 被 .github/instructions/hugo-articles.instructions.md 引用
-    └── 被各 Skill 引用
-
-.agents/skills/
-    ├── article-writer/SKILL.md (引用 AGENTS.md)
-    └── article-refiner/SKILL.md (引用 AGENTS.md)
-
-sync-skills.ps1 (同步脚本)
-    └── 将 .agents/skills/ 同步到 .claude/skills/
-```
-
-## 版本历史
-
-| 版本 | 日期 | 变更 |
-|------|------|------|
-| 1.0.0 | 2024 | 初始版本 |
-| 1.1.0 | 2025-03-27 | 增加质量检查清单、错误处理指引、明确 Skill 边界、添加使用示例 |
-| 1.1.1 | 2026-06-22 | 增加反 AI 腔维护要求，要求写作语气变化同步覆盖 writer/refiner |
-
-## 维护者
-
-- 主维护：owent
-- 修改前请阅读 [AGENTS.md](../../AGENTS.md)
+外部规范与调研依据见 [docs/ai/source-index.md](../../docs/ai/source-index.md)。

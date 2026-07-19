@@ -250,6 +250,18 @@ ins.adsbygoogle {
   // a mis-measurement (e.g. when another element already widened the page)
   // can never inflate the page width.
   max-width: 100% !important;
+
+  // AdSense occasionally mis-measures the slot (notably inside the floated
+  // TOC box) and hard-codes pixel widths with !important on its host
+  // elements (div#aswift_N_host, .google-aiuf, .goog-rentries, ...), making
+  // the creative stick out of the slot. Clamp the whole host subtree:
+  // max-width is independent from width in the cascade, so it constrains
+  // even an inline "width: 390px !important".
+  *,
+  *::before,
+  *::after {
+    max-width: 100% !important;
+  }
 }
 
 // Unfilled slots (no ad inventory, or the request failed) collapse

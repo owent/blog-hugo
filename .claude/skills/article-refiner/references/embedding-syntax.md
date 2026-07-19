@@ -36,7 +36,7 @@ flowchart TD
 }
 ```
 
-```echarts {extensions="gl"}
+```echarts {extensions="gl" height="500px" max-width="720px"}
 {
   "xAxis3D": { "type": "value" },
   "yAxis3D": { "type": "value" },
@@ -71,11 +71,11 @@ flowchart TD
 ![Plotly 图](2601-vis.plotly.json)
 ```
 
-图片标题里可以用 `{width=... height=... class=... style=... extensions=...}` 传参：
+图片标题里可以用 `{width=... height=... max-width=... max-height=... class=... style=... extensions=...}` 传参：
 
 ```markdown
-![3D 曲面](2601-surface.echarts.json {extensions=gl height=500px})
-![3D 曲面](2601-surface.plotly.json {extensions=gl3d height=500px})
+![3D 曲面](2601-surface.echarts.json "{extensions=gl width=100% max-width=720px height=500px}")
+![3D 曲面](2601-surface.plotly.json "{extensions=gl3d width=100% max-width=720px height=500px}")
 ```
 
 ## Shortcode 引用外部文件
@@ -83,8 +83,8 @@ flowchart TD
 在需要显式传参或复用文件时使用：
 
 ```markdown
-{{</* echarts src="2601-vis.echarts.json" extensions="gl" height="500px" */>}}{{</* /echarts */>}}
-{{</* plotly src="2601-vis.plotly.json" extensions="gl3d" height="500px" */>}}{{</* /plotly */>}}
+{{</* echarts src="2601-vis.echarts.json" extensions="gl" width="100%" max-width="720px" height="500px" */>}}{{</* /echarts */>}}
+{{</* plotly src="2601-vis.plotly.json" extensions="gl3d" width="100%" max-width="720px" height="500px" */>}}{{</* /plotly */>}}
 {{</* mermaid src="2601-flow.mermaid" */>}}{{</* /mermaid */>}}
 {{</* chart src="2601-perf.chart.json" */>}}{{</* /chart */>}}
 ```
@@ -106,7 +106,7 @@ flowchart TD
 3. **需要复用外部文件且图片语法不满足时** → Shortcode 引用外部文件
 4. **需要在 Markdown 中保留结构化参数或嵌入非 JSON/文本内容时** → Shortcode 内联
 
-> **推荐**：优先使用代码块或图片语法；Shortcode 仅在需要显式传参（如 `extensions="gl"`、`width`、`class`）或复用同一文件但渲染方式不同时使用。
+> **推荐**：优先使用代码块或图片语法；Shortcode 仅在需要显式传参（如 `extensions="gl"`、`width`、`max-width`、`max-height`、`class`）或复用同一文件但渲染方式不同时使用。
 
 ## Mermaid inline 校验要求
 
