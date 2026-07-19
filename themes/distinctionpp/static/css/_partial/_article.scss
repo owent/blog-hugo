@@ -93,7 +93,10 @@
 }
 
 .article-panel {
-    @include transition(all 0.5s ease-in-out);
+    // No transition here: with "all", breakpoint-driven changes (e.g. the
+    // 1200px font-size bump) become a ~0.5s animated full-article relayout on
+    // every window resize, which stalls the page. Nothing on the panel is
+    // meant to animate.
     background-color: $article-background;
     @include border-radius($border-radius);
     padding: 0.05rem;

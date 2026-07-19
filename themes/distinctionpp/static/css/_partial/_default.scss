@@ -94,60 +94,13 @@ canvas {
 }
 
 #main {
-  $background-c1: rgb(160, 160, 160);
-  $background-c2: rgb(176, 176, 176);
-  $background-c3: rgb(144, 144, 144);
-  $background-c4: rgb(128, 128, 128);
-  $background-c5: rgb(192, 192, 192);
-  background: -webkit-repeating-radial-gradient(
-      circle,
-      transparent,
-      transparent 3em,
-      $background-c1 1em,
-      transparent 6em,
-      $background-c2 6.5em
-    ),
-    -webkit-repeating-radial-gradient(ellipse farthest-corner, transparent 1em, $background-c3
-          1em, transparent 5em, $background-c3 2em),
-    -webkit-repeating-radial-gradient(circle, transparent, transparent 3em, $background-c4
-          1em, transparent 2em, $background-c4 4em),
-    -webkit-repeating-radial-gradient(circle, transparent 3em, $background-c4
-          1em, transparent 2em, $background-c4 4em),
-    $background-c5;
-  background: repeating-radial-gradient(
-      circle,
-      transparent,
-      transparent 3em,
-      $background-c1 1em,
-      transparent 6em,
-      $background-c2 6.5em
-    ),
-    repeating-radial-gradient(
-      ellipse farthest-corner,
-      transparent 1em,
-      $background-c3 1em,
-      transparent 5em,
-      $background-c3 2em
-    ),
-    repeating-radial-gradient(
-      circle,
-      transparent,
-      transparent 3em,
-      $background-c4 1em,
-      transparent 2em,
-      $background-c4 4em
-    ),
-    repeating-radial-gradient(
-      circle,
-      transparent 3em,
-      $background-c4 1em,
-      transparent 2em,
-      $background-c4 4em
-    ),
-    $background-c5;
-  background-blend-mode: multiply;
+  // Performance: the original four stacked repeating-radial-gradient layers
+  // (with background-blend-mode: multiply) were re-rasterized on every window
+  // resize, stalling the UI for seconds on long pages. The exact same pattern
+  // is now baked into a static tile (images/main-bg.png, rendered from the
+  // original gradient stack) which the browser only decodes once.
+  background: rgb(192, 192, 192) url(images/main-bg.png) repeat;
   background-size: 10em 10em;
-  background-position: 0 0, 5em 5em, 15em 50em;
 }
 
 blockquote {
@@ -254,10 +207,23 @@ iframe {
 
 // Display math does not line-wrap. Let the formula scroll inside its own box
 // instead of inflating the page width.
+//
+// Performance: a math-heavy page carries thousands of KaTeX spans, and
+// re-wrapping them on every window resize used to stall the UI for seconds.
+// content-visibility lets the browser skip layout/paint for offscreen display
+// formulas and for the hidden MathML semantics layer, which removes almost
+// all of that resize cost. Unlike display:none, content-visibility:hidden
+// keeps the MathML in the accessibility tree.
 .katex-display {
   overflow-x: auto;
   overflow-y: hidden;
   padding: 0.1rem 0;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 3em;
+}
+
+.katex-mathml {
+  content-visibility: hidden;
 }
 
 mjx-container[display="true"] {
