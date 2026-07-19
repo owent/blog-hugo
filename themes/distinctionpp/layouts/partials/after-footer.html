@@ -982,6 +982,102 @@ document.addEventListener('DOMContentLoaded', (event) => {
 </script>
 <!-- style import end -->
 {{- end }}
+{{- if $.Site.Params.adsense }}
+<!-- adsense empty-slot watchdog begin -->
+<script type="text/javascript">
+// Collapse ad slots that AdSense marks as filled but that actually contain a
+// provably empty creative: a data:text/html iframe document with an empty
+// body. Without this, such slots stay on the page as blank boxes. Slots that
+// later receive a real creative (the iframe src is swapped) are restored.
+// Slots still loading (no iframe yet) are never touched: hiding a pending
+// slot would prevent AdSense from measuring and filling it.
+(function () {
+    function isEmptyDataDoc(src) {
+        if (!src || src.indexOf('data:text/html') !== 0) {
+            return false;
+        }
+        var comma = src.indexOf(',');
+        if (comma < 0) {
+            return false;
+        }
+        var meta = src.slice(0, comma);
+        var data = src.slice(comma + 1);
+        var text;
+        try {
+            text = meta.indexOf(';base64') >= 0 ? atob(data) : decodeURIComponent(data);
+        } catch (e) {
+            return false;
+        }
+        var body = text.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+        if (!body) {
+            return false;
+        }
+        return body[1].replace(/<!--[\s\S]*?-->|\s/g, '') === '';
+    }
+
+    function updateSlot(ins) {
+        var frame = ins.querySelector('iframe');
+        var empty = ins.getAttribute('data-ad-status') === 'filled'
+            && frame
+            && isEmptyDataDoc(frame.getAttribute('src'));
+        var wrapper = ins.closest('.ads-container, .ads-placeholder');
+        var targets = wrapper && wrapper !== ins ? [ins, wrapper] : [ins];
+        for (var i = 0; i < targets.length; i++) {
+            var el = targets[i];
+            if (empty) {
+                if (!el.hasAttribute('data-ad-empty-hidden')) {
+                    el.setAttribute('data-ad-empty-hidden', '1');
+                    el.style.display = 'none';
+                }
+            } else if (el.hasAttribute('data-ad-empty-hidden')) {
+                el.removeAttribute('data-ad-empty-hidden');
+                el.style.display = '';
+            }
+        }
+    }
+
+    function sweep() {
+        var list = document.querySelectorAll('ins.adsbygoogle');
+        for (var i = 0; i < list.length; i++) {
+            updateSlot(list[i]);
+        }
+    }
+
+    function start() {
+        sweep();
+        // AdSense rewrites slot DOM asynchronously (status flips, iframe
+        // insertion, src swaps), so re-check on every relevant mutation.
+        var observer = new MutationObserver(function (mutations) {
+            for (var i = 0; i < mutations.length; i++) {
+                var node = mutations[i].target;
+                var ins = node.nodeType === 1 && node.closest ? node.closest('ins.adsbygoogle') : null;
+                if (ins) {
+                    updateSlot(ins);
+                }
+            }
+        });
+        observer.observe(document.body, {
+            attributes: true,
+            childList: true,
+            subtree: true,
+            attributeFilter: ['data-ad-status', 'src']
+        });
+        // Slots injected late by Auto Ads are caught by the observer above;
+        // a few timed sweeps act as a safety net.
+        for (var t = 1; t <= 6; t++) {
+            setTimeout(sweep, 2000 * t);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', start);
+    } else {
+        start();
+    }
+})();
+</script>
+<!-- adsense empty-slot watchdog end -->
+{{- end }}
 {{- with $.Site.Params.Content }}
   {{- with .after_footer }}
     {{- range . -}}
