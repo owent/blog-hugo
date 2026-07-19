@@ -228,12 +228,13 @@ params:
       # after_body:
       after_footer: |
         <!-- article_after_footer -->
+        <!-- FWR 关闭：Google 会用负 margin 把广告拉满视口宽，与本站宽度钳制冲突导致左偏 -->
         <ins class="adsbygoogle ads_infeed"
             style="display:block"
             data-ad-client="ca-pub-8180054975285991"
             data-ad-slot="5599802929"
             data-ad-format="rectangle, horizontal"
-            data-full-width-responsive="true"></ins>
+            data-full-width-responsive="false"></ins>
         <script>
         (adsbygoogle = window.adsbygoogle || []).push({});
         </script>
@@ -241,24 +242,27 @@ params:
       # after_comments:
       after_toc: |
         <!-- after_toc -->
+        <!-- FWR 关闭：该槽位在浮动的 #toc 盒内，Google 官方建议受限/浮动容器内禁用，
+             否则会写入负 margin + 视口宽度造成错位 -->
         <ins class="adsbygoogle ads_toc"
             style="display:block"
             data-ad-client="ca-pub-8180054975285991"
             data-ad-slot="1249494377"
             data-ad-format="rectangle, vertical"
-            data-full-width-responsive="true"></ins>
+            data-full-width-responsive="false"></ins>
         <script>
         (adsbygoogle = window.adsbygoogle || []).push({});
         </script>
     page:
       after_body: |
         <!-- article_after_footer -->
+        <!-- FWR 关闭：同 article.after_footer -->
         <ins class="adsbygoogle ads_infeed"
             style="display:block"
             data-ad-client="ca-pub-8180054975285991"
             data-ad-slot="5599802929"
             data-ad-format="rectangle, horizontal"
-            data-full-width-responsive="true"></ins>
+            data-full-width-responsive="false"></ins>
         <script>
         (adsbygoogle = window.adsbygoogle || []).push({});
         </script>
