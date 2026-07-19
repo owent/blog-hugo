@@ -13,6 +13,15 @@ html {
   box-sizing: border-box;
 }
 
+// The page itself must never scroll horizontally: one over-wide element (math
+// formula, ad iframe, embed) otherwise inflates the page width on mobile and
+// pushes the whole article column off screen. Wide elements below handle
+// their own scrolling instead.
+html,
+body {
+  overflow-x: hidden;
+}
+
 *,
 *::before,
 *::after {
@@ -67,8 +76,14 @@ canvas {
 }
 
 #main {
-  padding: 1rem;
+  // Narrow screens: trim the page padding so more width goes to body text.
+  // Together with the .article-panel-inner padding this keeps roughly 22 CJK
+  // characters per line on a ~390px phone at the default 16px font size.
+  padding: 0.5rem;
   margin: 0 auto;
+  @media (min-width: 576px) {
+    padding: 1rem;
+  }
   @media (min-width: 768px) {
     padding: 2rem;
   }
@@ -231,21 +246,74 @@ div.mermaid[data-processed], pre.mermaid[data-processed] {
   text-align: center;
 }
 
-.ads_infeed {
-  height: 50px;
-  max-height: 50px;
-
-  @media (min-width: 768px) {
-    height: 64px;
-    max-height: 64px;
-  }
-  @media (min-width: 1200px) {
-    height: 80px;
-    max-height: 80px;
-  }
+// Embeds (bilibili/youtube players, utterances, ad iframes) may carry a fixed
+// width attribute; never let them exceed the column.
+iframe {
+  max-width: 100%;
 }
 
-.ads_menu {
-  height: 50px;
-  max-height: 57px;
+// Display math does not line-wrap. Let the formula scroll inside its own box
+// instead of inflating the page width.
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.1rem 0;
+}
+
+mjx-container[display="true"] {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+// ---- AdSense slots ----
+// The rules below are shaped by AdSense policy:
+// - No fixed heights and no clipping on ad slots: squeezing or cutting a
+//   filled ad counts as modifying the ad, which is prohibited. The ad script
+//   sizes the slot itself.
+// - Collapsing *unfilled* slots is officially supported via the
+//   data-ad-status attribute the script sets on the <ins>.
+.ads-container,
+.ads-placeholder {
+  max-width: 100%;
+  text-align: center;
+}
+
+ins.adsbygoogle {
+  // Full-width-responsive ads measure this box; keep it inside the column so
+  // a mis-measurement (e.g. when another element already widened the page)
+  // can never inflate the page width.
+  max-width: 100% !important;
+}
+
+// Unfilled slots (no ad inventory, or the request failed) collapse
+// completely: no empty grey bar, no stray spacing. This also covers visitors
+// with ad blockers, where the script never runs and the slot stays empty.
+ins.adsbygoogle[data-ad-status="unfilled"] {
+  display: none !important;
+}
+
+.ads-container:has(ins.adsbygoogle[data-ad-status="unfilled"]) {
+  display: none;
+}
+
+// A slot with no rendered ad yet (pending request) reserves no space either:
+// the <ins> is empty and zero-height until the ad arrives, so the rules above
+// and below only take visual effect once data-ad-status is set.
+#main .ads-container:has(ins.adsbygoogle[data-ad-status="filled"]) {
+  // Filled ads get a consistent vertical rhythm with the surrounding content.
+  margin: 0.75rem 0;
+
+  // Small neutral marker above filled ads. A plain "广告" label is allowed by
+  // AdSense (only misleading labels are prohibited) and keeps the slot
+  // visually separated from article content.
+  &::before {
+    content: "广告";
+    display: block;
+    margin-bottom: 0.2rem;
+    font-size: 0.65rem;
+    line-height: 1;
+    letter-spacing: 0.1em;
+    color: #9a9a9a;
+  }
 }

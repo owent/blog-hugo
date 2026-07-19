@@ -88,8 +88,14 @@
 </script>
 {{- end }}
 <script type="module">
-{{- "// import * as Popper from \"@popperjs/core\";" | safeJS }}
-{{- "// import * as bootstrap from \"bootstrap\";" | safeJS }}
+{{- if isset $imports "bootstrap" }}
+// Load bootstrap (ESM) so the data-api components (e.g. the mobile nav
+// toggler using data-bs-toggle="collapse") actually work. Use a dynamic
+// import so a CDN failure does not kill the rest of this module script.
+import("bootstrap").catch((e) => {
+    if (window.console) { console.error("Failed to load bootstrap:", e); }
+});
+{{- end }}
 {{- with $.Site.Params.modules }}
     {{- with .module }}
         {{- range . }}
