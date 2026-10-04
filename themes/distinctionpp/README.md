@@ -113,6 +113,14 @@ services:
 
 All of them are enabled by default. You can edit them in `widget` setting.
 
+## Article lists
+
+Home, category and tag lists use a responsive grid. Each card's content panel is
+26rem high; titles show up to three lines and summaries up to eight lines. List
+summaries use plain text truncated to 240 characters plus an ellipsis, including
+summaries defined with `<!--more-->` or front matter. The full article retains its
+formatting.
+
 ## shortcodes
 
 ### chart

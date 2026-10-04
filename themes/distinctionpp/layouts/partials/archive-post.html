@@ -18,7 +18,7 @@
       {{- end}}
     {{- end}}
   {{- end -}}
-    <header class="article-header archive-article-title">{{ partial "post/title.html" . }}</header>
+    <header class="article-header archive-article-title" title="{{ .Title }}">{{ partial "post/title.html" . }}</header>
   {{- if not ( .Params.noad ) }}
     {{- with $.Site.Params.Ads }}
       {{- with .archive}}
@@ -28,7 +28,7 @@
       {{- end}}
     {{- end}}
   {{- end -}}
-    <div class="article-summary">{{ .Summary }}</div>
+    <div class="article-summary">{{ .Summary | plainify | htmlUnescape | replaceRE "\\s+" " " | strings.TrimSpace | strings.Truncate 240 "…" }}</div>
   {{- if not ( .Params.noad ) }}
     {{- with $.Site.Params.Ads }}
       {{- with .archive}}

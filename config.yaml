@@ -240,19 +240,7 @@ params:
         </script>
       # before_comments:
       # after_comments:
-      after_toc: |
-        <!-- after_toc -->
-        <!-- FWR 关闭：该槽位在浮动的 #toc 盒内，Google 官方建议受限/浮动容器内禁用，
-             否则会写入负 margin + 视口宽度造成错位 -->
-        <ins class="adsbygoogle ads_toc"
-            style="display:block"
-            data-ad-client="ca-pub-8180054975285991"
-            data-ad-slot="1249494377"
-            data-ad-format="rectangle, vertical"
-            data-full-width-responsive="false"></ins>
-        <script>
-        (adsbygoogle = window.adsbygoogle || []).push({});
-        </script>
+      # after_toc:
     page:
       after_body: |
         <!-- article_after_footer -->
