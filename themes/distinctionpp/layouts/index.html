@@ -1,4 +1,8 @@
 {{ define "main-content" }}
+<div class="archive-heading">
+  <h2>{{ T "recentPosts" }}</h2>
+  {{ with .OutputFormats.Get "rss" }}<a href="{{ .RelPermalink }}">{{ T "rssFeed" }} <span aria-hidden="true">↗</span></a>{{ end }}
+</div>
 <div id="index-content">{{ partial "archive.html" . }}</div>
 {{ partial "page-nav.html" . }}
 {{ end }}

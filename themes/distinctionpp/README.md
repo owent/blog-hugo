@@ -115,11 +115,14 @@ All of them are enabled by default. You can edit them in `widget` setting.
 
 ## Article lists
 
-Home, category and tag lists use a responsive grid. Each card's content panel is
-26rem high; titles show up to three lines and summaries up to eight lines. List
-summaries use plain text truncated to 240 characters plus an ellipsis, including
-summaries defined with `<!--more-->` or front matter. The full article retains its
-formatting.
+Home, category and tag lists use a responsive grid with a light background and
+white cards. Each card's content panel is 28rem high; titles show up to three lines.
+Summaries retain paragraphs, headings, emphasis, links, lists and code formatting.
+They are truncated to 480 characters with balanced HTML tags, then limited to
+eight lines inside a clipped viewport with a fade at the bottom. This also bounds
+summaries defined with `<!--more-->` or front matter. Interactive embeds are shown
+only in the full article. Dates appear above the title; up to three tag links and
+the read-more link stay aligned at the bottom. Full article styles are unchanged.
 
 ## shortcodes
 

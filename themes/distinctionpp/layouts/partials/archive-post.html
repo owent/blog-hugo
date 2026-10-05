@@ -18,7 +18,10 @@
       {{- end}}
     {{- end}}
   {{- end -}}
-    <header class="article-header archive-article-title" title="{{ .Title }}">{{ partial "post/title.html" . }}</header>
+    <div class="archive-card-meta">{{ partial "post/date.html" . }}</div>
+    <header class="article-header archive-article-title">
+      <h2 itemprop="name"><a class="article-title" href="{{ .Permalink }}" target="_blank" rel="noopener" itemprop="url" title="{{ .Title }}">{{ .Title }}</a></h2>
+    </header>
   {{- if not ( .Params.noad ) }}
     {{- with $.Site.Params.Ads }}
       {{- with .archive}}
@@ -28,7 +31,10 @@
       {{- end}}
     {{- end}}
   {{- end -}}
-    <div class="article-summary">{{ .Summary | plainify | htmlUnescape | replaceRE "\\s+" " " | strings.TrimSpace | strings.Truncate 240 "…" }}</div>
+    <div class="article-summary">
+      {{- /* Keep rendered formatting and balanced tags, without duplicating heading IDs across cards. */ -}}
+      <div class="archive-summary-content">{{ .Summary | replaceRE `\s+id="[^"]*"` "" | safeHTML | strings.Truncate 480 "…" }}</div>
+    </div>
   {{- if not ( .Params.noad ) }}
     {{- with $.Site.Params.Ads }}
       {{- with .archive}}
@@ -38,8 +44,14 @@
       {{- end}}
     {{- end}}
   {{- end -}}
-    <div class="article-more"><a href="{{ .Permalink }}" target="_blank" itemprop="url">{{ T "readMore" }}</a></div>
-    <div class="article-panel-footer archive-article-footer">{{ partial "post/date.html" . }}</div>
+    <footer class="archive-article-footer">
+      <div class="archive-card-tags">
+        {{- range first 3 (.GetTerms "tags") }}
+        <a class="archive-card-tag" href="{{ .RelPermalink }}" title="{{ .LinkTitle }}">{{ .LinkTitle }}</a>
+        {{- end }}
+      </div>
+      <div class="article-more"><a href="{{ .Permalink }}" target="_blank" rel="noopener" itemprop="url" aria-label="{{ T "readMore" }}: {{ .Title }}">{{ T "readMore" }}<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg></a></div>
+    </footer>
   </div>
   {{- if not ( .Params.noad ) }}
     {{- with $.Site.Params.Ads }}
