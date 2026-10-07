@@ -29,11 +29,27 @@ jobs:
             rm -rf "${GITHUB_WORKSPACE}/hugo-latest";
           fi
           ln -s "$HUGO_ROOT" "${GITHUB_WORKSPACE}/hugo-latest" ;
+      - name: Install D2
+        env:
+          D2_VERSION: v0.9.0
+        run: |
+          set -euo pipefail
+          D2_ROOT="${RUNNER_TEMP}/d2"
+          mkdir -p "$D2_ROOT"
+          cd "$D2_ROOT"
+          D2_ARCHIVE="d2-${D2_VERSION}-linux-amd64.tar.gz"
+          D2_URL="https://github.com/d2lang/d2/releases/download/${D2_VERSION}"
+          curl --fail --location --retry 3 "$D2_URL/$D2_ARCHIVE" -o "$D2_ARCHIVE"
+          curl --fail --location --retry 3 "$D2_URL/SHA256SUMS" -o SHA256SUMS
+          grep " $D2_ARCHIVE$" SHA256SUMS | sha256sum --check --strict
+          tar -xzf "$D2_ARCHIVE"
+          echo "$D2_ROOT/d2-${D2_VERSION}/bin" >> "$GITHUB_PATH"
       - name: Build blog website
         run: |
           echo "GITHUB_WORKSPACE=${GITHUB_WORKSPACE}"
           cd "${GITHUB_WORKSPACE}"
           export PATH="${GITHUB_WORKSPACE}/hugo-latest:$PATH"
+          python3 scripts/test-d2.py -v
           bash "deploy.sh"
       - name: Deploy blog website
         run: |

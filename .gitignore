@@ -9,6 +9,9 @@ db.json
 
 node_modules
 
+/assets/d2-generated/
+/_agent_tmp/
+
 /.vscode/settings.json
 
 /.kilocode/package-lock.json

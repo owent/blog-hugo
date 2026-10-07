@@ -8,6 +8,7 @@
 {{- $isChart := strings.HasSuffix (lower $src) ".chart.json" -}}
 {{- $isEcharts := strings.HasSuffix (lower $src) ".echarts.json" -}}
 {{- $isPlotly := strings.HasSuffix (lower $src) ".plotly.json" -}}
+{{- $isD2 := strings.HasSuffix (lower $src) ".d2" -}}
 
 {{- /* Parse attributes from title (format: "title {width=xxx height=xxx}") */ -}}
 {{- $width := "100%" -}}
@@ -62,7 +63,10 @@
   {{- $styleSuffix = printf "%s %s" $styleSuffix $style -}}
 {{- end -}}
 
-{{- if $isMermaid -}}
+{{- if $isD2 -}}
+  {{- $attrs := dict "alt" $alt "title" $actualTitle "width" $width "height" $height "max-width" $maxWidth "max-height" $maxHeight "class" $class "style" $style -}}
+  {{- partial "d2/render.html" (dict "page" .Page "src" $src "attrs" $attrs "instance" (printf "image-%d" .Ordinal)) -}}
+{{- else if $isMermaid -}}
   {{- /* Mark page as having mermaid content */ -}}
   {{- .Page.Store.Set "themeExtensionHasMermaid" true -}}
   

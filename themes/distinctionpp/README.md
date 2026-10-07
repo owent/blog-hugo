@@ -236,6 +236,24 @@ All diagram and chart renderers accept `width`, `height`, `max-width`, `max-heig
 | **Chart.js** | `![](file.chart.json)` | ` ```chart ` or ` ```chartjs ` | `{{</* chart src="file.chart.json" */>}}` | `{{</* chart */>}}JSON{{</* /chart */>}}` |
 | **ECharts** | `![](file.echarts.json)` | ` ```echarts ` | `{{</* echarts src="file.echarts.json" */>}}` | `{{</* echarts */>}}JSON{{</* /echarts */>}}` |
 | **Plotly.js** | `![](file.plotly.json)` | ` ```plotly ` | `{{</* plotly src="file.plotly.json" */>}}` | `{{</* plotly */>}}JSON{{</* /plotly */>}}` |
+| **D2** | `![](file.d2)` | ` ```d2 ` | `{{</* d2 src="file.d2" */>}}` | `{{</* d2 */>}}code{{</* /d2 */>}}` |
+
+### D2 build integration
+
+D2 diagrams use the native [D2 CLI](https://d2lang.com/tour/install/) at build time. No D2 JavaScript or WASM is loaded by the reader. SVG is embedded inline to preserve links and tooltips. Each occurrence has its own ID salt, including repeated references to the same file. On narrow screens diagrams keep their intrinsic width and scroll horizontally so text remains readable.
+
+In this repository, install Python 3.9+, Hugo, and D2 v0.9.0, then run:
+
+```bash
+python scripts/build-d2.py --buildDrafts --renderToMemory
+python scripts/test-d2.py -v
+```
+
+`HUGO_BINARY` and `D2_BINARY` can point to executables outside PATH. The wrapper runs Hugo with a temporary `params.d2.collect` config overlay to publish diagram requests to a temporary directory, renders every request into ignored `assets/d2-generated/` resources, then runs the requested Hugo build. Stale generated SVGs are removed after a successful render; a failed render keeps the previous outputs untouched. Both passes use the requested Hugo environment. Hugo flags are forwarded to the final build. D2 errors and invalid SVG stop the build before the final Hugo invocation; partial D2 output is discarded. Direct Hugo builds report missing generated SVGs as errors.
+
+Use local `src` paths relative to the article. Relative imports and images are resolved from the external D2 file's directory, or the article's directory for inline content. Set layout, theme, and padding in `vars.d2-config`. The wrapper exports only the root board. Remote icons still require network access during rendering. Re-run the wrapper after changing D2 sources, imports, or images, then use `hugo server` for preview; the wrapper is a one-shot build command.
+
+The templates live in the theme, while `scripts/build-d2.py` is the repository's build adapter. Other sites using the theme must also install this adapter (and use their own deployment entrypoint). D2 accepts the common sizing and style attributes listed above, plus `alt` for code blocks and shortcodes. The image syntax uses its normal alt text.
 
 ### Configuration
 

@@ -1,0 +1,17 @@
+vars: {
+  d2-config: {
+    layout-engine: elk
+    theme-id: 0
+    pad: 24
+  }
+}
+direction: right
+source: D2 文件 {
+  shape: page
+  tooltip: 同一个文件由图片语法和 Shortcode 分别引用
+}
+build: 构建时渲染
+svg: SVG {
+  link: https://d2lang.com/tour/exports/
+}
+source -> build -> svg

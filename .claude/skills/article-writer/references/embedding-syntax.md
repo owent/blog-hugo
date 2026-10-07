@@ -10,6 +10,10 @@ flowchart TD
     A[开始] --> B[处理]
 ```
 
+```d2
+开始 -> 处理
+```
+
 ```chart
 {
   "type": "line",
@@ -69,6 +73,7 @@ flowchart TD
 ![部署图](2601-deploy.drawio)
 ![ECharts 图](2601-vis.echarts.json)
 ![Plotly 图](2601-vis.plotly.json)
+![D2 架构图](2601-arch.d2)
 ```
 
 图片标题里可以用 `{width=... height=... max-width=... max-height=... class=... style=... extensions=...}` 传参：
@@ -87,6 +92,7 @@ flowchart TD
 {{</* plotly src="2601-vis.plotly.json" extensions="gl3d" width="100%" max-width="720px" height="500px" */>}}{{</* /plotly */>}}
 {{</* mermaid src="2601-flow.mermaid" */>}}{{</* /mermaid */>}}
 {{</* chart src="2601-perf.chart.json" */>}}{{</* /chart */>}}
+{{</* d2 src="2601-arch.d2" alt="D2 架构图" */>}}{{</* /d2 */>}}
 ```
 
 ## Shortcode 内联
@@ -101,7 +107,7 @@ flowchart TD
 
 ## 默认优先级
 
-1. **简短图表** → 代码块（`mermaid`、`chart`/`chartjs`、`drawio`、`excalidraw`、`echarts`、`plotly`）
+1. **简短图表** → 代码块（`mermaid`、`d2`、`chart`/`chartjs`、`drawio`、`excalidraw`、`echarts`、`plotly`）
 2. **较长或可复用** → 拆成外部文件，用图片语法引用
 3. **需要复用外部文件且图片语法不满足时** → Shortcode 引用外部文件
 4. **需要在 Markdown 中保留结构化参数或嵌入非 JSON/文本内容时** → Shortcode 内联
@@ -118,6 +124,13 @@ flowchart TD
 
 - ECharts 扩展是**增量加载**的：默认只加载核心包（含所有 2D 图表），3D 等扩展通过 `extensions="gl"` 声明后按需追加
 - Plotly.js 的 partial bundle 之间**互相覆盖**全局 `Plotly`，无法叠加：默认加载最小包（`plotly-basic`），当页面同时出现最小特性图表和声明了扩展的图表时，加载器会自动升级到完整包
+
+## D2 构建时渲染
+
+- 四种入口均输出内联 SVG；内联 Shortcode 为 `{{</* d2 */>}}开始 -> 处理{{</* /d2 */>}}`。
+- 安装 Python 3.9+、Hugo 和 D2 CLI 后，运行 `python scripts/build-d2.py --buildDrafts --renderToMemory`，不要用直接 Hugo 构建替代 D2 渲染检查。
+- `src` 使用相对文章目录的本地路径；相对导入和图片以外部 D2 文件目录为基准，内联图以文章目录为基准。更改依赖后也要重新运行构建脚本。
+- 布局和主题等参数写在 `vars.d2-config`；当前只输出根画板。接入细节与验证命令见 `themes/distinctionpp/README.md` 的 D2 小节。
 
 ## 资源命名规范
 
