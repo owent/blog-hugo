@@ -1,1 +1,7 @@
-{{ range .Paginator.Pages }}{{ partial "archive-post.html" . }}{{ end }}
+{{- $list := . -}}
+{{- range $index, $page := .Paginator.Pages -}}
+  {{- partial "archive-post.html" . -}}
+  {{- if and (not $list.Params.noad) (in (slice 5 11) $index) -}}
+    {{- partial "ads/slot.html" (dict "page" $page "kind" "archive") -}}
+  {{- end -}}
+{{- end -}}

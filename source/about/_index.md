@@ -47,7 +47,7 @@ img[src*="img.shields.io"] { display: inline-block !important; vertical-align: m
     - [xres-code-generator](https://github.com/owent/xres-code-generator) — 读表代码生成器
     - [xresloader-dump-bin](https://github.com/owent/xresloader-dump-bin) — 二进制 dump 工具
 - **[atframework](https://github.com/atframework)**：高性能、全异步、跨平台、去中心化的游戏服务器框架生态，包含 [Utility 库](https://github.com/atframework/atframe_utils)、[libatbus 高性能进程间通信](https://github.com/atframework/libatbus)\(小包单线程百万级QPS，大包单线程12Gbps/5Gbps吞吐\)、[libatapp 应用框架](https://github.com/atframework/libatapp)、[atsf4g-co 完整解决方案](https://github.com/atframework/atsf4g-co)、[cmake-toolset 构建系统](https://github.com/atframework/cmake-toolset)、[atgateway 的 C# 适配（可用于 Unity）](https://github.com/atframework/AtgwInnerCli-CSharp) 等等。
-- **[AICodeReviewer](https://github.com/atframework/AICodeReviewer)（AICR）**：自托管的多 VCS AI 代码审查编排服务。把 GitHub / Gitea / GitLab / P4 / SVN 等触发统一成一条 review 流水线，在沙箱里跑自选 agent（Kilo Code、Claude Code、opencode、Zoo Code、Copilot CLI），产出结构化结论回写到 PR 评论、issue 或 IM 机器人；带密钥脱敏、Prometheus 指标和 LLM 成本看板。[文档站](https://aicr.atframe.work)。
+- **[AICodeReviewer](https://github.com/atframework/AICodeReviewer)（AICR）**：自托管的多 VCS AI 代码审查编排服务。把 GitHub / Gitea / GitLab / P4 / SVN 等触发统一成一条 review 流水线，在沙箱里跑自选 agent（Kilo Code、Claude Code、opencode、Pi、Oh-My-Pi、Copilot CLI），产出结构化结论回写到 PR 评论、issue 或 IM 机器人；带密钥脱敏、Prometheus 指标和 LLM 成本看板。[文档站](https://aicr.atframe.work)。
 - **[hiredis-happ](https://github.com/owent/hiredis-happ)**：Redis 高可用接入，较早支持 redis cluster，带自动重试、断线重连、按需连接。
 - **[upload-to-github-release](https://github.com/xresloader/upload-to-github-release)**：GitHub Action，已上架 [Marketplace](https://github.com/marketplace/actions/upload-to-github-release)。
 
@@ -59,7 +59,7 @@ img[src*="img.shields.io"] { display: inline-block !important; vertical-align: m
 
 | 时间              | 公司 / 组织                      | 角色                                        | 参与项目（代号）                                                                                                                            |
 | ----------------- | -------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026.07 – 至今    | \*\*\*                           | —                                           | —                                                                                                                                           |
+| 2026.07 – 至今    | MyrionStudio                     | 服务端技术负责人                            | —                                                                                                                                           |
 | 2025.09 – 2026.06 | 游幻科技（上海）（追觅科技旗下） | 服务端技术负责人                            | UE / Unity 多语言生态游戏服务器、跨平台构建与研发工具、云原生与运维体系                                                                     |
 | 2017.09 – 2025.08 | 腾讯科技（上海）· 北极光工作室   | 后台组 · 专家工程师，部分项目的服务端主程序 | Maple，UE 搜打撤、TGF，UE 搜打撤，Pix（UE 大乱斗）、《钢之炼金术师》《疯狂动物城》手游；云观（可观测性 OTeam）、TDXA（分布式事务 OTeam）PMC |
 | 2016.10 – 2017.07 | 上海格奕网络科技                 | 后端技术负责人                              | 酋长万岁（手游 MMORPG）                                                                                                                     |

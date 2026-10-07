@@ -1,198 +1,180 @@
 @use '../variables' as *;
-@use '../_utils/mixin' as *;
-
-.toc {
-    color: #4078c0;
-    text-decoration: none;
-    // Long (English) headings must wrap instead of widening the card.
-    overflow-wrap: break-word;
-
-    ul {
-        list-style-type: none;
-
-        li {
-            a:not(:first-child) {
-                // patch for table of content in gohugo 
-                top: -.5em;
-                position: relative;
-                font-size: 75%;
-                line-height: 0;
-                vertical-align: baseline;
-            }
-        }
-    }
-
-    border: $article-toc-border;
-    @include border-radius($border-radius-sm);
-}
-
-.toc::before {
-    content: "Table Of Content";
-    font-size: 0.6rem;
-    font-style: italic;
-    color: gray;
-    border-bottom: $article-toc-border;
-}
-
-.article-header {
-    a {
-        color: rgb(51, 51, 51);
-    }
-
-    a:hover {
-        text-decoration: none;
-    }
-}
-
-.article-summary {
-    color: rgb(123, 125, 131);
-    overflow: hidden;
-}
-
-.article-more {
-    a {
-        color: rgb(34, 128, 221);
-        font-size: 0.8rem;
-        /*font-weight: bolder;*/
-    }
-
-    a:hover {
-        text-decoration: none;
-    }
-
-    a::after {
-        content: "»"
-    }
-}
 
 .article-panel {
-    // No transition here: with "all", breakpoint-driven changes (e.g. the
-    // 1200px font-size bump) become a ~0.5s animated full-article relayout on
-    // every window resize, which stalls the page. Nothing on the panel is
-    // meant to animate.
-    background-color: $article-background;
-    @include border-radius($border-radius);
-    padding: 0.05rem;
-    width: 100%;
-    margin: 0.6rem 0 0.6rem 0;
-
-    .article-panel-inner {
-        border: $article-inner-border;
-        background-color: $article-background;
-        @include border-radius($border-radius);
-        margin: 0.2rem 0.15rem 0.15rem 0.15rem;
-        padding: 0.8rem;
-
-        // Narrow screens: trade some inner padding for text width (see #main).
-        @media (max-width: 575.98px) {
-            padding: 0.6rem;
-        }
-
-        ul,
-        ol {
-            margin-left: 2rem;
-        }
-
-        .article-panel-footer {
-            background: #ddd;
-            /* border: $article-footer-border; */
-            /* @include border-radius($border-radius-sm); */
-            /* @include box-shadow(inset 0.05em 0.05em 0.25em rgb(72,72,72)); */
-            font-size: 0.8rem;
-            /* font-weight: bold; */
-            margin-bottom: 0.25rem;
-            overflow: hidden;
-            padding: 0.15rem 0.4rem;
-            /* text-shadow: 0 0 0.05rem #000; */
-            text-align: right;
-            color: #666;
-
-            a {
-                color: #000;
-            }
-
-            a:hover {
-                text-decoration: none;
-            }
-        }
-    }
-
-    .article-nav {
-        font-size: 0.8rem;
-    }
+  min-width: 0;
+  width: 100%;
+  margin: 0.5rem auto;
+  background: $article-background;
+  border: 1px solid $article-border-color;
+  border-radius: $border-radius-lg;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
 }
 
-#article-nav {
-    ul {
-        margin: 0;
-    }
+.article-panel-inner { padding: clamp(1rem, 3vw, 2.5rem); min-width: 0; }
+.article-header a { color: #172c42; text-decoration: none; }
+#main:has(.reading-panel) {
+  padding-top: 0.75rem;
+  @media (min-width: 768px) { padding-top: 1rem; }
+}
+.reading-panel {
+  --reading-padding: clamp(1rem, 3vw, 2.5rem);
+  --reading-top-padding: clamp(1rem, 2vw, 1.5rem);
+  margin: 0 auto;
+  background-image: $reading-surface-texture;
+  background-size: $reading-surface-size;
+  @media (forced-colors: active) { background-image: none; }
+  > .article-panel-inner {
+    padding: var(--reading-padding);
+    padding-top: var(--reading-top-padding);
+  }
+  > .article-panel-inner > .article-header {
+    background: $article-heading-background;
+    background-image: $article-heading-texture;
+    background-size: $article-heading-size;
+    border-radius: calc(#{$border-radius-lg} - 1px) calc(#{$border-radius-lg} - 1px) 0 0;
+    // Extend the title material to the panel edge while keeping text aligned.
+    margin-top: calc(-1 * var(--reading-top-padding));
+    margin-inline: calc(-1 * var(--reading-padding));
+    padding-top: var(--reading-top-padding);
+    padding-inline: var(--reading-padding);
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid $article-border-color;
+    overflow-wrap: anywhere;
+    @media (forced-colors: active) { background-image: none; }
+    h1 { font-size: clamp(1.55rem, 3vw, 2.2rem); line-height: 1.45; margin: 0; }
+  }
 }
 
-.article-meta {
-
-    ul,
-    ol {
-        margin-left: 0 !important;
-        list-style: none;
+.article-layout {
+  // Contain the directory float without constraining the prose to a column.
+  display: flow-root;
+  @media (min-width: 1200px) {
+    > .toc[open] {
+      float: right;
+      width: max-content;
+      // Keep a useful minimum, with the percentage cap taking priority.
+      min-width: min(18rem, 32%);
+      max-width: 32%;
+      margin: 0 0 1rem 2rem;
     }
-
-    li {
-        display: inline-block;
-    }
-
-    li:not(:first-child) {
-        ::before {
-            content: " / "
-        }
-    }
-
-    margin: 0 0 1rem 0;
+  }
 }
 
-.article-meta-left {
-    float: left;
-}
-
-.article-meta-right {
+.toc {
+  box-sizing: border-box;
+  min-width: 0;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border: 1px solid $article-border-color;
+  border-radius: $border-radius;
+  background: $article-muted-background;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+  &:not([open]) {
     float: right;
-    font-style: italic;
-
-    a {
-        color: rgb(64, 128, 255);
-    }
-}
-
-// Chart / diagram containers should establish their own stacking context
-// and clip any internal overflow to avoid overlapping following content.
-.echarts-container,
-.plotly-container,
-.chartjs-container,
-.mermaid-container,
-.excalidraw-container,
-.drawio-container {
-    position: relative;
-    z-index: 1;
-    overflow: hidden;
+    width: max-content;
     max-width: 100%;
+    margin: 0 0 1rem 1rem;
+    padding: 0.5rem 0.75rem;
+  }
+  summary { font-weight: 600; color: $link-color; cursor: pointer; }
+  nav {
+    margin-top: 0.75rem;
+    max-height: 60vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-gutter: stable;
+    padding-inline-end: 0.35rem;
+    @media (min-width: 1200px) {
+      max-height: none;
+      overflow: visible;
+      scrollbar-gutter: auto;
+    }
+  }
+  ul { list-style: none; margin: 0; padding: 0; }
+  ul ul { padding-left: 0.9rem; border-left: 1px solid $article-border-color; }
+  li { margin-block: 0.35rem; }
+  a { color: $link-color; text-decoration: none; }
+  a:hover { color: $link-hover-color; text-decoration: underline; }
 }
 
 .article-entry {
-    // Wrap long unbreakable tokens (plain-text URLs, long inline code)
-    // instead of letting them widen the whole page on mobile.
-    overflow-wrap: break-word;
+  min-width: 0;
+  width: 100%;
+  font-size: 1rem;
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+  @media (min-width: 768px) { font-size: 1.0625rem; }
+  h2, h3, h4 { color: #172c42; margin: 2rem 0 1rem; line-height: 1.5; scroll-margin-top: 1rem; }
+  h2 { font-size: 1.5em; }
+  h3 { font-size: 1.25em; }
+  p { margin-bottom: 1.15rem; }
+  > :first-child { margin-top: 0; }
+  ul, ol { margin: 0 0 1.25rem; padding-left: 1.6em; }
+  li { margin-block: 0.25rem; }
+  pre { padding: 1rem; border-radius: $border-radius; max-width: 100%; overflow: auto; font-size: 0.875rem; line-height: 1.65; }
+  p, li, td, th { code { overflow-wrap: anywhere; } }
+  svg { max-width: 100%; height: auto; }
+  table { font-size: 0.925em; }
+  blockquote {
+    // Keep the quote background outside the directory's margin box.
+    display: flow-root;
+    background: $quote-background;
+    color: $quote-text-color;
+    padding: 0.75rem 1rem;
+    border: 0;
+    border-left: 3px solid $quote-border-color;
+    border-radius: $border-radius;
+    strong, h1, h2, h3, h4, h5, h6 { color: inherit; }
+    :not(pre) > code { background: $quote-code-background; color: $quote-text-color; }
+    > :last-child { margin-bottom: 0; }
+  }
+}
 
-    p,
-    li,
-    td,
-    th {
-        code {
-            overflow-wrap: anywhere;
-        }
-    }
+// In-body ads fit beside the directory; direct layout/footer ads still clear it.
+.article-entry > .ads-container, .article-entry > .google-auto-placed {
+  display: flow-root;
+  clear: none;
+  width: auto;
+}
 
-    // Inline SVG diagrams (mermaid / excalidraw exports) must fit the column.
-    svg {
-        max-width: 100%;
-        height: auto;
-    }
+.article-entry a, .archive-summary-content a {
+  color: $link-color;
+  text-decoration: underline;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.18em;
+  strong { color: inherit; }
+  &:visited { color: $link-visited-color; }
+  &:hover { color: $link-hover-color; text-decoration-thickness: 0.15em; }
+}
+
+.article-panel a:focus-visible, .toc summary:focus-visible {
+  outline: 3px solid $link-color;
+  outline-offset: 3px;
+  background: $focus-background;
+  color: #172c42;
+}
+
+.article-footer { border-top: 1px solid $article-border-color; margin-top: 2rem; padding-top: 1rem; font-size: 0.875rem; color: #526174; }
+.article-meta { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem 1rem; }
+.article-meta ul, .article-meta ol { list-style: none; padding: 0; margin: 0; }
+.article-meta li { display: inline-block; margin-right: 0.5rem; }
+#article-nav { font-size: 0.875rem; margin-block: 1.5rem; overflow-wrap: anywhere; ul { margin: 0; padding: 0; } }
+.article-summary { color: #526479; overflow: hidden; }
+.article-more a { color: $link-color; }
+
+.echarts-container, .plotly-container, .chartjs-container,
+.mermaid-container, .excalidraw-container, .drawio-container,
+.d2-container, .plantuml-container {
+  position: relative;
+  min-width: 0;
+  max-width: 100%;
+  overflow: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .d2-container * { animation: none !important; }
 }

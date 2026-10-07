@@ -44,12 +44,29 @@ jobs:
           grep " $D2_ARCHIVE$" SHA256SUMS | sha256sum --check --strict
           tar -xzf "$D2_ARCHIVE"
           echo "$D2_ROOT/d2-${D2_VERSION}/bin" >> "$GITHUB_PATH"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install PlantUML
+        env:
+          PLANTUML_VERSION: '1.2026.8'
+          PLANTUML_SHA256: 5e1ecfa8ecd32c90b03bbf3b1eb6f020943f98ab0fcf4032be31a0002ee2c462
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y graphviz fonts-noto-cjk
+          PLANTUML_JAR="${RUNNER_TEMP}/plantuml.jar"
+          curl --fail --location --retry 3 "https://github.com/plantuml/plantuml/releases/download/v${PLANTUML_VERSION}/plantuml-${PLANTUML_VERSION}.jar" -o "$PLANTUML_JAR"
+          echo "${PLANTUML_SHA256}  $PLANTUML_JAR" | sha256sum --check --strict
+          echo "PLANTUML_JAR=$PLANTUML_JAR" >> "$GITHUB_ENV"
       - name: Build blog website
         run: |
           echo "GITHUB_WORKSPACE=${GITHUB_WORKSPACE}"
           cd "${GITHUB_WORKSPACE}"
           export PATH="${GITHUB_WORKSPACE}/hugo-latest:$PATH"
           python3 scripts/test-d2.py -v
+          python3 scripts/test-plantuml.py -v
           bash "deploy.sh"
       - name: Deploy blog website
         run: |

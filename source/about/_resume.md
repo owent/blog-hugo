@@ -36,7 +36,9 @@ noad: true
 > 7. 读表代码生成器: [xres-code-generator](https://github.com/xresloader/xres-code-generator)
 > 8. 二进制Dump工具: [xresloader-dump-bin](https://github.com/xresloader/xresloader-dump-bin)
 
-* 高性能、全异步、跨平台、去中心化游戏服务器框架\([atframework](https://atframe.work/)\): https://github.com/atframework
+* 高性能、全异步、跨平台、去中心化游戏服务器框架\([atframework](https://atframe.work/)\): 
+  * 开源组织: <https://github.com/atframework>
+  * 文档: <https://atframe.work/>
 
 > * [Utility库](https://github.com/atframework/atframe_utils)
 > * [libatbus - 高性能进程间通信和管理](https://github.com/atframework/libatbus)
@@ -66,7 +68,15 @@ noad: true
 
 * C++/C++ Contrib核心贡献者: Approver
 
-## 2025年09月 — 至今：游幻科技（上海）有限公司（追觅科技旗下）
+## 2026年07月 - 至今：MyrionStudio
+
+* 公司服务端技术负责人
+* 负责UE项目，游戏服务器解决方案研发落地
+* 负责公司运维框架体系，各类IT系统管理，各类云原生环境搭建管理
+* 负责公司研发环境、网络规划实施以及各类devops系统管理
+* 继续维护多个项目跨平台技术构建和各类研发工具研发集成
+
+## 2025年09月 — 2026年06月：游幻科技（上海）有限公司（追觅科技旗下）
 
 * 公司服务端技术负责人
 * 负责UE项目和Unity项目，多种语言生态游戏服务器解决方案研发落地

@@ -46,3 +46,7 @@
   translation: "本站源码"
 - id: page_source
   translation: "本页源码"
+- id: tableOfContents
+  translation: "目录"
+- id: advertisement
+  translation: "广告"

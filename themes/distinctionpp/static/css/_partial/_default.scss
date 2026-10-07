@@ -13,14 +13,6 @@ html {
   box-sizing: border-box;
 }
 
-// The page itself must never scroll horizontally: one over-wide element (math
-// formula, ad iframe, embed) otherwise inflates the page width on mobile and
-// pushes the whole article column off screen. Wide elements below handle
-// their own scrolling instead.
-html,
-body {
-  overflow-x: hidden;
-}
 
 *,
 *::before,
@@ -30,17 +22,16 @@ body {
 
 body {
   font-family: $font-content;
-  @media (min-width: 1200px) {
-    font-size: 1.25rem;
-  }
+  color: #263548;
+  background: $page-background;
+  line-height: 1.7;
+
 }
 
 pre,
 code {
   font-family: $font-code;
-  @media (min-width: 1200px) {
-    font-size: 1.25rem;
-  }
+
 }
 
 h1,
@@ -76,9 +67,7 @@ canvas {
 }
 
 #main {
-  // Narrow screens: trim the page padding so more width goes to body text.
-  // Together with the .article-panel-inner padding this keeps roughly 22 CJK
-  // characters per line on a ~390px phone at the default 16px font size.
+  // Reading panels add their own inner spacing; keep mobile gutters small.
   padding: 0.5rem;
   margin: 0 auto;
   @media (min-width: 576px) {
@@ -90,17 +79,17 @@ canvas {
 }
 
 #main-content {
-  background-blend-mode: normal;
+  min-width: 0;
+  margin: 0 auto;
 }
 
 #main {
-  // Performance: the original four stacked repeating-radial-gradient layers
-  // (with background-blend-mode: multiply) were re-rasterized on every window
-  // resize, stalling the UI for seconds on long pages. The exact same pattern
-  // is now baked into a static tile (images/main-bg.png, rendered from the
-  // original gradient stack) which the browser only decodes once.
-  background: rgb(192, 192, 192) url(images/main-bg.png) repeat;
-  background-size: 10em 10em;
+  // A bounded wash and faint diagonal grain: no image, animation or blend mode.
+  background-color: $page-background;
+  background-image: radial-gradient(ellipse at 15% 0, rgba(106, 140, 143, 0.16), transparent 70%),
+    repeating-linear-gradient(135deg, rgba(207, 221, 218, 0.025) 0 1px, transparent 1px 8px);
+  background-size: 100% 32rem, auto;
+  background-repeat: no-repeat, repeat;
 }
 
 blockquote {
@@ -232,66 +221,29 @@ mjx-container[display="true"] {
   overflow-y: hidden;
 }
 
-// ---- AdSense slots ----
-// The rules below are shaped by AdSense policy:
-// - No fixed heights and no clipping on ad slots: squeezing or cutting a
-//   filled ad counts as modifying the ad, which is prohibited. The ad script
-//   sizes the slot itself.
-// - Collapsing *unfilled* slots is officially supported via the
-//   data-ad-status attribute the script sets on the <ins>.
-.ads-container,
-.ads-placeholder {
+// Ads keep their natural height; never clip or resize a filled creative.
+.ads-container, .google-auto-placed {
+  min-width: 0;
+  width: 100%;
   max-width: 100%;
+  grid-column: 1 / -1;
   text-align: center;
+  clear: both;
 }
-
-ins.adsbygoogle {
-  // Full-width-responsive ads measure this box; keep it inside the column so
-  // a mis-measurement (e.g. when another element already widened the page)
-  // can never inflate the page width.
-  max-width: 100% !important;
-
-  // AdSense occasionally mis-measures the slot (notably inside the floated
-  // TOC box) and hard-codes pixel widths with !important on its host
-  // elements (div#aswift_N_host, .google-aiuf, .goog-rentries, ...), making
-  // the creative stick out of the slot. Clamp the whole host subtree:
-  // max-width is independent from width in the cascade, so it constrains
-  // even an inline "width: 390px !important".
-  *,
-  *::before,
-  *::after {
-    max-width: 100% !important;
-  }
-}
-
-// Unfilled slots (no ad inventory, or the request failed) collapse
-// completely: no empty grey bar, no stray spacing. This also covers visitors
-// with ad blockers, where the script never runs and the slot stays empty.
-ins.adsbygoogle[data-ad-status="unfilled"] {
-  display: none !important;
-}
-
-.ads-container:has(ins.adsbygoogle[data-ad-status="unfilled"]) {
-  display: none;
-}
-
-// A slot with no rendered ad yet (pending request) reserves no space either:
-// the <ins> is empty and zero-height until the ad arrives, so the rules above
-// and below only take visual effect once data-ad-status is set.
-#main .ads-container:has(ins.adsbygoogle[data-ad-status="filled"]) {
-  // Filled ads get a consistent vertical rhythm with the surrounding content.
-  margin: 0.75rem 0;
-
-  // Small neutral marker above filled ads. A plain "广告" label is allowed by
-  // AdSense (only misleading labels are prohibited) and keeps the slot
-  // visually separated from article content.
+.ads-container:has(ins[data-ad-status="filled"]) {
+  margin: 2rem auto;
+  padding-block: 1rem;
+  background: #f8fafc;
+  border-block: 1px solid #dce4ee;
   &::before {
     content: "广告";
     display: block;
-    margin-bottom: 0.2rem;
-    font-size: 0.65rem;
-    line-height: 1;
-    letter-spacing: 0.1em;
-    color: #9a9a9a;
+    color: #64748b;
+    font-size: 0.75rem;
+    margin-bottom: 0.5rem;
   }
+}
+ins.adsbygoogle[data-ad-status="unfilled"],
+.ads-container:has(ins.adsbygoogle[data-ad-status="unfilled"]) {
+  display: none !important;
 }

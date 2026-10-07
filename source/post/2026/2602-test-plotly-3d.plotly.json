@@ -7,11 +7,11 @@
     "colorscale": "Viridis"
   }],
   "layout": {
-    "title": "z = sin(sqrt(x^2 + y^2))",
+    "title": { "text": "z = sin(sqrt(x^2 + y^2))" },
     "scene": {
-      "xaxis": { "title": "x" },
-      "yaxis": { "title": "y" },
-      "zaxis": { "title": "z" },
+      "xaxis": { "title": { "text": "x" } },
+      "yaxis": { "title": { "text": "y" } },
+      "zaxis": { "title": { "text": "z" } },
       "camera": { "eye": { "x": 1.6, "y": 1.6, "z": 1.0 } }
     },
     "margin": { "l": 0, "r": 0, "t": 40, "b": 0 }

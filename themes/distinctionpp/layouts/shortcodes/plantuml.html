@@ -1,0 +1,1 @@
+{{- partial "plantuml/render.html" (dict "page" .Page "source" .Inner "src" (.Get "src") "attrs" .Params "instance" (printf "shortcode-%d" .Ordinal)) -}}

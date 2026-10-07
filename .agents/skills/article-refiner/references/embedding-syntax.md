@@ -14,6 +14,12 @@ flowchart TD
 开始 -> 处理
 ```
 
+```plantuml
+@startuml
+用户 -> 服务: 请求
+@enduml
+```
+
 ```chart
 {
   "type": "line",
@@ -74,6 +80,7 @@ flowchart TD
 ![ECharts 图](2601-vis.echarts.json)
 ![Plotly 图](2601-vis.plotly.json)
 ![D2 架构图](2601-arch.d2)
+![PlantUML 时序图](2601-sequence.puml)
 ```
 
 图片标题里可以用 `{width=... height=... max-width=... max-height=... class=... style=... extensions=...}` 传参：
@@ -107,7 +114,7 @@ flowchart TD
 
 ## 默认优先级
 
-1. **简短图表** → 代码块（`mermaid`、`d2`、`chart`/`chartjs`、`drawio`、`excalidraw`、`echarts`、`plotly`）
+1. **简短图表** → 代码块（`mermaid`、`d2`、`plantuml`、`chart`/`chartjs`、`drawio`、`excalidraw`、`echarts`、`plotly`）
 2. **较长或可复用** → 拆成外部文件，用图片语法引用
 3. **需要复用外部文件且图片语法不满足时** → Shortcode 引用外部文件
 4. **需要在 Markdown 中保留结构化参数或嵌入非 JSON/文本内容时** → Shortcode 内联
@@ -131,6 +138,12 @@ flowchart TD
 - 安装 Python 3.9+、Hugo 和 D2 CLI 后，运行 `python scripts/build-d2.py --buildDrafts --renderToMemory`，不要用直接 Hugo 构建替代 D2 渲染检查。
 - `src` 使用相对文章目录的本地路径；相对导入和图片以外部 D2 文件目录为基准，内联图以文章目录为基准。更改依赖后也要重新运行构建脚本。
 - 布局和主题等参数写在 `vars.d2-config`；当前只输出根画板。接入细节与验证命令见 `themes/distinctionpp/README.md` 的 D2 小节。
+
+## PlantUML 构建时渲染
+
+- 支持 `plantuml` 代码块、`.puml` / `.plantuml` 图片语法，以及 `plantuml` 的文件和内联 Shortcode。每张图包含一组 `@startuml` / `@enduml`。
+- 与 D2 共用 `python scripts/build-d2.py`；需要 Java、Graphviz 和 `PLANTUML_JAR` 指定的本地 JAR。相对 `!include` 以源文件目录为基准，限仓库内文件，不支持远程 include。
+- 默认主题为 `plain`，图内 `!theme` 可覆盖。D2 的虚线动画可用 `style.animated: true`，站点尊重系统减少动态效果设置。安装和测试命令见主题 README。
 
 ## 资源命名规范
 

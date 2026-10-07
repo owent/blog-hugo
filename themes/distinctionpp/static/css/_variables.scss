@@ -34,12 +34,43 @@ $transition-fade: opacity 0.15s linear !default;
 $transition-collapse: height 0.35s ease !default;
 
 // CSS3 border
-$border-radius: 0.25rem !default;
-$border-radius-lg: 0.3rem !default;
-$border-radius-sm: 0.2rem !default;
+$border-radius: 0.375rem !default;
+$border-radius-lg: 0.5rem !default;
+$border-radius-sm: 0.25rem !default;
 
 // Articles
-$article-background: rgb(241, 241, 241);
+$page-background: #202b34;
+$article-background: #ededed;
+$article-muted-background: #e3e3e3;
+$article-border-color: #bcbcbc;
+$link-color: #0755b5;
+$link-hover-color: #003b83;
+$link-visited-color: #3c5c87;
+$focus-background: #c7e6f1;
+$card-border-color: #526b80;
+$card-heading-background: #e9e9e9;
+$article-heading-background: #e7e7e7;
+$quote-background: #dedede;
+$quote-code-background: #d3d3d3;
+$quote-border-color: #52788f;
+$quote-text-color: #35495c;
+// Separate static CSS materials: neutral matte cards, finer title grain,
+// and quiet neutral dots behind the off-white main prose.
+$surface-grain-color: #525252;
+$heading-grain-color: #525252;
+$reading-surface-texture:
+  radial-gradient(circle at 1px 1px, rgba($surface-grain-color, 0.065) 0 0.5px, transparent 0.85px),
+  radial-gradient(circle at 2px 2px, rgba(#fff, 0.30) 0 0.5px, transparent 0.85px);
+$reading-surface-size: 6px 6px, 7px 9px;
+$card-heading-texture:
+  radial-gradient(circle at 1px 1px, rgba($heading-grain-color, 0.06) 0 0.45px, transparent 0.85px),
+  linear-gradient(135deg, rgba(#fff, 0.32), transparent 48%, rgba($heading-grain-color, 0.025));
+$card-heading-size: 4px 6px, auto;
+$article-heading-texture:
+  radial-gradient(circle at 1px 1px, rgba($heading-grain-color, 0.035) 0 0.45px, transparent 0.85px),
+  radial-gradient(ellipse at 12% 0, rgba(#fff, 0.32), transparent 66%),
+  linear-gradient(180deg, rgba(#fff, 0.12), transparent 45%, rgba($heading-grain-color, 0.022));
+$article-heading-size: 3px 5px, auto, auto;
 $article-inner-border: 0.2rem solid rgb(212, 212, 212);
 $article-footer-border: $border-width solid #666;
 $article-tag-border: $border-width solid #666;

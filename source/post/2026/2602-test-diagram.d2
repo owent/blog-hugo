@@ -1,7 +1,7 @@
 vars: {
   d2-config: {
     layout-engine: elk
-    theme-id: 0
+    theme-id: 4
     pad: 24
   }
 }
@@ -14,4 +14,7 @@ build: 构建时渲染
 svg: SVG {
   link: https://d2lang.com/tour/exports/
 }
-source -> build -> svg
+source -> build -> svg: {
+  style.animated: true
+  style.stroke-dash: 3
+}

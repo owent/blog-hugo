@@ -91,6 +91,16 @@ params:
   favicon: /favicon.ico
   css: ["css/syntax.css"]
   ugly: ".html"
+  beian:
+    text: "沪ICP备2022003252号"
+    url: "https://beian.miit.gov.cn/"
+    # Exact hostnames; no protocol or port. Empty means no exact-only entries.
+    domains: []
+    # Matches each suffix itself and its subdomains, using location.hostname.
+    domain_suffixes:
+      - localhost
+      - x-ha.com
+      - r-ci.com
   search:
     url: //www.bing.com/search
     keywork: q
@@ -104,8 +114,6 @@ params:
       - |
         // import React from "react";
   content:
-    footer:
-      right: '<a href="https://beian.miit.gov.cn/" target="_blank">沪ICP备2022003252号</a>&nbsp;&nbsp;'
     after_footer:
       - attributes:
           type: "text/javascript"
@@ -177,7 +185,7 @@ params:
     js: https://cdn.jsdelivr.net/npm/chart.js
   mermaid:
     js: "https://esm.sh/mermaid"
-    theme: neutral
+    theme: base
   excalidraw:
     js: "https://esm.sh/@excalidraw/excalidraw"
     css: "https://cdn.jsdelivr.net/npm/excalidraw/dist/excalidraw.min.css"
@@ -219,6 +227,9 @@ params:
     - name: "baidu-site-verification"
       content: "codeva-4M5iohb9TW"
   ads:
+    # One manual unit after each article/page; archive.feed appears after cards 6 and 12.
+    # Legacy position keys use the first configured unit, at these same positions.
+    # Auto ads density/excluded areas must be set in the AdSense console.
     # menu:
     article:
       # panel_header:
@@ -244,6 +255,7 @@ params:
         (adsbygoogle = window.adsbygoogle || []).push({});
         </script>
     # archive:
+    #   feed:
     #   # panel_header:
     #   # panel_footer:
     #   # before_title:

@@ -1,13 +1,15 @@
 <footer id="footer">
   <div class="outer">
-    <div id="footer-info" class="inner clearfix">
-      <strong id="footer-left" class="float-left float-start">
+    <div id="footer-info" class="inner">
+      <div id="footer-left">
+        <span class="footer-license">
         {{- if $.Site.Copyright }}
           {{- $.Site.Copyright | safeHTML }}
         {{- else }}
         &nbsp;&copy;&nbsp;
         {{- end}}
-        {{- $.Site.Lastmod.Format "2006" }}&nbsp;
+        </span>
+        <span class="footer-credit">{{- $.Site.Lastmod.Format "2006" }}&nbsp;
         {{- if and .Params.author }}
           {{- .Params.author | safeHTML}}
         {{- else if and $.Site.Params $.Site.Params.author }}
@@ -15,6 +17,7 @@
         {{- else if and $.Site.Taxonomies $.Site.Taxonomies.author }}
           {{- $.Site.Taxonomies.author | safeHTML}}
         {{- end}}
+        </span>
         {{- with $.Site.Params.Content }}
           {{- with .Footer }}
             {{- with .Left }}
@@ -22,8 +25,15 @@
             {{- end}}
           {{- end}}
         {{- end}}
-      </strong>
-      <strong id="footer-right" class="float-right float-end">
+      </div>
+      <div id="footer-right">
+        {{- with .Site.Params.beian }}
+          {{- if .text }}
+        <span id="site-registration" hidden data-domains="{{ .domains | default slice | jsonify }}" data-domain-suffixes="{{ .domain_suffixes | default slice | jsonify }}">
+          <a href="{{ .url | default "https://beian.miit.gov.cn/" | safeURL }}" target="_blank" rel="noopener">{{ .text }}</a>
+        </span>
+          {{- end }}
+        {{- end }}
         {{- with $.Site.Params.Content }}
           {{- with .Footer }}
             {{- with .Right }}
@@ -32,15 +42,17 @@
           {{- end}}
         {{- end}}
         {{- with .Params.PageSource -}}
-        <a href="{{ .Params.PageSource | safeURL}}" target="_blank">{{ i18n "page_source" }}</a>,
+        <a href="{{ . | safeURL }}" target="_blank" rel="noopener">{{ i18n "page_source" }}</a>
         {{- end}}
         {{- if and $.Site.Params $.Site.Params.SiteSource -}}
-        <a href="{{ $.Site.Params.SiteSource | safeURL}}" target="_blank">{{ i18n "site_source" }}</a>,
+        <a href="{{ $.Site.Params.SiteSource | safeURL}}" target="_blank" rel="noopener">{{ i18n "site_source" }}</a>
         {{- end}}
-        {{ i18n "powered_by" }} <a href="https://gohugo.io/" target="_blank">Hugo</a>,
-        {{ i18n "theme" }} <a href="https://github.com/owent/hugo-theme-distinctionpp" target="_blank">distinctionpp</a>
-      </strong>
-      <span class="clearfix"></span>
+        <span>{{ i18n "powered_by" }} <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a></span>
+        <span>{{ i18n "theme" }} <a href="https://github.com/owent/hugo-theme-distinctionpp" target="_blank" rel="noopener">distinctionpp</a></span>
+      </div>
     </div>
   </div>
 </footer>
+{{- if .Site.Params.beian.text }}
+<script defer src="{{ "js/site-registration.js" | relURL }}"></script>
+{{- end }}

@@ -1,0 +1,54 @@
+{{- /* Hugo collects requests; the build wrapper renders them with the selected CLI. */ -}}
+{{- $engine := .engine -}}
+{{- $label := .label -}}
+{{- $page := .page -}}
+{{- $attrs := .attrs | default dict -}}
+{{- $source := .source | default "" -}}
+{{- $baseDir := path.Dir (replace $page.File.Filename `\` "/") -}}
+{{- with .src -}}
+  {{- if or (findRE `^[a-zA-Z][a-zA-Z0-9+.-]*:` .) (strings.HasPrefix . "/") -}}
+    {{- errorf "%s in %s: src must be a local path relative to the article, got %q" $label $page.File.Path . -}}
+  {{- else -}}
+    {{- $filename := path.Join $baseDir (replace . `\` "/") -}}
+    {{- $readPath := strings.TrimPrefix (printf "%s/" (replace hugo.WorkingDir `\` "/")) $filename -}}
+    {{- if os.FileExists $readPath -}}
+      {{- $source = os.ReadFile $readPath -}}
+      {{- $baseDir = path.Dir $filename -}}
+    {{- else -}}
+      {{- errorf "%s in %s: source file not found: %s" $label $page.File.Path . -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- $source = trim (replace $source "\r\n" "\n") " \t\r\n" -}}
+{{- if not $source -}}
+  {{- errorf "%s in %s: provide src or non-empty inline content" $label $page.File.Path -}}
+{{- end -}}
+{{- /* The instance salt keeps IDs distinct when the same file appears twice. */ -}}
+{{- $request := dict "source" $source "baseDir" $baseDir "instance" (printf "%s:%s" $page.File.Path .instance) -}}
+{{- $json := jsonify $request -}}
+{{- $key := crypto.SHA256 $json -}}
+{{- if (index $page.Site.Params $engine).collect -}}
+  {{- $resource := resources.FromString (printf "%s-build/%s.json" $engine $key) $json -}}
+  {{- $resource.Publish -}}
+{{- else -}}
+  {{- $svgPath := printf "%s-generated/%s.svg" $engine $key -}}
+  {{- with resources.Get $svgPath -}}
+    {{- $width := index $attrs "width" | default "100%" -}}
+    {{- $height := index $attrs "height" | default "auto" -}}
+    {{- $style := printf "width: %s; height: %s; margin: 1rem auto; overflow: auto;" $width $height -}}
+    {{- with index $attrs "max-width" -}}
+      {{- $style = printf "%s max-width: %s;" $style . -}}
+    {{- end -}}
+    {{- with index $attrs "max-height" -}}
+      {{- $style = printf "%s max-height: %s;" $style . -}}
+    {{- end -}}
+    {{- with index $attrs "style" -}}
+      {{- $style = printf "%s %s" $style . -}}
+    {{- end -}}
+<div class="{{ $engine }}-container{{ with index $attrs "class" }} {{ . }}{{ end }}" data-diagram-key="{{ $key }}" {{ printf "data-%s-key" $engine | safeHTMLAttr }}="{{ $key }}" style="{{ $style | safeCSS }}" role="group" aria-label="{{ index $attrs "alt" | default (printf "%s diagram" $label) }}"{{ with index $attrs "id" }} id="{{ . }}"{{ end }}{{ with index $attrs "title" }} title="{{ . }}"{{ end }}>
+{{ .Content | safeHTML }}
+</div>
+  {{- else -}}
+    {{- errorf "%s SVG missing for %s (%s). Run: python scripts/build-d2.py [Hugo build flags]" $label $page.File.Path .instance -}}
+  {{- end -}}
+{{- end -}}

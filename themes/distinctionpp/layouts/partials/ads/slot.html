@@ -1,0 +1,12 @@
+{{- /* One manual unit after a page; archive callers limit units to two per page.
+     Old position keys remain accepted, but the first configured unit is used. */ -}}
+{{- if not .page.Params.noad -}}
+  {{- $settings := index (.page.Site.Params.ads | default dict) .kind | default dict -}}
+  {{- $code := "" -}}
+  {{- range slice "feed" "after_body" "after_footer" "panel_header" "before_title" "after_title" "after_summary" "panel_footer" "before_comments" "after_comments" "before_toc" "after_toc" -}}
+    {{- if not $code -}}{{- $code = index $settings . | default "" -}}{{- end -}}
+  {{- end -}}
+  {{- with $code }}
+<aside class="ads-container ads-placeholder" aria-label="{{ T "advertisement" }}">{{ . | safeHTML }}</aside>
+  {{- end -}}
+{{- end -}}

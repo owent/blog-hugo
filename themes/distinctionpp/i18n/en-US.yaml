@@ -46,3 +46,7 @@
   translation: "Site Source"
 - id: page_source
   translation: "Page Source"
+- id: tableOfContents
+  translation: "Contents"
+- id: advertisement
+  translation: "Advertisement"

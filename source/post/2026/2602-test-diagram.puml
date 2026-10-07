@@ -1,0 +1,10 @@
+@startuml
+title 构建时生成 PlantUML 图表
+participant "Markdown 文章" as Author
+participant "Hugo / Python" as Build
+participant "PlantUML" as Renderer
+Author -> Build: 收集本地源码
+Build -> Renderer: 渲染 SVG
+Renderer --> Build: 返回图表
+Build --> Author: 页面内联 SVG
+@enduml

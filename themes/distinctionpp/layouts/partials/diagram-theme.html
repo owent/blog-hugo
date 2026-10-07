@@ -1,0 +1,28 @@
+{{- /* Defaults only: native per-diagram options continue to take precedence. */ -}}
+<script>
+const blogDiagramTheme = {
+  color: ['#267a93', '#399886', '#6c79b8', '#cd9344', '#be697e', '#75889d'],
+  ink: '#334155', grid: '#e2e8f0', font: 'system-ui, sans-serif',
+  mermaid: {
+    primaryColor: '#e8f2f6', primaryTextColor: '#243b53', primaryBorderColor: '#6b9caf',
+    secondaryColor: '#e8f5ef', tertiaryColor: '#f4f1e8', lineColor: '#688499',
+    background: '#ffffff', mainBkg: '#e8f2f6', nodeBorder: '#6b9caf',
+    clusterBkg: '#f6f9fc', clusterBorder: '#cbd5e1', edgeLabelBackground: '#ffffff',
+    fontFamily: 'system-ui, sans-serif'
+  }
+};
+blogDiagramTheme.echarts = {
+  color: blogDiagramTheme.color, backgroundColor: 'transparent',
+  textStyle: {color: blogDiagramTheme.ink, fontFamily: blogDiagramTheme.font},
+  title: {textStyle: {color: blogDiagramTheme.ink, fontSize: 16}},
+  categoryAxis: {axisLine: {lineStyle: {color: '#94a3b8'}}, axisLabel: {color: '#475569'}},
+  valueAxis: {splitLine: {lineStyle: {color: blogDiagramTheme.grid}}, axisLabel: {color: '#475569'}}
+};
+blogDiagramTheme.plotly = {layout: {
+  colorway: blogDiagramTheme.color,
+  font: {color: blogDiagramTheme.ink, family: blogDiagramTheme.font},
+  paper_bgcolor: '#ffffff', plot_bgcolor: '#ffffff',
+  xaxis: {gridcolor: blogDiagramTheme.grid, zerolinecolor: '#94a3b8', automargin: true},
+  yaxis: {gridcolor: blogDiagramTheme.grid, zerolinecolor: '#94a3b8', automargin: true}
+}};
+</script>

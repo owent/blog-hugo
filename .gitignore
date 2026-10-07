@@ -10,6 +10,7 @@ db.json
 node_modules
 
 /assets/d2-generated/
+/assets/plantuml-generated/
 /_agent_tmp/
 
 /.vscode/settings.json

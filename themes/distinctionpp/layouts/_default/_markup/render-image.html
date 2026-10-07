@@ -66,6 +66,9 @@
 {{- if $isD2 -}}
   {{- $attrs := dict "alt" $alt "title" $actualTitle "width" $width "height" $height "max-width" $maxWidth "max-height" $maxHeight "class" $class "style" $style -}}
   {{- partial "d2/render.html" (dict "page" .Page "src" $src "attrs" $attrs "instance" (printf "image-%d" .Ordinal)) -}}
+{{- else if or (strings.HasSuffix (lower $src) ".puml") (strings.HasSuffix (lower $src) ".plantuml") -}}
+  {{- $attrs := dict "alt" $alt "title" $actualTitle "width" $width "height" $height "max-width" $maxWidth "max-height" $maxHeight "class" $class "style" $style -}}
+  {{- partial "plantuml/render.html" (dict "page" .Page "src" $src "attrs" $attrs "instance" (printf "image-%d" .Ordinal)) -}}
 {{- else if $isMermaid -}}
   {{- /* Mark page as having mermaid content */ -}}
   {{- .Page.Store.Set "themeExtensionHasMermaid" true -}}

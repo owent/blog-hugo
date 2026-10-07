@@ -30,7 +30,7 @@ class D2Integration(unittest.TestCase):
         }), encoding="utf-8")
         templates = ROOT / "themes" / "distinctionpp" / "layouts"
         for relative in (
-            "partials/d2/render.html", "_default/_markup/render-codeblock-d2.html",
+            "partials/d2/render.html", "partials/diagrams/render.html", "_default/_markup/render-codeblock-d2.html",
             "_default/_markup/render-image.html", "shortcodes/d2.html",
         ):
             destination = self.site / "layouts" / relative
