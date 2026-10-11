@@ -15,7 +15,7 @@ const luminance=color=>color.match(/[\d.]+/g).slice(0,3).map(v=>Number(v)/255)
  .map(v=>v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4)
  .reduce((sum,v,i)=>sum+v*[0.2126,0.7152,0.0722][i],0);
 const contrast=(a,b)=>{const values=[luminance(a),luminance(b)].sort((x,y)=>y-x);return (values[0]+0.05)/(values[1]+0.05);};
-// Bound each gradient layer by its lightest/darkest stop before compositing layers.
+// Bound gradients and opaque SVG facets before compositing background layers.
 const surfaceContrast=(textColor,background,image='none')=>{
  const base=background.match(/[\d.]+/g).slice(0,3).map(Number);
  const layers=[];
@@ -27,7 +27,12 @@ const surfaceContrast=(textColor,background,image='none')=>{
  }
  layers.push(image.slice(start));
  const bounds=[Math.min,Math.max].map(extreme=>[...layers].reverse().reduce((pixels,layer)=>{
-  const stops=[...layer.matchAll(/rgba?\(([^)]+)\)/g)].map(match=>match[1].match(/[\d.]+/g).map(Number));
+  const svg=layer.trim().match(/^url\(["']?data:image\/svg\+xml,(.*?)["']?\)$/);
+  const stops=svg
+   ? [...decodeURIComponent(svg[1]).matchAll(/fill=["']#([\da-f]{6})["']/gi)]
+      .map(match=>[0,2,4].map(offset=>parseInt(match[1].slice(offset,offset+2),16)))
+   : [...layer.matchAll(/rgba?\(([^)]+)\)/g)].map(match=>match[1].match(/[\d.]+/g).map(Number));
+  if(svg) assert.ok(stops.length>0,'SVG background has no checked facet colors');
   return pixels.map((value,i)=>extreme(value,...stops.map(stop=>{
    const alpha=stop[3]??1;
    return value*(1-alpha)+stop[i]*alpha;

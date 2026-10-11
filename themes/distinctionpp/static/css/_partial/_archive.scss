@@ -98,8 +98,10 @@
             background: $card-heading-background;
             background-image: $card-heading-texture;
             background-size: $card-heading-size;
-            color: #263548;
-            border-bottom: 1px solid $article-border-color;
+            background-position: center;
+            background-repeat: no-repeat;
+            color: $card-heading-color;
+            border-bottom: 1px solid $card-heading-border-color;
 
             @media (forced-colors: active) { background-image: none; }
         }
@@ -111,7 +113,7 @@
             justify-content: space-between;
             gap: 0.75rem;
             margin-bottom: 0.65rem;
-            color: #43566a;
+            color: $card-heading-meta-color;
             font-size: 0.8rem;
             line-height: 1.5;
             letter-spacing: 0.04em;
@@ -124,9 +126,9 @@
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
-            color: $link-color;
+            color: $card-heading-link-color;
             text-underline-offset: 0.2em;
-            &:hover { color: $link-hover-color; }
+            &:hover { color: $card-heading-hover-color; }
         }
 
         .archive-article-title {
@@ -149,14 +151,20 @@
         .article-title {
             display: block;
             overflow-wrap: anywhere;
-            color: #263548;
+            color: $card-heading-color;
             text-decoration: none;
 
             &:hover {
-                color: $link-hover-color;
+                color: $card-heading-hover-color;
                 text-decoration: underline;
                 text-underline-offset: 0.15em;
             }
+        }
+
+        .article-title:focus-visible, .archive-card-category:focus-visible {
+            color: #172c42;
+            background: $focus-background;
+            outline-color: $card-heading-link-color;
         }
 
         .article-summary {
