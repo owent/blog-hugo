@@ -221,6 +221,21 @@ See https://plotly.com/javascript/ for more detail.
 
 Use `extensions="gl3d"` (or `cartesian`, `geo`, `gl2d`, `mapbox`, `finance`) to load a Plotly.js partial bundle. Plotly.js partial bundles redefine the global `Plotly` object and cannot be stacked; when a page mixes minimal charts with extended charts, the loader falls back to the full bundle.
 
+## Math in blockquotes
+
+With `params.katex` enabled, use a `math` code fence for multiline formulas inside blockquotes or lists. The render hook lets Goldmark remove container prefixes, escapes HTML characters, and passes the LaTeX to the existing KaTeX renderer. Do not include `$$` inside the fence.
+
+````markdown
+> ```math
+> \begin{cases}
+> X_{ij},&i>j,\\
+> 0,&i\le j.
+> \end{cases}
+> ```
+````
+
+This avoids the blockquote markers retained by the passthrough extension in Hugo 0.168.0. Existing `$...$` and `$$...$$` syntax remains available. In this repository, run `node scripts/test-math.cjs` with `playwright` and `katex` installed (or available through `NODE_PATH`) to check the generated HTML and browser rendering.
+
 ## Diagram & Chart Extensions
 
 This theme supports rendering diagrams and charts from various sources:

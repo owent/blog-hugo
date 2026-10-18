@@ -1,0 +1,5 @@
+{{- /* Fenced math lets Goldmark remove blockquote/list prefixes before KaTeX renders it.
+     Keep template escaping: TeX comparisons and HTML-like text must remain text nodes. */ -}}
+<div class="math-block">$$
+{{ .Inner }}
+$$</div>
