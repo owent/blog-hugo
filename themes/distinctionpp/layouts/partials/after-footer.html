@@ -991,15 +991,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
 </script>
 <!-- style import end -->
 {{- end }}
-<script>
-// Native details remains usable without JavaScript; adapt on breakpoint changes.
-const articleToc = document.querySelector('details.toc');
-if (articleToc) {
-    const wideArticle = matchMedia('(min-width: 1200px)');
-    articleToc.open = wideArticle.matches;
-    wideArticle.addEventListener('change', event => { articleToc.open = event.matches; });
-}
-</script>
 {{- with $.Site.Params.Content }}
   {{- with .after_footer }}
     {{- range . -}}

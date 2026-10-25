@@ -58,6 +58,11 @@
       max-width: 32%;
       margin: 0 0 1rem 2rem;
     }
+    > .toc[open] + .article-entry {
+      // Size image blocks to the space beside the float, rather than pushing
+      // full-width images below it. Later blocks can still use the full width.
+      > p:has(img), > figure { display: flow-root; }
+    }
   }
 }
 
@@ -73,10 +78,9 @@
   line-height: 1.65;
   overflow-wrap: anywhere;
   &:not([open]) {
-    float: right;
     width: max-content;
     max-width: 100%;
-    margin: 0 0 1rem 1rem;
+    margin: 0 0 1rem auto;
     padding: 0.5rem 0.75rem;
   }
   summary { font-weight: 600; color: $link-color; cursor: pointer; }
@@ -113,6 +117,9 @@
   h3 { font-size: 1.25em; }
   p { margin-bottom: 1.15rem; }
   > :first-child { margin-top: 0; }
+  > :first-child:is(p, figure) {
+    > img:only-child, > a:only-child > img:only-child { width: 100%; }
+  }
   ul, ol { margin: 0 0 1.25rem; padding-left: 1.6em; }
   li { margin-block: 0.25rem; }
   pre { padding: 1rem; border-radius: $border-radius; max-width: 100%; overflow: auto; font-size: 0.875rem; line-height: 1.65; }

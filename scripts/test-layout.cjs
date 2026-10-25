@@ -134,6 +134,88 @@ async function checkAdaptiveToc(page, browserName) {
  await page.evaluate(()=>document.documentElement.style.removeProperty('font-size'));
  console.log(`${browserName}: ${results.length} adaptive directory and flow checks passed`);
 }
+async function checkArticleMedia(page, browserName) {
+ const results=[];
+ for(const post of ['2610','2611','2612']) {
+  await page.goto(`https://owent.net/2026/${post}.html`,{waitUntil:'load'});
+  assert.equal(await page.locator('.toc').evaluate(toc=>toc.open),false,`${browserName} ${post}: directory should start collapsed`);
+  await page.locator('.article-entry > p img').first().evaluate(img=>img.decode());
+  for(const [width,height] of sizes) {
+   await page.setViewportSize({width,height});
+   await page.locator('.toc').evaluate(toc=>toc.open=innerWidth>=1200);
+   await page.waitForFunction(()=>document.querySelector('.toc').open===(innerWidth>=1200));
+   const measure=await page.evaluate(()=>{
+    const rect=el=>{const r=el.getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right,width:r.width};};
+    const entry=document.querySelector('.article-entry'),img=entry.querySelector('img');
+    return {layout:rect(document.querySelector('.article-layout')),toc:rect(document.querySelector('.toc')),
+     image:rect(img),entry:rect(entry),naturalWidth:img.naturalWidth,
+     aspectError:Math.abs(img.clientWidth/img.clientHeight-img.naturalWidth/img.naturalHeight),
+     overflow:document.documentElement.scrollWidth-innerWidth};
+   });
+   const context=`${browserName} ${post} ${width}px`;
+   assert.ok(measure.overflow<=1,`${context}: media causes page overflow`);
+   assert.ok(measure.aspectError<0.03,`${context}: banner aspect ratio changed`);
+   assert.ok(measure.image.left>=measure.entry.left-1&&measure.image.right<=measure.entry.right+1,`${context}: banner escapes the article`);
+   if(width>=1200) {
+    assert.ok(Math.abs(measure.image.top-measure.layout.top)<2,`${context}: banner is pushed below the directory`);
+    assert.ok(measure.image.right<=measure.toc.left-16,`${context}: banner overlaps the directory`);
+   } else {
+    assert.ok(Math.abs(measure.image.width-measure.entry.width)<2,`${context}: collapsed directory squeezes the mobile banner`);
+   }
+   if(post==='2612'&&[390,1440,2560].includes(width)&&process.env.BLOG_SCREENSHOTS!=='0') {
+    await page.evaluate(()=>scrollTo({top:0,behavior:'instant'}));
+    await page.screenshot({path:path.join(output,`${browserName}-banner-${width}.png`)});
+   }
+   // A collapsed directory must let the banner fill the article, even beyond its intrinsic width.
+   if(width>=1200) {
+    await page.locator('.toc summary').click();
+    const collapsed=await page.locator('.article-entry img').first().evaluate(img=>({width:img.getBoundingClientRect().width,entryWidth:img.closest('.article-entry').clientWidth}));
+    assert.ok(Math.abs(collapsed.width-collapsed.entryWidth)<2,`${context}: collapsed directory still narrows the banner`);
+    if(post==='2612'&&[1440,2560].includes(width)&&process.env.BLOG_SCREENSHOTS!=='0') {
+     await page.evaluate(()=>scrollTo({top:0,behavior:'instant'}));
+     await page.screenshot({path:path.join(output,`${browserName}-banner-collapsed-${width}.png`)});
+    }
+    await page.locator('.toc summary').click();
+   }
+   results.push({post,width,...measure});
+  }
+ }
+ // Exercise linked images and semantic figures against an unusually tall TOC.
+ await page.setViewportSize({width:1440,height:1000});
+ await page.locator('.toc').evaluate(toc=>{
+  toc.open=true;
+  toc.querySelector('nav').innerHTML='<ul>'+Array.from({length:40},(_,i)=>`<li><a href="#media-fixture">章节 ${i+1}</a></li>`).join('')+'</ul>';
+ });
+ const source=await page.locator('.article-entry img').first().getAttribute('src');
+ for(const wrapper of ['p','figure']) {
+  await page.locator('.article-entry').evaluate((entry,{wrapper,source})=>{
+   entry.innerHTML=`<${wrapper}><a href="${source}"><img src="${source}" alt="Banner regression fixture"></a></${wrapper}>`;
+  },{wrapper,source});
+  await page.locator('.article-entry img').evaluate(img=>img.decode());
+  for(const fontSize of [16,32]) {
+   await page.evaluate(size=>document.documentElement.style.setProperty('font-size',`${size}px`,'important'),fontSize);
+   const measure=await page.evaluate(()=>{
+    const img=document.querySelector('.article-entry img').getBoundingClientRect(),toc=document.querySelector('.toc').getBoundingClientRect();
+    return {imageTop:img.top,tocTop:toc.top,imageRight:img.right,tocLeft:toc.left,overflow:document.documentElement.scrollWidth-innerWidth};
+   });
+   assert.ok(Math.abs(measure.imageTop-measure.tocTop)<2,`${browserName} ${wrapper} ${fontSize}px: tall directory pushes image down`);
+   assert.ok(measure.imageRight<measure.tocLeft,`${browserName} ${wrapper} ${fontSize}px: media overlaps directory`);
+   assert.ok(measure.overflow<=1,`${browserName} ${wrapper} ${fontSize}px: media overflows at large font size`);
+  }
+  await page.evaluate(()=>document.documentElement.style.removeProperty('font-size'));
+ }
+ // An image below the directory must regain the full article width.
+ await page.locator('.article-entry > figure').evaluate(figure=>figure.style.marginTop='3000px');
+ const below=await page.locator('.article-entry img').evaluate(img=>{
+  const image=img.getBoundingClientRect(),figure=getComputedStyle(img.closest('figure'));
+  return {width:image.width,top:image.top,naturalWidth:img.naturalWidth,tocBottom:document.querySelector('.toc').getBoundingClientRect().bottom,
+   available:img.closest('.article-entry').clientWidth-parseFloat(figure.marginLeft)-parseFloat(figure.marginRight)};
+ });
+ assert.ok(below.top>=below.tocBottom,`${browserName}: full-width media probe is not below the directory`);
+ assert.ok(Math.abs(below.width-below.available)<2,`${browserName}: image stays narrow below the directory`);
+ fs.writeFileSync(path.join(output,`${browserName}-article-media.json`),JSON.stringify(results,null,2));
+ console.log(`${browserName}: ${results.length} real-article banner checks plus linked image, figure, tall directory and font scaling checks passed`);
+}
 (async()=>{
  const results=[];
  for(const [name,type] of Object.entries({chromium,firefox,webkit})) {
@@ -150,12 +232,15 @@ async function checkAdaptiveToc(page, browserName) {
     return route.fulfill({path:file,contentType:mime[path.extname(file)]||'application/octet-stream'});
    });
    await checkAdaptiveToc(page,name);
+   await checkArticleMedia(page,name);
    for(const url of pages) {
     await page.goto('https://owent.net'+url,{waitUntil:'load'});
     await page.evaluate(()=>document.fonts.ready);
     const archive=await page.locator('#index-content, #archive-content').count()>0;
     const label=url==='/'?'home':url.includes('archives')?'archives':url.includes('tags')?'tags':url.includes('2602')?'article':'about';
     if(label==='home') {
+     assert.equal(await page.locator('.archive-type-2612 .archive-summary > .archive-summary-banner').count(),1,'home banner was not extracted into the outer summary');
+     assert.equal(await page.locator('.archive-type-2612 .archive-summary-content img').count(),0,'home banner is still inside the text excerpt');
      assert.equal(await page.locator('.archive-heading').count(),0,'home still has a heading row');
      assert.equal(await page.locator('a[href$="index.xml"]').count(),1,'home has duplicate RSS links');
      assert.equal(await page.locator('#main-nav #nav-rss-link').count(),1,'navigation RSS link missing');
@@ -228,10 +313,10 @@ async function checkAdaptiveToc(page, browserName) {
     },archive);
     for(const [width,height] of sizes) {
      await page.setViewportSize({width,height});
-     // Wait for the media-query change handler before measuring or capturing.
+     // The directory stays collapsed until the reader explicitly opens it.
      await page.waitForFunction(()=>{
       const toc=document.querySelector('details.toc');
-      return !toc||toc.open===(innerWidth>=1200);
+      return !toc||!toc.open;
      });
      await page.evaluate(()=>{
       for(const frame of document.querySelectorAll('.ads-container iframe,.google-auto-placed iframe')) {
@@ -246,6 +331,11 @@ async function checkAdaptiveToc(page, browserName) {
       const readingStyle=reading&&getComputedStyle(reading);
       return {viewport:innerWidth,scroll:document.documentElement.scrollWidth,
        cards:[...document.querySelectorAll('.archive-article')].map(rect),
+       summaryBanners:[...document.querySelectorAll('.archive-summary > .archive-summary-banner img')].map(img=>({
+        image:rect(img),summary:rect(img.closest('.archive-summary')),card:rect(img.closest('.archive-article-inner')),
+        insideText:!!img.closest('.archive-summary-content'),heading:rect(img.closest('.archive-article-inner').querySelector('.archive-card-heading'))
+       })),
+       rootFontSize:parseFloat(getComputedStyle(document.documentElement).fontSize),
        ads:[...document.querySelectorAll('.ads-container,.google-auto-placed')].map(rect),
        entry:document.querySelector('.article-entry')?rect(document.querySelector('.article-entry')):null,
        readingWidth:reading?reading.clientWidth-parseFloat(readingStyle.paddingLeft)-parseFloat(readingStyle.paddingRight):null,
@@ -262,6 +352,17 @@ async function checkAdaptiveToc(page, browserName) {
        background:getComputedStyle(document.querySelector('#main')).backgroundColor};
      });
      assert.ok(measure.scroll<=width+1, `${name} ${url} ${width}: overflow ${measure.scroll}`);
+     for(const banner of measure.summaryBanners) {
+      const context=`${name} ${url} ${width}: summary banner`;
+      assert.ok(Math.abs(banner.image.width-banner.summary.width)<2,`${context} does not fill the summary width`);
+      assert.ok(Math.abs(banner.image.width-banner.card.width)<2,`${context} does not fill the card interior`);
+      assert.ok(Math.abs(banner.image.left-banner.summary.left)<2,`${context} is not aligned with summary text`);
+      assert.equal(banner.insideText,false,`${context} is still inside the padded text excerpt`);
+      assert.ok(Math.abs(banner.image.top-banner.heading.bottom)<2,`${context} leaves a gap below the heading`);
+      assert.ok(banner.image.height<=12*measure.rootFontSize+1,`${context} exceeds the preview height limit`);
+      assert.ok(banner.image.bottom<=banner.summary.bottom+1,`${context} is clipped by the summary container`);
+      assert.ok(Math.abs(banner.card.height-28*measure.rootFontSize)<2,`${context} stretches the card`);
+     }
      if((archive||label==='archives')&&width>=1920) {
       assert.ok(measure.main.width>=width-66,`${name} ${url}: wide list remains capped`);
       if(archive) assert.ok(measure.columns>=Math.floor((width-64+20)/404),'wide screen is not adding columns');
@@ -312,6 +413,7 @@ async function checkAdaptiveToc(page, browserName) {
    const noJS=await offline.newPage();
    await noJS.route('**/*',r=>r.abort());
    await noJS.setContent(fs.readFileSync(path.join(site,'2026/2602.html'),'utf8'));
+   assert.equal(await noJS.locator('.toc').evaluate(toc=>toc.open),false,'directory should be collapsed without JavaScript');
    assert.equal(await noJS.locator('.plantuml-container > svg,.d2-container > svg').count(),8);
    await offline.close();
    console.log(`${name}: ${sizes.length*pages.length} viewport/page checks passed`);

@@ -3,7 +3,7 @@
     <header class="article-header">{{ partial "post/title.html" . }}</header>
     <div class="article-layout{{ if findRE `<li>` .TableOfContents }} has-toc{{ end }}">
       {{- if findRE `<li>` .TableOfContents }}
-      <details id="toc" class="toc" open>
+      <details id="toc" class="toc">
         <summary>{{ T "tableOfContents" }}</summary>
         {{ .TableOfContents }}
       </details>

@@ -11,9 +11,23 @@
         <h2 itemprop="name"><a class="article-title" href="{{ .Permalink }}" target="_blank" rel="noopener" itemprop="url" title="{{ .Title }}">{{ .Title }}</a></h2>
       </header>
     </div>
-    <div class="article-summary">
-      {{- /* Keep rendered formatting and balanced tags, without duplicating heading IDs across cards. */ -}}
-      <div class="archive-summary-content">{{ .Summary | replaceRE `\s+id="[^"]*"` "" | safeHTML | strings.Truncate 480 "…" }}</div>
+    {{- /* Keep the leading image outside the padded text, preserving its rendered attributes and link. */ -}}
+    {{- $summary := .Summary | replaceRE `\s+id="[^"]*"` "" -}}
+    {{- $image := `(?:<img\b[^>]*>|<a\b[^>]*>\s*<img\b[^>]*>\s*</a>)` -}}
+    {{- $bannerPattern := printf `(?s)^\s*(?:<p\b[^>]*>\s*%s\s*</p>|<figure\b[^>]*>\s*%s\s*</figure>)\s*` $image $image -}}
+    {{- $banner := "" -}}
+    {{- with findRE $bannerPattern $summary 1 -}}
+      {{- $banner = index . 0 -}}
+      {{- $summary = strings.TrimPrefix $banner $summary -}}
+    {{- end -}}
+    <div class="article-summary archive-summary{{ if $banner }} has-banner{{ end }}">
+      {{- with $banner }}
+      <div class="archive-summary-banner">{{ . | safeHTML }}</div>
+      {{- end }}
+      {{- if strings.TrimSpace $summary }}
+      {{- /* Keep balanced rich text without duplicating heading IDs across cards. */ -}}
+      <div class="archive-summary-content">{{ $summary | safeHTML | strings.Truncate 480 "…" }}</div>
+      {{- end }}
     </div>
     <footer class="archive-article-footer">
       <div class="archive-card-tags">
