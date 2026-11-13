@@ -42,12 +42,50 @@ class LLMTrainConfigureSave(BaseModel):
     dir: str
 
 
+class LLMTrainConfigureRopeScaling(BaseModel):
+    beta_fast: int
+    beta_slow: int
+    factor: int
+    original_max_position_embeddings: int
+    attention_factor: float
+    type: str
+
+
+class LLMTrainConfigureTrain(BaseModel):
+    batch_size: int
+    epochs: int
+    learning_rate: float
+    device: str
+
+
 class LLMTrainConfigureParam(BaseModel):
     batch_size: int
     epochs: int
     learning_rate: float
     device: str
     eps: float
+    hidden_size: int
+    num_hidden_layers: int
+    dropout: float
+    vocab_size: int
+    bos_token_id: int
+    eos_token_id: int
+    flash_attn: bool
+    num_attention_heads: int
+    num_key_value_heads: int
+    hidden_act: str
+    intermediate_size: int
+    max_position_embeddings: int
+    rope_theta: float
+    tie_word_embeddings: bool
+    inference_rope_scaling: bool
+    rope_scaling: LLMTrainConfigureRopeScaling
+    use_moe: bool
+    moe_num_experts: int
+    moe_num_experts_per_tok: int
+    moe_intermediate_size: int
+    norm_topk_prob: bool
+    router_aux_loss_coef: float
 
 
 class LLMTrainConfigureLoader(BaseModel):
@@ -57,10 +95,12 @@ class LLMTrainConfigureLoader(BaseModel):
 class LLMTrainConfigureAll(BaseModel):
     save: LLMTrainConfigureSave
     from_weight: str
+    train: LLMTrainConfigureTrain
     param: LLMTrainConfigureParam
     loader: LLMTrainConfigureLoader
 
 
+LLM_TRAIN_CONST_VALUE_HIDDEN_SIZE: int = 768
 LLM_TRAIN_SETTINGS = LLMTrainConfigureAll.model_validate(
     {
         # 从哪个权重开始 none, pretrain 等
@@ -69,7 +109,7 @@ LLM_TRAIN_SETTINGS = LLMTrainConfigureAll.model_validate(
             "prefix": "pretrain",
             "dir": "./out",
         },
-        "param": {
+        "train": {
             # Batch size
             "batch_size": 8,
             # 训练轮数
@@ -78,12 +118,60 @@ LLM_TRAIN_SETTINGS = LLMTrainConfigureAll.model_validate(
             "learning_rate": 2e-5,
             # 训练设备(如果有多GPU或者AMD的独显+集显，请注意选择正确的显卡设备)
             "device": "cuda:0" if torch.cuda.is_available() else "cpu",
+        },
+        "param": {
             # epsilon 参数
             "eps": 1e-6,
+            # 隐藏层维度，是否需要可word embedding的维度相同？
+            "hidden_size": LLM_TRAIN_CONST_VALUE_HIDDEN_SIZE,
+            # 隐藏层数量，隐藏层越多，是否世界知识越丰富？
+            "num_hidden_layers": 8,
+            # dropout 现代模型 dropout 是否都是0？为什么？
+            "dropout": 0.0,
+            # 词表大小？
+            "vocab_size": 6400,
+            # 什么含义？和词表相关？
+            "bos_token_id": 1,
+            # 什么含义？和词表相关？
+            "eos_token_id": 2,
+            # 是否使用Flash Attention
+            "flash_attn": True,
+            # 多头注意力的头数量，每个头分开计算。然后再concat到一起
+            "num_attention_heads": 8,
+            # KV头数量，为什么要和num_attention_heads分开？
+            "num_key_value_heads": 4,
+            # 什么含义?
+            "hidden_act": "silu",
+            # 什么含义？
+            "intermediate_size": math.ceil(
+                LLM_TRAIN_CONST_VALUE_HIDDEN_SIZE * math.pi / 64
+            )
+            * 64,
+            # 什么含义？
+            "max_position_embeddings": 32768,
+            # 什么含义?
+            "rope_theta": 1e6,
+            # 什么含义？
+            "tie_word_embeddings": True,
+            # 什么含义?
+            "inference_rope_scaling": False,
+            # 什么作用？
+            "rope_scaling": None,
+            # 是否是MOE模型
+            "use_moe": True,
             # MOE 专家数
             "moe_num_experts": 8,
             # MOE 激活专家数
             "moe_num_experts_per_tok": 2,
+            # 什么含义？
+            "moe_intermediate_size": math.ceil(
+                LLM_TRAIN_CONST_VALUE_HIDDEN_SIZE * math.pi / 64
+            )
+            * 64,
+            # 什么含义？
+            "norm_topk_prob": True,
+            # 什么含义？
+            "router_aux_loss_coef": 5e-4,
         },
         "loader": {
             # 加载数据的工作线程数
@@ -91,6 +179,18 @@ LLM_TRAIN_SETTINGS = LLMTrainConfigureAll.model_validate(
         },
     }
 )
+if LLM_TRAIN_SETTINGS.param.inference_rope_scaling:
+    LLM_TRAIN_SETTINGS.param.rope_scaling = LLMTrainConfigureRopeScaling.model_validate(
+        {
+            # 下列参数分别什么含义？
+            "beta_fast": 32,
+            "beta_slow": 1,
+            "factor": 16,
+            "original_max_position_embeddings": 2048,
+            "attention_factor": 1.0,
+            "type": "yarn",
+        }
+    )
 
 
 def is_main_process():
@@ -114,7 +214,7 @@ def get_learning_rate(current_step, total_steps, lr):
 # Adam 部分：自适应学习率: 梯度大/波动大的参数（v_t大）自动用更小的步长，梯度稳定的参数用更大的步长。
 def create_optimizer(model, **kargs):
     return optim.AdamW(
-        model.parameters(), lr=LLM_TRAIN_SETTINGS.param.learning_rate, **kargs
+        model.parameters(), lr=LLM_TRAIN_SETTINGS.train.learning_rate, **kargs
     )
 
 
@@ -148,50 +248,34 @@ def setup_seed(seed: int):
 class OWenTLLMConfig(PretrainedConfig):
     model_type = "OWenTLLM"
 
-    def __init__(self, hidden_size=768, num_hidden_layers=8, use_moe=False, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.hidden_size = hidden_size
-        self.num_hidden_layers = num_hidden_layers
-        self.use_moe = use_moe
-        self.dropout = kwargs.get("dropout", 0.0)
-        self.vocab_size = kwargs.get("vocab_size", 6400)
-        self.bos_token_id = kwargs.get("bos_token_id", 1)
-        self.eos_token_id = kwargs.get("eos_token_id", 2)
-        self.flash_attn = kwargs.get("flash_attn", True)
-        self.num_attention_heads = kwargs.get("num_attention_heads", 8)
-        self.num_key_value_heads = kwargs.get("num_key_value_heads", 4)
-        self.head_dim = kwargs.get(
-            "head_dim", self.hidden_size // self.num_attention_heads
-        )
-        self.hidden_act = kwargs.get("hidden_act", "silu")
-        self.intermediate_size = kwargs.get(
-            "intermediate_size", math.ceil(hidden_size * math.pi / 64) * 64
-        )
-        self.max_position_embeddings = kwargs.get("max_position_embeddings", 32768)
-        self.rms_norm_eps = kwargs.get("rms_norm_eps", 1e-6)
-        self.rope_theta = kwargs.get("rope_theta", 1e6)
-        self.tie_word_embeddings = kwargs.get("tie_word_embeddings", True)
-        self.inference_rope_scaling = kwargs.get("inference_rope_scaling", False)
-        self.rope_scaling = (
-            {
-                "beta_fast": 32,
-                "beta_slow": 1,
-                "factor": 16,
-                "original_max_position_embeddings": 2048,
-                "attention_factor": 1.0,
-                "type": "yarn",
-            }
-            if self.inference_rope_scaling
-            else None
-        )
+        self.hidden_size = LLM_TRAIN_SETTINGS.param.hidden_size
+        self.num_hidden_layers = LLM_TRAIN_SETTINGS.param.num_hidden_layers
+        self.use_moe = LLM_TRAIN_SETTINGS.param.use_moe
+        self.dropout = LLM_TRAIN_SETTINGS.param.dropout
+        self.vocab_size = LLM_TRAIN_SETTINGS.param.vocab_size
+        self.bos_token_id = LLM_TRAIN_SETTINGS.param.bos_token_id
+        self.eos_token_id = LLM_TRAIN_SETTINGS.param.eos_token_id
+        self.flash_attn = LLM_TRAIN_SETTINGS.param.flash_attn
+        self.num_attention_heads = LLM_TRAIN_SETTINGS.param.num_attention_heads
+        self.num_key_value_heads = LLM_TRAIN_SETTINGS.param.num_key_value_heads
+        # 每头维度
+        self.head_dim = self.hidden_size // self.num_attention_heads
+        self.hidden_act = LLM_TRAIN_SETTINGS.param.hidden_act
+        self.intermediate_size = LLM_TRAIN_SETTINGS.param.intermediate_size
+        self.max_position_embeddings = LLM_TRAIN_SETTINGS.param.max_position_embeddings
+        self.rms_norm_eps = LLM_TRAIN_SETTINGS.param.eps
+        self.rope_theta = LLM_TRAIN_SETTINGS.param.rope_theta
+        self.tie_word_embeddings = LLM_TRAIN_SETTINGS.param.tie_word_embeddings
+        self.inference_rope_scaling = LLM_TRAIN_SETTINGS.param.intermediate_size
+        self.rope_scaling = LLM_TRAIN_SETTINGS.param.rope_scaling
         ### MoE specific configs (ignored if use_moe = False)
-        self.num_experts = kwargs.get("num_experts", 4)
-        self.num_experts_per_tok = kwargs.get("num_experts_per_tok", 1)
-        self.moe_intermediate_size = kwargs.get(
-            "moe_intermediate_size", self.intermediate_size
-        )
-        self.norm_topk_prob = kwargs.get("norm_topk_prob", True)
-        self.router_aux_loss_coef = kwargs.get("router_aux_loss_coef", 5e-4)
+        self.num_experts = LLM_TRAIN_SETTINGS.param.moe_num_experts
+        self.num_experts_per_tok = LLM_TRAIN_SETTINGS.param.moe_num_experts_per_tok
+        self.moe_intermediate_size = LLM_TRAIN_SETTINGS.param.moe_intermediate_size
+        self.norm_topk_prob = LLM_TRAIN_SETTINGS.param.norm_topk_prob
+        self.router_aux_loss_coef = LLM_TRAIN_SETTINGS.param.router_aux_loss_coef
 
 
 # ==================================== 模型内容部分 ====================================
@@ -757,12 +841,12 @@ def train_epoch(epoch, loader, iters, start_step=0, wandb=None):
     start_time = time.time()
     # 每一个Step都对应一组输入数据
     for step, (input_ids, labels) in enumerate(loader, start=start_step + 1):
-        input_ids = input_ids.to(LLM_TRAIN_SETTINGS.param.device)
-        labels = labels.to(LLM_TRAIN_SETTINGS.param.device)
+        input_ids = input_ids.to(LLM_TRAIN_SETTINGS.train.device)
+        labels = labels.to(LLM_TRAIN_SETTINGS.train.device)
         lr = get_learning_rate(
             epoch * iters + step,
-            LLM_TRAIN_SETTINGS.param.epochs * iters,
-            LLM_TRAIN_SETTINGS.param.learning_rate,
+            LLM_TRAIN_SETTINGS.train.epochs * iters,
+            LLM_TRAIN_SETTINGS.train.learning_rate,
         )
         for param_group in optimizer.param_groups:
             param_group["lr"] = lr
@@ -791,7 +875,7 @@ def train_epoch(epoch, loader, iters, start_step=0, wandb=None):
             current_lr = optimizer.param_groups[-1]["lr"]
             eta_min = spend_time / max(step - start_step, 1) * (iters - step) // 60
             Logger(
-                f"Epoch:[{epoch + 1}/{LLM_TRAIN_SETTINGS.param.epochs}]({step}/{iters}), loss: {current_loss:.4f}, logits_loss: {current_logits_loss:.4f}, aux_loss: {current_aux_loss:.4f}, lr: {current_lr:.8f}, epoch_time: {eta_min:.1f}min"
+                f"Epoch:[{epoch + 1}/{LLM_TRAIN_SETTINGS.train.epochs}]({step}/{iters}), loss: {current_loss:.4f}, logits_loss: {current_logits_loss:.4f}, aux_loss: {current_aux_loss:.4f}, lr: {current_lr:.8f}, epoch_time: {eta_min:.1f}min"
             )
             if wandb:
                 wandb.log(
@@ -940,7 +1024,7 @@ if __name__ == "__main__":
 
         wandb_id = ckp_data.get("wandb_id") if ckp_data else None
         resume = "must" if wandb_id else None
-        wandb_run_name = f"OWenTLLM-Pretrain-Epoch-{LLM_TRAIN_SETTINGS.param.epochs}-BatchSize-{args.batch_size}-LearningRate-{args.learning_rate}"
+        wandb_run_name = f"OWenTLLM-Pretrain-Epoch-{LLM_TRAIN_SETTINGS.train.epochs}-BatchSize-{args.batch_size}-LearningRate-{args.learning_rate}"
         wandb.init(
             project=args.wandb_project, name=wandb_run_name, id=wandb_id, resume=resume
         )
@@ -969,7 +1053,7 @@ if __name__ == "__main__":
         model = DistributedDataParallel(model, device_ids=[local_rank])
 
     # ========== 8. 开始训练 ==========
-    for epoch in range(start_epoch, LLM_TRAIN_SETTINGS.param.epochs):
+    for epoch in range(start_epoch, LLM_TRAIN_SETTINGS.train.epochs):
         train_sampler and train_sampler.set_epoch(epoch)
         setup_seed(args.seed + epoch)
         indices = torch.randperm(len(train_ds)).tolist()
@@ -985,7 +1069,7 @@ if __name__ == "__main__":
         )
         if skip > 0:
             Logger(
-                f"Epoch [{epoch + 1}/{LLM_TRAIN_SETTINGS.param.epochs}]: 跳过前{start_step}个step，从step {start_step + 1}开始"
+                f"Epoch [{epoch + 1}/{LLM_TRAIN_SETTINGS.train.epochs}]: 跳过前{start_step}个step，从step {start_step + 1}开始"
             )
             train_epoch(
                 epoch,
