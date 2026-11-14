@@ -6,7 +6,7 @@ import time
 import math
 import warnings
 from contextlib import nullcontext
-
+from typing import Any
 from enum import Enum
 
 import numpy
@@ -16,6 +16,7 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
 from pydantic import BaseModel
 
+from datasets import load_dataset
 import torch
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel
@@ -33,6 +34,7 @@ warnings.filterwarnings("ignore")
 class LLMTrainWeightType(Enum):
     kNone = 0
     kPretrain = 1
+    kFullSFT = 2
 
 class LLMTrainConfigureSave(BaseModel):
     save_weight: LLMTrainWeightType
@@ -89,12 +91,14 @@ class LLMTrainConfigureParam(BaseModel):
 
 class LLMTrainConfigureLoader(BaseModel):
     num_workers: int
+    data_item_max_length: int
+    tokenizer_path: str
 
 class LLMTrainConfigureVisualizationWanDB(BaseModel):
     project: str
 
 class LLMTrainConfigureVisualization(BaseModel):
-    wandb: LLMTrainConfigureVisualizationWanDB
+    wandb: LLMTrainConfigureVisualizationWanDB | None
 
 class LLMTrainConfigureLog(BaseModel):
     step_interval: int
@@ -105,7 +109,7 @@ class LLMTrainConfigureAll(BaseModel):
     train: LLMTrainConfigureTrain
     param: LLMTrainConfigureParam
     loader: LLMTrainConfigureLoader
-    visualization: LLMTrainConfigureVisualization
+    visualization: LLMTrainConfigureVisualization | None
     log: LLMTrainConfigureLog
 
 # torchrun 启动时会设置 RANK 和 LOCAL_RANK 环境变量
@@ -211,8 +215,10 @@ LLM_TRAIN_SETTINGS = LLMTrainConfigureAll.model_validate(
         "loader": {
             # 加载数据的工作线程数
             "num_workers": 8,
-            # 每条训练数据的最大截断长度（中文1token≈1.5~1.7字符）
-            "data_item_max_length": 1024,
+            # 每条训练数据的最大截断长度，Unsloth里QWen 3.8 27B默认2048，GPT-20b-oss默认1024
+            "data_item_max_length": 2048,
+            # tokenizer路径
+            "tokenizer_path": "../model",
         },
         "visualization": None,
         "log": {
@@ -272,7 +278,7 @@ def setup_seed(seed: int):
 
 
 # 运行时配置结构
-class OWenTLLMConfig(PretrainedConfig):
+class LLMTrainRuntimeConfig(PretrainedConfig):
     model_type = LLM_TRAIN_SETTINGS.model_name
 
     def __init__(self, settings: LLMTrainConfigureAll, **kwargs):
@@ -462,7 +468,7 @@ def repeat_kv(x: torch.Tensor, n_rep: int) -> torch.Tensor:
 
 
 class Attention(torch.nn.Module):
-    def __init__(self, config: OWenTLLMConfig):
+    def __init__(self, config: LLMTrainRuntimeConfig):
         super().__init__()
         self.num_key_value_heads = (
             config.num_attention_heads
@@ -549,7 +555,7 @@ class Attention(torch.nn.Module):
 
 
 class FeedForward(torch.nn.Module):
-    def __init__(self, config: OWenTLLMConfig, intermediate_size: int = None):
+    def __init__(self, config: LLMTrainRuntimeConfig, intermediate_size: int = None):
         super().__init__()
         intermediate_size = intermediate_size or config.intermediate_size
         self.gate_proj = torch.nn.Linear(config.hidden_size, intermediate_size, bias=False)
@@ -562,7 +568,7 @@ class FeedForward(torch.nn.Module):
 
 
 class MOEFeedForward(torch.nn.Module):
-    def __init__(self, config: OWenTLLMConfig):
+    def __init__(self, config: LLMTrainRuntimeConfig):
         super().__init__()
         self.config = config
         self.gate = torch.nn.Linear(config.hidden_size, config.num_experts, bias=False)
@@ -621,7 +627,7 @@ class MOEFeedForward(torch.nn.Module):
 
 # 单层 Transformer 解码块
 class OWenTLLMBlock(torch.nn.Module):
-    def __init__(self, layer_id: int, config: OWenTLLMConfig):
+    def __init__(self, layer_id: int, config: LLMTrainRuntimeConfig):
         super().__init__()
         self.self_attn = Attention(config)
         self.input_layernorm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
@@ -655,7 +661,7 @@ class OWenTLLMBlock(torch.nn.Module):
 
 # 主干网络
 class OWenTLLMModel(torch.nn.Module):
-    def __init__(self, config: OWenTLLMConfig):
+    def __init__(self, config: LLMTrainRuntimeConfig):
         super().__init__()
         self.config = config
         self.vocab_size, self.num_hidden_layers = (
@@ -728,11 +734,11 @@ class OWenTLLMModel(torch.nn.Module):
 
 # 完整模型
 class OWenTLLMForCausalLM(PreTrainedModel, GenerationMixin):
-    config_class = OWenTLLMConfig
+    config_class = LLMTrainRuntimeConfig
     _tied_weights_keys = {"lm_head.weight": "model.embed_tokens.weight"}
 
-    def __init__(self, config: OWenTLLMConfig = None):
-        self.config = config or OWenTLLMConfig(LLM_TRAIN_SETTINGS)
+    def __init__(self, config: LLMTrainRuntimeConfig = None):
+        self.config = config or LLMTrainRuntimeConfig(LLM_TRAIN_SETTINGS)
         super().__init__(self.config)
         self.model = OWenTLLMModel(self.config)
         self.lm_head = torch.nn.Linear(
@@ -899,25 +905,25 @@ def print_model_params(model, config):
 
 
 def init_model(
-    lm_config,
-    tokenizer_path="../model",
-    device="cuda",
+    lm_config: LLMTrainRuntimeConfig,
+    settings: LLMTrainConfigureAll
 ):
-    tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
+    tokenizer = AutoTokenizer.from_pretrained(settings.loader.tokenizer_path)
     model = OWenTLLMForCausalLM(lm_config)
 
-    if LLM_TRAIN_SETTINGS.train.from_weight != LLMTrainWeightType.kNone:
+    # 如果是从一个已经与训练好的模型做后训练，那么这里的 from_weight 是 LLMTrainWeightType.kPretrain
+    if settings.train.from_weight != LLMTrainWeightType.kNone:
         weight_path = (
-            f"{LLM_TRAIN_SETTINGS.save.dir}/output/{lm_get_ckp_file_name(LLM_TRAIN_SETTINGS, LLM_TRAIN_SETTINGS.train.from_weight)}"
+            f"{settings.save.dir}/output/{lm_get_ckp_file_name(settings, settings.train.from_weight)}"
         )
-        weights = torch.load(weight_path, map_location=device)
+        weights = torch.load(weight_path, map_location=settings.train.device)
         model.load_state_dict(weights, strict=False)
 
     print_model_params(model, lm_config)
     Logger(
         f"Trainable Params: {sum(p.numel() for p in model.parameters() if p.requires_grad) / 1e6:.3f}M"
     )
-    return model.to(device), tokenizer
+    return model.to(settings.train.device), tokenizer
 
 class SkipBatchSampler(Sampler):
     def __init__(self, sampler, batch_size, skip_batches=0):
@@ -968,7 +974,7 @@ class PretrainDataset(torch.utils.data.Dataset):
 
 # ============================================ 流程入口 ============================================
 # 开始一轮训练
-def train_epoch(settings: LLMTrainConfigureAll,epoch, loader, iters, start_step=0, wandb=None):
+def train_epoch(settings: LLMTrainConfigureAll, epoch: int, loader: DataLoader, iters: int, start_step: int = 0, wandb: Any = None) -> None:
     start_time = time.time()
     # 每一个Step都对应一组输入数据
     for step, (input_ids, labels) in enumerate(loader, start=start_step + 1):
@@ -1047,12 +1053,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=f"{LLM_TRAIN_SETTINGS.model_name} {str(LLM_TRAIN_SETTINGS.save.save_weight)[1:]}")
     parser.add_argument(
-        "--max_seq_len",
-        default=340,
-        type=int,
-        help="训练的最大截断长度（中文1token≈1.5~1.7字符）",
-    )
-    parser.add_argument(
         "--input-data-path",
         type=str,
         default="../dataset/pretrain_t2t_mini.jsonl",
@@ -1076,7 +1076,7 @@ if __name__ == "__main__":
 
     # ========== 2. 配置目录、模型参数、检查ckp ==========
     os.makedirs(f"{LLM_TRAIN_SETTINGS.save.dir}/output", exist_ok=True)
-    lm_config = OWenTLLMConfig(LLM_TRAIN_SETTINGS)
+    lm_config = LLMTrainRuntimeConfig(LLM_TRAIN_SETTINGS)
     ckp_data = (
         lm_checkpoint(LLM_TRAIN_SETTINGS)
         if args.resume == 1
@@ -1104,9 +1104,10 @@ if __name__ == "__main__":
         )
 
     # ========== 5. 定义模型、数据、优化器 ==========
-    model, tokenizer = init_model(lm_config, device=LLM_TRAIN_SETTINGS.train.device)
-    train_ds = PretrainDataset(args.input_data_path, tokenizer, max_length=args.max_seq_len)
+    model, tokenizer = init_model(lm_config, LLM_TRAIN_SETTINGS)
+    train_ds = PretrainDataset(args.input_data_path, tokenizer, max_length=LLM_TRAIN_SETTINGS.loader.data_item_max_length)
     train_sampler = DistributedSampler(train_ds) if dist.is_initialized() else None
+    # GradScaler的作用是什么？
     scaler = torch.amp.GradScaler(device_type, enabled=(LLM_TRAIN_SETTINGS.param.dtype == "float16"))
     optimizer = torch.optim.AdamW(model.parameters(), lr=LLM_TRAIN_SETTINGS.train.learning_rate)
 
