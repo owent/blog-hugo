@@ -1,6 +1,14 @@
 import os
 import sys
 import random
+import argparse
+import time
+import math
+import warnings
+from contextlib import nullcontext
+
+from enum import Enum
+
 import numpy
 
 __package__ = "trainer"
@@ -8,39 +16,28 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
 from pydantic import BaseModel
 
-import datasets  # noqa: F401  # Windows pyarrow/torch DLL conflict workaround (issue #771)
-import argparse
-import time
-import warnings
-import math
 import torch
 import torch.distributed as dist
-from contextlib import nullcontext
-from torch import optim, nn
 from torch.nn.parallel import DistributedDataParallel
-from torch.utils.data import DataLoader, DistributedSampler
+from torch.utils.data import DataLoader, DistributedSampler, Sampler
 from transformers.activations import ACT2FN
 from transformers import PreTrainedModel, GenerationMixin, PretrainedConfig
 from transformers import AutoTokenizer, AutoModel, AutoModelForSequenceClassification
 from transformers.modeling_outputs import MoeCausalLMOutputWithPast
-import math, torch, torch.nn.functional as F
-
-from dataset.lm_dataset import PretrainDataset
-from trainer.trainer_utils import (
-    lm_checkpoint,
-    SkipBatchSampler,
-)
 
 warnings.filterwarnings("ignore")
 
 
 # 下载数据集 modelscope download --dataset gongjy/minimind_dataset README.md --local_dir ./dataset
 
+class LLMTrainWeightType(Enum):
+    kNone = 0
+    kPretrain = 1
 
 class LLMTrainConfigureSave(BaseModel):
-    prefix: str
+    save_weight: LLMTrainWeightType
     dir: str
-
+    step_interval: int
 
 class LLMTrainConfigureRopeScaling(BaseModel):
     beta_fast: int
@@ -51,18 +48,20 @@ class LLMTrainConfigureRopeScaling(BaseModel):
     type: str
 
 
+
 class LLMTrainConfigureTrain(BaseModel):
+    from_weight: LLMTrainWeightType
     batch_size: int
     epochs: int
     learning_rate: float
     device: str
+    use_compile: bool
+    seed: int
+    accumulation_steps: int
+    grad_clip: float
 
 
 class LLMTrainConfigureParam(BaseModel):
-    batch_size: int
-    epochs: int
-    learning_rate: float
-    device: str
     eps: float
     hidden_size: int
     num_hidden_layers: int
@@ -91,25 +90,51 @@ class LLMTrainConfigureParam(BaseModel):
 class LLMTrainConfigureLoader(BaseModel):
     num_workers: int
 
+class LLMTrainConfigureVisualizationWanDB(BaseModel):
+    project: str
+
+class LLMTrainConfigureVisualization(BaseModel):
+    wandb: LLMTrainConfigureVisualizationWanDB
+
+class LLMTrainConfigureLog(BaseModel):
+    step_interval: int
 
 class LLMTrainConfigureAll(BaseModel):
+    model_name: str
     save: LLMTrainConfigureSave
-    from_weight: str
     train: LLMTrainConfigureTrain
     param: LLMTrainConfigureParam
     loader: LLMTrainConfigureLoader
+    visualization: LLMTrainConfigureVisualization
+    log: LLMTrainConfigureLog
 
+# torchrun 启动时会设置 RANK 和 LOCAL_RANK 环境变量
+def init_distributed_mode():
+    if int(os.environ.get("RANK", -1)) == -1:
+        return 0  # 非DDP模式
+
+    # 多卡训练
+    # nccl是 NVIDIA 的多卡集合通信库，是 GPU 训练做梯度 all-reduce 的标准后端。
+    dist.init_process_group(backend="nccl")
+    # 取出本进程在本机内的 GPU 编号
+    local_rank = int(os.environ["LOCAL_RANK"])
+    # 绑定GPU
+    torch.cuda.set_device(local_rank)
+    return local_rank
 
 LLM_TRAIN_CONST_VALUE_HIDDEN_SIZE: int = 768
 LLM_TRAIN_SETTINGS = LLMTrainConfigureAll.model_validate(
     {
-        # 从哪个权重开始 none, pretrain 等
-        "from_weight": "none",
+        "model_name": "OWenTLLM",
         "save": {
-            "prefix": "pretrain",
+            "save_weight": LLMTrainWeightType.kPretrain,
             "dir": "./out",
+            # 模型保存间隔
+            "step_interval": 1000,
         },
         "train": {
+            # 基于哪个权重训练，为none则从头开始
+            "from_weight": LLMTrainWeightType.kNone,
             # Batch size
             "batch_size": 8,
             # 训练轮数
@@ -117,11 +142,21 @@ LLM_TRAIN_SETTINGS = LLMTrainConfigureAll.model_validate(
             # 初始学习率
             "learning_rate": 2e-5,
             # 训练设备(如果有多GPU或者AMD的独显+集显，请注意选择正确的显卡设备)
-            "device": "cuda:0" if torch.cuda.is_available() else "cpu",
+            "device": "cuda" if torch.cuda.is_available() else "cpu",
+            # 是否使用torch.compile加速
+            "use_compile": False,
+            # 随机种子（DDP下每个rank为seed+rank，每轮为seed+epoch）。这个值可否随机？还是必须每次训练必须保持不变？
+            "seed": 42,
+            # 梯度累积步数。有什么作用？
+            "accumulation_steps": 8,
+            # 梯度裁剪阈值。有什么作用？
+            "grad_clip": 1.0,
         },
         "param": {
             # epsilon 参数
             "eps": 1e-6,
+            # 混合精度类型
+            "dtype": "bfloat16",
             # 隐藏层维度，是否需要可word embedding的维度相同？
             "hidden_size": LLM_TRAIN_CONST_VALUE_HIDDEN_SIZE,
             # 隐藏层数量，隐藏层越多，是否世界知识越丰富？
@@ -176,7 +211,14 @@ LLM_TRAIN_SETTINGS = LLMTrainConfigureAll.model_validate(
         "loader": {
             # 加载数据的工作线程数
             "num_workers": 8,
+            # 每条训练数据的最大截断长度（中文1token≈1.5~1.7字符）
+            "data_item_max_length": 1024,
         },
+        "visualization": None,
+        "log": {
+            # 日志打印间隔
+            "step_interval": 100,
+        }
     }
 )
 if LLM_TRAIN_SETTINGS.param.inference_rope_scaling:
@@ -212,25 +254,10 @@ def get_learning_rate(current_step, total_steps, lr):
 
 # 创建优化器
 # Adam 部分：自适应学习率: 梯度大/波动大的参数（v_t大）自动用更小的步长，梯度稳定的参数用更大的步长。
-def create_optimizer(model, **kargs):
-    return optim.AdamW(
-        model.parameters(), lr=LLM_TRAIN_SETTINGS.train.learning_rate, **kargs
+def create_optimizer(model, settings: LLMTrainConfigureAll, **kargs):
+    return torch.optim.AdamW(
+        model.parameters(), lr=settings.train.learning_rate, **kargs
     )
-
-
-# torchrun 启动时会设置 RANK 和 LOCAL_RANK 环境变量
-def init_distributed_mode():
-    if int(os.environ.get("RANK", -1)) == -1:
-        return 0  # 非DDP模式
-
-    # 多卡训练
-    # nccl是 NVIDIA 的多卡集合通信库，是 GPU 训练做梯度 all-reduce 的标准后端。
-    dist.init_process_group(backend="nccl")
-    # 取出本进程在本机内的 GPU 编号
-    local_rank = int(os.environ["LOCAL_RANK"])
-    # 绑定GPU
-    torch.cuda.set_device(local_rank)
-    return local_rank
 
 
 # 初始化种子
@@ -244,39 +271,100 @@ def setup_seed(seed: int):
     torch.backends.cudnn.benchmark = False
 
 
-# 配置结构
+# 运行时配置结构
 class OWenTLLMConfig(PretrainedConfig):
-    model_type = "OWenTLLM"
+    model_type = LLM_TRAIN_SETTINGS.model_name
 
-    def __init__(self, **kwargs):
+    def __init__(self, settings: LLMTrainConfigureAll, **kwargs):
         super().__init__(**kwargs)
-        self.hidden_size = LLM_TRAIN_SETTINGS.param.hidden_size
-        self.num_hidden_layers = LLM_TRAIN_SETTINGS.param.num_hidden_layers
-        self.use_moe = LLM_TRAIN_SETTINGS.param.use_moe
-        self.dropout = LLM_TRAIN_SETTINGS.param.dropout
-        self.vocab_size = LLM_TRAIN_SETTINGS.param.vocab_size
-        self.bos_token_id = LLM_TRAIN_SETTINGS.param.bos_token_id
-        self.eos_token_id = LLM_TRAIN_SETTINGS.param.eos_token_id
-        self.flash_attn = LLM_TRAIN_SETTINGS.param.flash_attn
-        self.num_attention_heads = LLM_TRAIN_SETTINGS.param.num_attention_heads
-        self.num_key_value_heads = LLM_TRAIN_SETTINGS.param.num_key_value_heads
+        self.hidden_size = settings.param.hidden_size
+        self.num_hidden_layers = settings.param.num_hidden_layers
+        self.use_moe = settings.param.use_moe
+        self.dropout = settings.param.dropout
+        self.vocab_size = settings.param.vocab_size
+        self.bos_token_id = settings.param.bos_token_id
+        self.eos_token_id = settings.param.eos_token_id
+        self.flash_attn = settings.param.flash_attn
+        self.num_attention_heads = settings.param.num_attention_heads
+        self.num_key_value_heads = settings.param.num_key_value_heads
         # 每头维度
         self.head_dim = self.hidden_size // self.num_attention_heads
-        self.hidden_act = LLM_TRAIN_SETTINGS.param.hidden_act
-        self.intermediate_size = LLM_TRAIN_SETTINGS.param.intermediate_size
-        self.max_position_embeddings = LLM_TRAIN_SETTINGS.param.max_position_embeddings
-        self.rms_norm_eps = LLM_TRAIN_SETTINGS.param.eps
-        self.rope_theta = LLM_TRAIN_SETTINGS.param.rope_theta
-        self.tie_word_embeddings = LLM_TRAIN_SETTINGS.param.tie_word_embeddings
-        self.inference_rope_scaling = LLM_TRAIN_SETTINGS.param.intermediate_size
-        self.rope_scaling = LLM_TRAIN_SETTINGS.param.rope_scaling
+        self.hidden_act = settings.param.hidden_act
+        self.intermediate_size = settings.param.intermediate_size
+        self.max_position_embeddings = settings.param.max_position_embeddings
+        self.rms_norm_eps = settings.param.eps
+        self.rope_theta = settings.param.rope_theta
+        self.tie_word_embeddings = settings.param.tie_word_embeddings
+        self.inference_rope_scaling = settings.param.intermediate_size
+        self.rope_scaling = settings.param.rope_scaling
         ### MoE specific configs (ignored if use_moe = False)
-        self.num_experts = LLM_TRAIN_SETTINGS.param.moe_num_experts
-        self.num_experts_per_tok = LLM_TRAIN_SETTINGS.param.moe_num_experts_per_tok
-        self.moe_intermediate_size = LLM_TRAIN_SETTINGS.param.moe_intermediate_size
-        self.norm_topk_prob = LLM_TRAIN_SETTINGS.param.norm_topk_prob
-        self.router_aux_loss_coef = LLM_TRAIN_SETTINGS.param.router_aux_loss_coef
+        self.num_experts = settings.param.moe_num_experts
+        self.num_experts_per_tok = settings.param.moe_num_experts_per_tok
+        self.moe_intermediate_size = settings.param.moe_intermediate_size
+        self.norm_topk_prob = settings.param.norm_topk_prob
+        self.router_aux_loss_coef = settings.param.router_aux_loss_coef
 
+def lm_get_ckp_file_name(settings : LLMTrainConfigureAll, weight : LLMTrainWeightType):
+    moe_path = '-moe' if settings.param.use_moe else ''
+    return f"{str(weight)[1:]}-{settings.param.hidden_size}{moe_path}.pth"
+def lm_get_ckp_resume_file_name(settings : LLMTrainConfigureAll, weight : LLMTrainWeightType):
+    moe_path = '-moe' if settings.param.use_moe else ''
+    return f"{str(weight)[1:]}-{settings.param.hidden_size}{moe_path}.resume.pth"
+# 读取或保存检查点
+def lm_checkpoint(settings : LLMTrainConfigureAll, model=None, optimizer=None, epoch=0, step=0, wandb=None, **kwargs):
+    save_dir = f"{settings.save.dir}/checkpoint"
+    os.makedirs(save_dir, exist_ok=True)
+    ckp_path = f'{save_dir}/{lm_get_ckp_file_name(settings, settings.save.save_weight)}'
+    resume_path = f'{save_dir}/{lm_get_ckp_resume_file_name(settings, settings.save.save_weight)}'
+
+    if model is not None:
+        raw_model = model.module if isinstance(model, DistributedDataParallel) else model
+        raw_model = getattr(raw_model, '_orig_mod', raw_model)
+        state_dict = raw_model.state_dict()
+        state_dict = {k: v.half().cpu() for k, v in state_dict.items()}
+        ckp_tmp = ckp_path + '.tmp'
+        torch.save(state_dict, ckp_tmp)
+        os.replace(ckp_tmp, ckp_path)
+        wandb_id = None
+        if wandb:
+            if hasattr(wandb, 'get_run'):
+                run = wandb.get_run()
+                wandb_id = getattr(run, 'id', None) if run else None
+            else:
+                wandb_id = getattr(wandb, 'id', None)
+
+        resume_data = {
+            'model': state_dict,
+            'optimizer': optimizer.state_dict(),
+            'epoch': epoch,
+            'step': step,
+            'world_size': dist.get_world_size() if dist.is_initialized() else 1,
+            'wandb_id': wandb_id
+        }
+        for key, value in kwargs.items():
+            if value is not None:
+                if hasattr(value, 'state_dict'):
+                    raw_value = value.module if isinstance(value, DistributedDataParallel) else value
+                    raw_value = getattr(raw_value, '_orig_mod', raw_value)
+                    resume_data[key] = raw_value.state_dict()
+                else:
+                    resume_data[key] = value
+
+        resume_tmp = resume_path + '.tmp'
+        torch.save(resume_data, resume_tmp)
+        os.replace(resume_tmp, resume_path)
+        del state_dict, resume_data
+        torch.cuda.empty_cache()
+    else:  # 加载模式
+        if os.path.exists(resume_path):
+            ckp_data = torch.load(resume_path, map_location='cpu')
+            saved_ws = ckp_data.get('world_size', 1)
+            current_ws = dist.get_world_size() if dist.is_initialized() else 1
+            if saved_ws != current_ws:
+                ckp_data['step'] = ckp_data['step'] * saved_ws // current_ws
+                Logger(f'GPU数量变化({saved_ws}→{current_ws})，step已自动转换为{ckp_data["step"]}')
+            return ckp_data
+        return None
 
 # ==================================== 模型内容部分 ====================================
 
@@ -287,7 +375,7 @@ class RMSNorm(torch.nn.Module):
         super().__init__()
         self.eps = eps
         # 把weight变成可训练参数
-        self.weight = nn.Parameter(torch.ones(dim))
+        self.weight = torch.nn.Parameter(torch.ones(dim))
 
     def norm(self, x):
         # x 的形状通常是 (batch_size, seq_len, hidden_size)，这里指对最后一维进行求平均
@@ -373,7 +461,7 @@ def repeat_kv(x: torch.Tensor, n_rep: int) -> torch.Tensor:
     )
 
 
-class Attention(nn.Module):
+class Attention(torch.nn.Module):
     def __init__(self, config: OWenTLLMConfig):
         super().__init__()
         self.num_key_value_heads = (
@@ -386,22 +474,22 @@ class Attention(nn.Module):
         self.n_rep = self.n_local_heads // self.n_local_kv_heads
         self.head_dim = config.head_dim
         self.is_causal = True
-        self.q_proj = nn.Linear(
+        self.q_proj = torch.nn.Linear(
             config.hidden_size, config.num_attention_heads * self.head_dim, bias=False
         )
-        self.k_proj = nn.Linear(
+        self.k_proj = torch.nn.Linear(
             config.hidden_size, self.num_key_value_heads * self.head_dim, bias=False
         )
-        self.v_proj = nn.Linear(
+        self.v_proj = torch.nn.Linear(
             config.hidden_size, self.num_key_value_heads * self.head_dim, bias=False
         )
-        self.o_proj = nn.Linear(
+        self.o_proj = torch.nn.Linear(
             config.num_attention_heads * self.head_dim, config.hidden_size, bias=False
         )
         self.q_norm = RMSNorm(self.head_dim, eps=config.rms_norm_eps)
         self.k_norm = RMSNorm(self.head_dim, eps=config.rms_norm_eps)
-        self.attn_dropout = nn.Dropout(config.dropout)
-        self.resid_dropout = nn.Dropout(config.dropout)
+        self.attn_dropout = torch.nn.Dropout(config.dropout)
+        self.resid_dropout = torch.nn.Dropout(config.dropout)
         self.dropout = config.dropout
         self.flash = (
             hasattr(torch.nn.functional, "scaled_dot_product_attention")
@@ -439,7 +527,7 @@ class Attention(nn.Module):
             and (not self.is_causal or past_key_value is None)
             and (attention_mask is None or torch.all(attention_mask == 1))
         ):
-            output = F.scaled_dot_product_attention(
+            output = torch.nn.functional.scaled_dot_product_attention(
                 xq,
                 xk,
                 xv,
@@ -454,31 +542,31 @@ class Attention(nn.Module):
                 ).triu(1)
             if attention_mask is not None:
                 scores += (1.0 - attention_mask.unsqueeze(1).unsqueeze(2)) * -1e9
-            output = self.attn_dropout(F.softmax(scores, dim=-1).type_as(xq)) @ xv
+            output = self.attn_dropout(torch.nn.functional.softmax(scores, dim=-1).type_as(xq)) @ xv
         output = output.transpose(1, 2).reshape(bsz, seq_len, -1)
         output = self.resid_dropout(self.o_proj(output))
         return output, past_kv
 
 
-class FeedForward(nn.Module):
+class FeedForward(torch.nn.Module):
     def __init__(self, config: OWenTLLMConfig, intermediate_size: int = None):
         super().__init__()
         intermediate_size = intermediate_size or config.intermediate_size
-        self.gate_proj = nn.Linear(config.hidden_size, intermediate_size, bias=False)
-        self.down_proj = nn.Linear(intermediate_size, config.hidden_size, bias=False)
-        self.up_proj = nn.Linear(config.hidden_size, intermediate_size, bias=False)
+        self.gate_proj = torch.nn.Linear(config.hidden_size, intermediate_size, bias=False)
+        self.down_proj = torch.nn.Linear(intermediate_size, config.hidden_size, bias=False)
+        self.up_proj = torch.nn.Linear(config.hidden_size, intermediate_size, bias=False)
         self.act_fn = ACT2FN[config.hidden_act]
 
     def forward(self, x):
         return self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
 
 
-class MOEFeedForward(nn.Module):
+class MOEFeedForward(torch.nn.Module):
     def __init__(self, config: OWenTLLMConfig):
         super().__init__()
         self.config = config
-        self.gate = nn.Linear(config.hidden_size, config.num_experts, bias=False)
-        self.experts = nn.ModuleList(
+        self.gate = torch.nn.Linear(config.hidden_size, config.num_experts, bias=False)
+        self.experts = torch.nn.ModuleList(
             [
                 FeedForward(config, intermediate_size=config.moe_intermediate_size)
                 for _ in range(config.num_experts)
@@ -489,7 +577,7 @@ class MOEFeedForward(nn.Module):
     def forward(self, x):
         batch_size, seq_len, hidden_dim = x.shape
         x_flat = x.view(-1, hidden_dim)
-        scores = F.softmax(self.gate(x_flat), dim=-1)
+        scores = torch.nn.functional.softmax(self.gate(x_flat), dim=-1)
         topk_weight, topk_idx = torch.topk(
             scores, k=self.config.num_experts_per_tok, dim=-1, sorted=False
         )
@@ -500,7 +588,7 @@ class MOEFeedForward(nn.Module):
                 )
             else:
                 top1 = torch.topk(
-                    F.softmax(self.gate(x_flat.detach()), dim=-1),
+                    torch.nn.functional.softmax(self.gate(x_flat.detach()), dim=-1),
                     k=1,
                     dim=-1,
                     sorted=False,
@@ -520,7 +608,7 @@ class MOEFeedForward(nn.Module):
             elif self.training:
                 y[0, 0] += 0 * sum(p.sum() for p in expert.parameters())
         if self.training and self.config.router_aux_loss_coef > 0:
-            load = F.one_hot(topk_idx, self.config.num_experts).float().mean(0)
+            load = torch.nn.functional.one_hot(topk_idx, self.config.num_experts).float().mean(0)
             self.aux_loss = (
                 (load * scores.mean(0)).sum()
                 * self.config.num_experts
@@ -532,7 +620,7 @@ class MOEFeedForward(nn.Module):
 
 
 # 单层 Transformer 解码块
-class OWenTLLMBlock(nn.Module):
+class OWenTLLMBlock(torch.nn.Module):
     def __init__(self, layer_id: int, config: OWenTLLMConfig):
         super().__init__()
         self.self_attn = Attention(config)
@@ -566,7 +654,7 @@ class OWenTLLMBlock(nn.Module):
 
 
 # 主干网络
-class OWenTLLMModel(nn.Module):
+class OWenTLLMModel(torch.nn.Module):
     def __init__(self, config: OWenTLLMConfig):
         super().__init__()
         self.config = config
@@ -574,9 +662,9 @@ class OWenTLLMModel(nn.Module):
             config.vocab_size,
             config.num_hidden_layers,
         )
-        self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size)
-        self.dropout = nn.Dropout(config.dropout)
-        self.layers = nn.ModuleList(
+        self.embed_tokens = torch.nn.Embedding(config.vocab_size, config.hidden_size)
+        self.dropout = torch.nn.Dropout(config.dropout)
+        self.layers = torch.nn.ModuleList(
             [OWenTLLMBlock(l, config) for l in range(self.num_hidden_layers)]
         )
         self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
@@ -644,10 +732,10 @@ class OWenTLLMForCausalLM(PreTrainedModel, GenerationMixin):
     _tied_weights_keys = {"lm_head.weight": "model.embed_tokens.weight"}
 
     def __init__(self, config: OWenTLLMConfig = None):
-        self.config = config or OWenTLLMConfig()
+        self.config = config or OWenTLLMConfig(LLM_TRAIN_SETTINGS)
         super().__init__(self.config)
         self.model = OWenTLLMModel(self.config)
-        self.lm_head = nn.Linear(
+        self.lm_head = torch.nn.Linear(
             self.config.hidden_size, self.config.vocab_size, bias=False
         )
         if self.config.tie_word_embeddings:
@@ -676,7 +764,7 @@ class OWenTLLMForCausalLM(PreTrainedModel, GenerationMixin):
         loss = None
         if labels is not None:
             x, y = logits[..., :-1, :].contiguous(), labels[..., 1:].contiguous()
-            loss = F.cross_entropy(
+            loss = torch.nn.functional.cross_entropy(
                 x.view(-1, x.size(-1)), y.view(-1), ignore_index=-100
             )
         return MoeCausalLMOutputWithPast(
@@ -812,18 +900,15 @@ def print_model_params(model, config):
 
 def init_model(
     lm_config,
-    from_weight="pretrain",
     tokenizer_path="../model",
-    save_dir="../out",
     device="cuda",
 ):
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
     model = OWenTLLMForCausalLM(lm_config)
 
-    if from_weight != "none":
-        moe_suffix = "_moe" if lm_config.use_moe else ""
+    if LLM_TRAIN_SETTINGS.train.from_weight != LLMTrainWeightType.kNone:
         weight_path = (
-            f"{save_dir}/{from_weight}_{lm_config.hidden_size}{moe_suffix}.pth"
+            f"{LLM_TRAIN_SETTINGS.save.dir}/output/{lm_get_ckp_file_name(LLM_TRAIN_SETTINGS, LLM_TRAIN_SETTINGS.train.from_weight)}"
         )
         weights = torch.load(weight_path, map_location=device)
         model.load_state_dict(weights, strict=False)
@@ -834,19 +919,65 @@ def init_model(
     )
     return model.to(device), tokenizer
 
+class SkipBatchSampler(Sampler):
+    def __init__(self, sampler, batch_size, skip_batches=0):
+        self.sampler = sampler
+        self.batch_size = batch_size
+        self.skip_batches = skip_batches
+
+    def __iter__(self):
+        batch = []
+        skipped = 0
+        for idx in self.sampler:
+            batch.append(idx)
+            if len(batch) == self.batch_size:
+                if skipped < self.skip_batches:
+                    skipped += 1
+                    batch = []
+                    continue
+                yield batch
+                batch = []
+        if len(batch) > 0 and skipped >= self.skip_batches:
+            yield batch
+
+    def __len__(self):
+        total_batches = (len(self.sampler) + self.batch_size - 1) // self.batch_size
+        return max(0, total_batches - self.skip_batches)
+
+# 预训练数据提取
+class PretrainDataset(torch.utils.data.Dataset):
+    def __init__(self, data_path, tokenizer, max_length=512):
+        super().__init__()
+        self.tokenizer = tokenizer
+        self.max_length = max_length
+        self.samples = load_dataset('json', data_files=data_path, split='train')
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, index):
+        sample = self.samples[index]
+        tokens = self.tokenizer(str(sample['text']), add_special_tokens=False, max_length=self.max_length - 2, truncation=True).input_ids
+        tokens = [self.tokenizer.bos_token_id] + tokens + [self.tokenizer.eos_token_id]
+        input_ids = tokens + [self.tokenizer.pad_token_id] * (self.max_length - len(tokens))
+        input_ids = torch.tensor(input_ids, dtype=torch.long)
+        labels = input_ids.clone()
+        labels[input_ids == self.tokenizer.pad_token_id] = -100
+        # 返回的是什么？
+        return input_ids, labels
 
 # ============================================ 流程入口 ============================================
 # 开始一轮训练
-def train_epoch(epoch, loader, iters, start_step=0, wandb=None):
+def train_epoch(settings: LLMTrainConfigureAll,epoch, loader, iters, start_step=0, wandb=None):
     start_time = time.time()
     # 每一个Step都对应一组输入数据
     for step, (input_ids, labels) in enumerate(loader, start=start_step + 1):
-        input_ids = input_ids.to(LLM_TRAIN_SETTINGS.train.device)
-        labels = labels.to(LLM_TRAIN_SETTINGS.train.device)
+        input_ids = input_ids.to(settings.train.device)
+        labels = labels.to(settings.train.device)
         lr = get_learning_rate(
             epoch * iters + step,
-            LLM_TRAIN_SETTINGS.train.epochs * iters,
-            LLM_TRAIN_SETTINGS.train.learning_rate,
+            settings.train.epochs * iters,
+            settings.train.learning_rate,
         )
         for param_group in optimizer.param_groups:
             param_group["lr"] = lr
@@ -854,28 +985,28 @@ def train_epoch(epoch, loader, iters, start_step=0, wandb=None):
         with autocast_ctx:
             res = model(input_ids, labels=labels)
             loss = res.loss + res.aux_loss
-            loss = loss / args.accumulation_steps
+            loss = loss / settings.train.accumulation_steps
 
         scaler.scale(loss).backward()
 
-        if step % args.accumulation_steps == 0 or step == iters:
+        if step % settings.train.accumulation_steps == 0 or step == iters:
             scaler.unscale_(optimizer)
-            torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), settings.train.grad_clip)
 
             scaler.step(optimizer)
             scaler.update()
 
             optimizer.zero_grad(set_to_none=True)
 
-        if step % args.log_interval == 0 or step == iters:
+        if step % settings.log.step_interval == 0 or step == iters:
             spend_time = time.time() - start_time
-            current_loss = loss.item() * args.accumulation_steps
+            current_loss = loss.item() * settings.train.accumulation_steps
             current_aux_loss = res.aux_loss.item() if res.aux_loss is not None else 0.0
             current_logits_loss = current_loss - current_aux_loss
             current_lr = optimizer.param_groups[-1]["lr"]
             eta_min = spend_time / max(step - start_step, 1) * (iters - step) // 60
             Logger(
-                f"Epoch:[{epoch + 1}/{LLM_TRAIN_SETTINGS.train.epochs}]({step}/{iters}), loss: {current_loss:.4f}, logits_loss: {current_logits_loss:.4f}, aux_loss: {current_aux_loss:.4f}, lr: {current_lr:.8f}, epoch_time: {eta_min:.1f}min"
+                f"Epoch:[{epoch + 1}/{settings.train.epochs}]({step}/{iters}), loss: {current_loss:.4f}, logits_loss: {current_logits_loss:.4f}, aux_loss: {current_aux_loss:.4f}, lr: {current_lr:.8f}, epoch_time: {eta_min:.1f}min"
             )
             if wandb:
                 wandb.log(
@@ -888,10 +1019,9 @@ def train_epoch(epoch, loader, iters, start_step=0, wandb=None):
                     }
                 )
 
-        if (step % args.save_interval == 0 or step == iters) and is_main_process():
+        if (step % settings.save.step_interval == 0 or step == iters) and is_main_process():
             model.eval()
-            moe_suffix = "_moe" if lm_config.use_moe else ""
-            ckp = f"{args.save_dir}/{args.save_weight}_{lm_config.hidden_size}{moe_suffix}.pth"
+            ckp = f"{settings.save.dir}/output/{lm_get_ckp_file_name(settings, settings.save.save_weight)}"
             raw_model = (
                 model.module if isinstance(model, DistributedDataParallel) else model
             )
@@ -899,15 +1029,13 @@ def train_epoch(epoch, loader, iters, start_step=0, wandb=None):
             state_dict = raw_model.state_dict()
             torch.save({k: v.half().cpu() for k, v in state_dict.items()}, ckp)
             lm_checkpoint(
-                lm_config,
-                weight=args.save_weight,
+                settings,
                 model=model,
                 optimizer=optimizer,
                 scaler=scaler,
                 epoch=epoch,
                 step=step,
                 wandb=wandb,
-                save_dir="../checkpoints",
             )
             model.train()
             del state_dict
@@ -916,30 +1044,8 @@ def train_epoch(epoch, loader, iters, start_step=0, wandb=None):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="OWenTLLM Pretraining")
-    parser.add_argument("--save_dir", type=str, default="../out", help="模型保存目录")
-    parser.add_argument(
-        "--save_weight", default="pretrain", type=str, help="保存权重的前缀名"
-    )
-    parser.add_argument("--epochs", type=int, default=2, help="训练轮数")
-    parser.add_argument("--batch_size", type=int, default=32, help="batch size")
-    parser.add_argument("--learning_rate", type=float, default=5e-4, help="初始学习率")
-    parser.add_argument(
-        "--device",
-        type=str,
-        default="cuda:0" if torch.cuda.is_available() else "cpu",
-        help="训练设备",
-    )
-    parser.add_argument("--dtype", type=str, default="bfloat16", help="混合精度类型")
-    parser.add_argument("--num_workers", type=int, default=8, help="数据加载线程数")
-    parser.add_argument(
-        "--accumulation_steps", type=int, default=8, help="梯度累积步数"
-    )
-    parser.add_argument("--grad_clip", type=float, default=1.0, help="梯度裁剪阈值")
-    parser.add_argument("--log_interval", type=int, default=100, help="日志打印间隔")
-    parser.add_argument("--save_interval", type=int, default=1000, help="模型保存间隔")
-    parser.add_argument("--hidden_size", default=768, type=int, help="隐藏层维度")
-    parser.add_argument("--num_hidden_layers", default=8, type=int, help="隐藏层数量")
+    parser = argparse.ArgumentParser(
+        description=f"{LLM_TRAIN_SETTINGS.model_name} {str(LLM_TRAIN_SETTINGS.save.save_weight)[1:]}")
     parser.add_argument(
         "--max_seq_len",
         default=340,
@@ -947,94 +1053,62 @@ if __name__ == "__main__":
         help="训练的最大截断长度（中文1token≈1.5~1.7字符）",
     )
     parser.add_argument(
-        "--use_moe",
-        default=0,
-        type=int,
-        choices=[0, 1],
-        help="是否使用MoE架构（0=否，1=是）",
-    )
-    parser.add_argument(
-        "--seed",
-        default=42,
-        type=int,
-        help="随机种子（DDP下每个rank为seed+rank，每轮为seed+epoch）",
-    )
-    parser.add_argument(
-        "--data_path",
+        "--input-data-path",
         type=str,
         default="../dataset/pretrain_t2t_mini.jsonl",
-        help="预训练数据路径",
+        help="(预)训练数据路径",
+        dest="input_data_path"
     )
     parser.add_argument(
-        "--from_weight",
-        default="none",
-        type=str,
-        help="基于哪个权重训练，为none则从头开始",
-    )
-    parser.add_argument(
-        "--from_resume",
-        default=0,
-        type=int,
-        choices=[0, 1],
-        help="是否自动检测&续训（0=否，1=是）",
-    )
-    parser.add_argument("--use_wandb", action="store_true", help="是否使用wandb")
-    parser.add_argument(
-        "--wandb_project", type=str, default="OWenTLLM-Pretrain", help="wandb项目名"
-    )
-    parser.add_argument(
-        "--use_compile",
-        default=0,
-        type=int,
-        choices=[0, 1],
-        help="是否使用torch.compile加速（0=否，1=是）",
+        "--resume",
+        default=False,
+        type=bool,
+        action="store_true",
+        help="是否自动检测&续训",
     )
     args = parser.parse_args()
 
     # ========== 1. 初始化环境和随机种子 ==========
     local_rank = init_distributed_mode()
     if dist.is_initialized():
-        args.device = f"cuda:{local_rank}"
-    setup_seed(args.seed + (dist.get_rank() if dist.is_initialized() else 0))
+        LLM_TRAIN_SETTINGS.train.device = f"cuda:{local_rank}"
+    setup_seed(LLM_TRAIN_SETTINGS.train.seed + (dist.get_rank() if dist.is_initialized() else 0))
 
     # ========== 2. 配置目录、模型参数、检查ckp ==========
-    os.makedirs(args.save_dir, exist_ok=True)
-    lm_config = OWenTLLMConfig(
-        hidden_size=args.hidden_size,
-        num_hidden_layers=args.num_hidden_layers,
-        use_moe=bool(args.use_moe),
-    )
+    os.makedirs(f"{LLM_TRAIN_SETTINGS.save.dir}/output", exist_ok=True)
+    lm_config = OWenTLLMConfig(LLM_TRAIN_SETTINGS)
     ckp_data = (
-        lm_checkpoint(lm_config, weight=args.save_weight, save_dir="../checkpoints")
-        if args.from_resume == 1
+        lm_checkpoint(LLM_TRAIN_SETTINGS)
+        if args.resume == 1
         else None
     )
 
     # ========== 3. 设置混合精度 ==========
-    device_type = "cuda" if "cuda" in args.device else "cpu"
-    dtype = torch.bfloat16 if args.dtype == "bfloat16" else torch.float16
+    device_type = "cuda" if "cuda" in LLM_TRAIN_SETTINGS.train.device else "cpu"
+    dtype = torch.bfloat16 if LLM_TRAIN_SETTINGS.param.dtype == "bfloat16" else torch.float16
     autocast_ctx = (
-        nullcontext() if device_type == "cpu" else torch.cuda.amp.autocast(dtype=dtype)
+        nullcontext() if device_type == "cpu" else torch.amp.autocast(device_type, dtype=dtype)
     )
 
-    # ========== 4. 配wandb ==========
+    # ========== 4. 配wandb可视化， https://wandb.ai/ 注册账号和项目 ==========
     wandb = None
-    if args.use_wandb and is_main_process():
+    if is_main_process() and LLM_TRAIN_SETTINGS.visualization and LLM_TRAIN_SETTINGS.visualization.wandb and LLM_TRAIN_SETTINGS.visualization.wandb.project:
         import swanlab as wandb
 
         wandb_id = ckp_data.get("wandb_id") if ckp_data else None
         resume = "must" if wandb_id else None
-        wandb_run_name = f"OWenTLLM-Pretrain-Epoch-{LLM_TRAIN_SETTINGS.train.epochs}-BatchSize-{args.batch_size}-LearningRate-{args.learning_rate}"
+        wandb_project = f"{LLM_TRAIN_SETTINGS.model_name}-{str(LLM_TRAIN_SETTINGS.save.save_weight)[1:]}"
+        wandb_run_name = f"{wandb_project}-Epoch-{LLM_TRAIN_SETTINGS.train.epochs}-BatchSize-{LLM_TRAIN_SETTINGS.train.batch_size}-LearningRate-{LLM_TRAIN_SETTINGS.train.learning_rate}"
         wandb.init(
-            project=args.wandb_project, name=wandb_run_name, id=wandb_id, resume=resume
+            project=wandb_project, name=wandb_run_name, id=wandb_id, resume=resume
         )
 
     # ========== 5. 定义模型、数据、优化器 ==========
-    model, tokenizer = init_model(lm_config, args.from_weight, device=args.device)
-    train_ds = PretrainDataset(args.data_path, tokenizer, max_length=args.max_seq_len)
+    model, tokenizer = init_model(lm_config, device=LLM_TRAIN_SETTINGS.train.device)
+    train_ds = PretrainDataset(args.input_data_path, tokenizer, max_length=args.max_seq_len)
     train_sampler = DistributedSampler(train_ds) if dist.is_initialized() else None
-    scaler = torch.cuda.amp.GradScaler(enabled=(args.dtype == "float16"))
-    optimizer = optim.AdamW(model.parameters(), lr=args.learning_rate)
+    scaler = torch.amp.GradScaler(device_type, enabled=(LLM_TRAIN_SETTINGS.param.dtype == "float16"))
+    optimizer = torch.optim.AdamW(model.parameters(), lr=LLM_TRAIN_SETTINGS.train.learning_rate)
 
     # ========== 6. 从ckp恢复状态 ==========
     start_epoch, start_step = 0, 0
@@ -1046,7 +1120,7 @@ if __name__ == "__main__":
         start_step = ckp_data.get("step", 0)
 
     # ========== 7. 编译和分布式包装 ==========
-    if args.use_compile == 1:
+    if LLM_TRAIN_SETTINGS.train.use_compile:
         model = torch.compile(model)
         Logger("torch.compile enabled")
     if dist.is_initialized():
@@ -1055,16 +1129,16 @@ if __name__ == "__main__":
     # ========== 8. 开始训练 ==========
     for epoch in range(start_epoch, LLM_TRAIN_SETTINGS.train.epochs):
         train_sampler and train_sampler.set_epoch(epoch)
-        setup_seed(args.seed + epoch)
+        setup_seed(LLM_TRAIN_SETTINGS.train.seed + epoch)
         indices = torch.randperm(len(train_ds)).tolist()
         skip = start_step if (epoch == start_epoch and start_step > 0) else 0
         batch_sampler = SkipBatchSampler(
-            train_sampler or indices, args.batch_size, skip
+            train_sampler or indices, LLM_TRAIN_SETTINGS.train.batch_size, skip
         )
         loader = DataLoader(
             train_ds,
             batch_sampler=batch_sampler,
-            num_workers=args.num_workers,
+            num_workers=LLM_TRAIN_SETTINGS.loader.num_workers,
             pin_memory=True,
         )
         if skip > 0:
@@ -1072,6 +1146,7 @@ if __name__ == "__main__":
                 f"Epoch [{epoch + 1}/{LLM_TRAIN_SETTINGS.train.epochs}]: 跳过前{start_step}个step，从step {start_step + 1}开始"
             )
             train_epoch(
+                LLM_TRAIN_SETTINGS,
                 epoch,
                 loader,
                 # 因为上面的 SkipBatchSampler 会使得 len(loader) 减去 skip，所以这里要加回来
@@ -1080,7 +1155,7 @@ if __name__ == "__main__":
                 wandb,
             )
         else:
-            train_epoch(epoch, loader, len(loader), 0, wandb)
+            train_epoch(LLM_TRAIN_SETTINGS, epoch, loader, len(loader), 0, wandb)
 
     # ========== 9. 清理分布进程 ==========
     if dist.is_initialized():
