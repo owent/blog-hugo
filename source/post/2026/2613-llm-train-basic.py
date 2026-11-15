@@ -184,40 +184,51 @@ LLM_TRAIN_SETTINGS = LLMTrainConfigureAll.model_validate(
             "eps": 1e-6,
             # 混合精度类型
             "dtype": "bfloat16",
-            # 隐藏层维度，是否需要可word embedding的维度相同？
+            # 隐藏层维度，某些模型可以有额外的投影层让隐藏层维度和word embedding的维度不同。
+            # 当前脚本没有投影层，所以隐藏层维度、注意力、FFN 和残差连接要和word embedding的维度相同
             "hidden_size": LLM_TRAIN_CONST_VALUE_HIDDEN_SIZE,
             # 隐藏层数量，隐藏层越多，是否世界知识越丰富？
             "num_hidden_layers": 8,
-            # dropout 现代模型 dropout 是否都是0？为什么？
+            # dropout。大规模预训练经常使用 0，常见原因是语料规模大、重复次数有限，模型更常受容量和训练计算量限制，而不是明显过拟合；
+            # Dropout 还会引入额外噪声，可能减慢收敛。
             "dropout": 0.0,
-            # 词表大小？
+            # 词表大小，包括普通 token 和特殊 token
             "vocab_size": 6400,
-            # 什么含义？和词表相关？
+            # BOS: Beginning of Sequence，表示序列开始。
+            # 这个 ID 必须与 tokenizer 中的定义一致。ID 本身没有特殊语义，语义来自 tokenizer、训练数据和生成代码的共同约定。
             "bos_token_id": 1,
-            # 什么含义？和词表相关？
+            # EOS，即 End of Sequence，表示序列结束。
+            # 这个 ID 必须与 tokenizer 中的定义一致。ID 本身没有特殊语义，语义来自 tokenizer、训练数据和生成代码的共同约定。
             "eos_token_id": 2,
             # 是否使用Flash Attention
             "flash_attn": True,
             # 多头注意力的头数量，每个头分开计算。然后再concat到一起
             "num_attention_heads": 8,
-            # KV头数量，为什么要和num_attention_heads分开？
+            # KV头数量。 只有 4 个头，构成 GQA（Grouped Query Attention）
+            # 这样可以将 K/V 投影参数量和 KV cache 减半，降低自回归解码时的显存占用和读取带宽；注意力输出仍保持 8 个头。
+            # - num_key_value_heads == num_attention_heads：普通 MHA。
+            # - num_key_value_heads == 1：MQA。
             "num_key_value_heads": 4,
-            # 什么含义?
+            # 前馈网络使用的激活函数： $\operatorname{SiLU}(x)=x\operatorname{sigmoid}(x)$
+            # 当前 FFN 实际使用的是 SwiGLU 结构：$\operatorname{FFN}(x) = W_{\text{down}} \left( \operatorname{SiLU}(W_{\text{gate}}x) \odot W_{\text{up}}x \right)$
             "hidden_act": "silu",
-            # 什么含义？
+            # 普通稠密 FFN 的中间维度。当前计算结果为： $\left\lceil\frac{768\pi}{64}\right\rceil\times64 =38\times64 =2432$
+            # 乘以 π 并向上对齐到 64 是这份模型的维度设计，不是 Transformer 的数学要求。
             "intermediate_size": math.ceil(
                 LLM_TRAIN_CONST_VALUE_HIDDEN_SIZE * math.pi / 64
             )
             * 64,
-            # 什么含义？
+            # 当前代码用它确定预计算 RoPE 正余弦表的长度，因此可表示位置：0 ～ 32767
+            # RoPE是做什么的？
             "max_position_embeddings": 32768,
-            # 什么含义?
+            # RoPE 的频率基数。对维度为 d 的注意力头，第 j 个频率为： $f_j=\theta^{-2j/d}$
+            # rope_theta 决定不同维度的旋转周期，什么作用？
             "rope_theta": 1e6,
-            # 什么含义？
+            # 表示输入 Embedding 和输出 lm_head 共享同一个参数矩阵
             "tie_word_embeddings": True,
-            # 什么含义?
+            # 为 True 时，创建后面的 YaRN rope_scaling 配置。
             "inference_rope_scaling": False,
-            # 什么作用？
+            # None表示使用原始 RoPE，不做额外频率缩放。
             "rope_scaling": None,
             # 是否是MOE模型
             "use_moe": True,
@@ -225,14 +236,16 @@ LLM_TRAIN_SETTINGS = LLMTrainConfigureAll.model_validate(
             "moe_num_experts": 8,
             # MOE 激活专家数
             "moe_num_experts_per_tok": 2,
-            # 什么含义？
+            # 每一个 MoE 专家内部的 FFN 中间维度，当前也是 2432。
             "moe_intermediate_size": math.ceil(
                 LLM_TRAIN_CONST_VALUE_HIDDEN_SIZE * math.pi / 64
             )
             * 64,
-            # 什么含义？
+            # 路由器先计算全部 moe_num_experts 个专家的 softmax 概率，再选择 Top-moe_num_experts_per_tok。
+            # 设为 True 时，会把选中的两个权重重新归一化，使其和为 1。
             "norm_topk_prob": True,
-            # 什么含义？
+            # 这是每层负载均衡辅助损失的系数，控制 $a_{i,l}$ 对总训练损失的相对影响
+            # 详见 “梯度累积与参数更新” 中 “MoE 的负载均衡辅助损失 $A_i$ 计算” 子章节
             "router_aux_loss_coef": 5e-4,
         },
         "loader": {
@@ -253,12 +266,17 @@ LLM_TRAIN_SETTINGS = LLMTrainConfigureAll.model_validate(
 if LLM_TRAIN_SETTINGS.param.inference_rope_scaling:
     LLM_TRAIN_SETTINGS.param.rope_scaling = LLMTrainConfigureRopeScaling.model_validate(
         {
-            # 下列参数分别什么含义？
+            # 快旋转分量的边界。原长度内旋转超过约 32 周的高频维度基本保持原频率，以保留局部位置分辨率。
             "beta_fast": 32,
+            # 慢旋转分量的边界。原长度内旋转不足约 1 周的低频维度充分除以 factor。
             "beta_slow": 1,
+            # 上下文扩展倍率 s = 16 , 充分缩放的低频分量，其频率会除以 16
             "factor": 16,
+            # 扩展前的参考上下文长度,用于计算各 RoPE 维度在原长度内旋转多少周。这里与训练样本最大长度 2048 对应。
             "original_max_position_embeddings": 2048,
+            # 同时缩放 RoPE 的 cos/sin，从而缩放旋转后的 Q、K；当前为 1，表示不做额外的注意力温度修正。
             "attention_factor": 1.0,
+            #  YaRN 缩放算
             "type": "yarn",
         }
     )
@@ -1110,7 +1128,10 @@ class PretrainDataset(torch.utils.data.Dataset):
         # 按实际长度屏蔽 padding，即使 PAD 与 EOS 使用同一 token ID，也保留真实 EOS 标签。
         labels[len(tokens):] = -100
         attention_mask = torch.arange(self.max_length) < len(tokens)
-        # 返回的数据是什么含义？
+        # 返回的数据
+        #   - 实际输入模型的 token ID；短序列用 PAD 补齐。
+        #   - 各位置的预测目标；不参与监督的位置为 -100。
+        #   - 真实 token 为 1，padding 为 0，控制注意力和 MoE 负载统计)。
         return input_ids, labels, attention_mask
 
 # 后训练数据提取
