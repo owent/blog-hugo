@@ -1,0 +1,53 @@
+vars: {
+  d2-config: {
+    layout-engine: elk
+    theme-id: 4
+    pad: 20
+  }
+}
+direction: right
+grid-rows: 2
+grid-gap: 32
+style.fill: transparent
+classes: {
+  layer: {
+    style: {fill: "#edf5fa"; stroke: "#81a4b7"; border-radius: 8; font-size: 18}
+  }
+  ffn: {
+    style: {fill: "#eaf6f1"; stroke: "#74a894"; border-radius: 8; font-size: 18}
+  }
+  add: {
+    shape: circle
+    width: 36
+    height: 36
+    style: {fill: "#ffffff"; stroke: "#81a4b7"; font-size: 18}
+  }
+}
+
+model: 模型主干 {
+  direction: right
+  style: {fill: "#f6f9fb"; stroke: "#b9cbd5"; border-radius: 12; font-size: 20}
+  embed: "Embedding + Dropout\ninput_ids → B × T × H" {class: layer}
+  blocks: "Decoder Block × L\n各层参数独立" {class: layer}
+  norm: "RMSNorm" {class: layer}
+  head: "lm_head\nlogits: B × T × V" {class: layer}
+  embed -> blocks -> norm -> head
+  embed -> head: 可选参数共享 {style: {stroke-dash: 4; stroke: "#a98b5b"; font-size: 15}}
+}
+
+block: 单个 Decoder Block {
+  direction: right
+  style: {fill: "#f6f9fb"; stroke: "#b9cbd5"; border-radius: 12; font-size: 20}
+  x: x {class: add}
+  attn: "RMSNorm + 因果 GQA\nQ / Key 归一化 · RoPE" {class: layer}
+  add1: "+" {class: add}
+  ffn: "RMSNorm + 前馈网络\n稠密 FFN 或 MoE" {class: ffn}
+  add2: "+" {class: add}
+  aux: "aux_loss（仅 MoE）" {
+    style: {fill: "#fff4e3"; stroke: "#c6a46d"; border-radius: 8; font-size: 16}
+  }
+  x -> attn -> add1 -> ffn -> add2
+  x -> add1: 残差 {style.font-size: 15}
+  add1 -> add2: 残差 {style.font-size: 15}
+  ffn -> aux: 辅助损失 {style: {stroke-dash: 4; font-size: 15}}
+}

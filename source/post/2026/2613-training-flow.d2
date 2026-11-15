@@ -1,0 +1,37 @@
+vars: {
+  d2-config: {
+    layout-engine: elk
+    theme-id: 4
+    pad: 20
+  }
+}
+direction: right
+style.fill: transparent
+classes: {
+  step: {
+    style: {fill: "#edf5fa"; stroke: "#81a4b7"; border-radius: 8; font-size: 18}
+  }
+  train: {
+    style: {fill: "#eaf6f1"; stroke: "#74a894"; border-radius: 8; font-size: 18}
+  }
+  state: {
+    style: {fill: "#fff4e3"; stroke: "#c6a46d"; border-radius: 8; font-size: 18}
+  }
+}
+
+init: "配置与初始化\ntokenizer · 模型" {class: step}
+pretrain: "预训练 Dataset" {class: step}
+sft: "SFT Dataset" {class: step}
+state: "新建或恢复\n优化器与训练状态" {class: state}
+train: "训练窗口循环" {class: train}
+save: "保存检查点\n导出权重" {class: state}
+
+init -> pretrain: pretrain
+init -> sft: sft
+pretrain -> state
+sft -> state
+state -> train
+train -> save: 到保存时机
+save -> state: --resume {
+  style: {stroke-dash: 4; stroke: "#a98b5b"; font-size: 15}
+}

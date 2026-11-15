@@ -1,0 +1,27 @@
+vars: {
+  d2-config: {
+    layout-engine: elk
+    theme-id: 4
+    pad: 20
+  }
+}
+direction: right
+style.fill: transparent
+classes: {
+  step: {
+    style: {fill: "#edf5fa"; stroke: "#81a4b7"; border-radius: 8; font-size: 18}
+  }
+  update: {
+    style: {fill: "#eaf6f1"; stroke: "#74a894"; border-radius: 8; font-size: 18}
+  }
+}
+
+window: "取累积窗口\n统计有效 token 数 N" {class: step}
+micro: "逐个 microbatch\n计算损失、累积梯度" {class: step}
+update: "解除缩放、裁剪梯度\n参数更新、清空梯度" {class: update}
+next: "按时机保存进度\n进入下一窗口" {class: step}
+
+window -> micro: N > 0
+micro -> update: 窗口结束
+update -> next
+window -> next: "N = 0：跳过更新" {style: {stroke-dash: 4; font-size: 15}}

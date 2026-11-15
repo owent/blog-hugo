@@ -168,11 +168,15 @@ LLM_TRAIN_SETTINGS = LLMTrainConfigureAll.model_validate(
             "device": "cuda" if torch.cuda.is_available() else "cpu",
             # 是否使用torch.compile加速
             "use_compile": False,
-            # 随机种子（每轮每个 rank 为 seed+epoch+rank）。这个值可否随机？还是必须每次训练必须保持不变？
+            # 随机种子（每轮每个 rank 为 seed+epoch+rank）。
+            # 这个值初始可以随机，固定值有助于观察训练波动。但是本脚本的续训是必须用原始的随机种子以便更精确的断点续训。
             "seed": 42,
-            # 梯度累积步数。有什么作用？
+            # 梯度累积步数。脚本每处理一个 batch_size=8 的 microbatch 就执行反向传播，但累积 8 个 microbatch 后才更新一次参数。
+            # “梯度累积与参数更新” 章节详解了它的作用原理
             "accumulation_steps": 8,
-            # 梯度裁剪阈值。有什么作用？
+            # 梯度裁剪阈值。所有参数梯度合在一起后的全局 L2 范数上限。
+            # 近似处理公式 $g \leftarrow g \cdot \min\left(1,\frac{1.0}{\lVert g\rVert_2}\right)$
+            # 方式梯度过大导致参数更新过猛、损失剧烈波动。
             "grad_clip": 1.0,
         },
         "param": {
@@ -835,6 +839,7 @@ class OWenTLLMModel(torch.nn.Module):
             )
             presents.append(present)
         hidden_states = self.norm(hidden_states)
+        # 参数更新公式中的 A_i
         aux_loss = sum(
             [l.mlp.aux_loss for l in self.layers if isinstance(l.mlp, MOEFeedForward)],
             hidden_states.new_zeros(1).squeeze(),
@@ -1289,7 +1294,7 @@ def save_training_checkpoint(settings, epoch, step, iters, wandb, resume_metadat
 
 
 # 开始一轮训练
-def train_epoch(settings: LLMTrainConfigureAll, epoch: int, loader: DataLoader, iters: int, start_step: int = 0, wandb: Any = None, *, resume_metadata) -> None:
+def train_epoch(settings: LLMTrainConfigureAll, scaler: torch.amp.GradScaler, epoch: int, loader: DataLoader, iters: int, start_step: int = 0, wandb: Any = None, *, resume_metadata) -> None:
     if settings.train.accumulation_steps < 1 or settings.save.step_interval < 1:
         raise ValueError("accumulation_steps 和保存间隔必须为正数")
     if start_step % settings.train.accumulation_steps and start_step != iters:
@@ -1329,6 +1334,7 @@ def train_epoch(settings: LLMTrainConfigureAll, epoch: int, loader: DataLoader, 
                 res = model(input_ids, attention_mask=attention_mask, labels=labels, loss_reduction="sum")
                 # CE 是 token 损失之和；辅助损失按各 microbatch 的有效预测 token 数加权。
                 loss = (res.loss + res.aux_loss * token_count) * loss_scale
+            # 每次都做反向传播，累计梯度
             scaler.scale(loss).backward()
             save_pending |= step % settings.save.step_interval == 0 or step == iters
 
@@ -1352,6 +1358,7 @@ def train_epoch(settings: LLMTrainConfigureAll, epoch: int, loader: DataLoader, 
 
         scaler.unscale_(optimizer)
         torch.nn.utils.clip_grad_norm_(model.parameters(), settings.train.grad_clip)
+        # 更新参数，然后清空梯度
         scaler.step(optimizer)
         scaler.update()
         optimizer.zero_grad(set_to_none=True)
@@ -1420,8 +1427,11 @@ if __name__ == "__main__":
     resume_metadata = build_resume_metadata(LLM_TRAIN_SETTINGS, train_ds, tokenizer)
     ckp_data = lm_checkpoint(LLM_TRAIN_SETTINGS, resume_metadata=resume_metadata) if args.resume else None
     # CPU 执行 FP32；仅 CUDA FP16 启用 GradScaler。
-    # GradScaler的作用是什么？
+    # GradScaler的作用是保证 FP16 混合精度训练的数值稳定性。检测到 inf 或 NaN 梯度时，跳过本次参数更新。
+    # 梯度过小，在 FP16 中变成 0；缩放后过大又可能变成 inf。
     scaler = torch.amp.GradScaler(device_type, enabled=(device_type == "cuda" and dtype == torch.float16))
+
+    # 创建优化器，即根据梯度计算并执行参数更新的算法。在 PyTorch 中，优化器对象还保存学习率、动量等运行状态。
     optimizer = create_optimizer(model, LLM_TRAIN_SETTINGS)
 
     # ========== 5. 配wandb可视化， https://wandb.ai/ 注册账号和项目 ==========
@@ -1468,7 +1478,7 @@ if __name__ == "__main__":
             Logger(
                 f"Epoch [{epoch + 1}/{LLM_TRAIN_SETTINGS.train.epochs}]: 跳过前{start_step}个step，从step {start_step + 1}开始"
             )
-        train_epoch(LLM_TRAIN_SETTINGS, epoch, loader, iters, skip, wandb, resume_metadata=resume_metadata)
+        train_epoch(LLM_TRAIN_SETTINGS, scaler, epoch, loader, iters, skip, wandb, resume_metadata=resume_metadata)
 
     # ========== 9. 清理分布进程 ==========
     if dist.is_initialized():
