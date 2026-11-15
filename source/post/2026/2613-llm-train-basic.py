@@ -20,7 +20,7 @@ import numpy
 __package__ = "trainer"
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from datasets import load_dataset, Features, Value
 import torch
@@ -31,6 +31,7 @@ from transformers.activations import ACT2FN
 from transformers import PreTrainedModel, GenerationMixin, PretrainedConfig
 from transformers import AutoTokenizer, AutoModel, AutoModelForSequenceClassification
 from transformers.modeling_outputs import MoeCausalLMOutputWithPast
+from transformers.utils.chat_template_utils import render_jinja_template
 
 warnings.filterwarnings("ignore")
 
@@ -58,6 +59,7 @@ class LLMTrainConfigureRopeScaling(BaseModel):
 
 
 class LLMTrainConfigureTrain(BaseModel):
+    stage: Literal["pretrain", "sft"] = "pretrain"
     from_weight: LLMTrainWeightType
     batch_size: int
     epochs: int
@@ -100,6 +102,8 @@ class LLMTrainConfigureLoader(BaseModel):
     num_workers: int
     data_item_max_length: int
     tokenizer_path: str
+    sft_add_system_ratio: float = Field(default=0.2, ge=0, le=1)
+    sft_empty_think_ratio: float = Field(default=0.2, ge=0, le=1)
 
 class LLMTrainConfigureVisualizationWanDB(BaseModel):
     project: str
@@ -352,12 +356,13 @@ def build_resume_metadata(settings, dataset, tokenizer):
             for path in sorted(Path(directory).rglob("*")) if path.is_file()
         }
     return {
-        "version": 1,
+        "version": 2,
         "train": settings.train.model_dump(mode="json", exclude={"device", "from_weight"}),
         "model": settings.param.model_dump(mode="json"),
         "loader": {"data_item_max_length": dataset.max_length, "num_workers": settings.loader.num_workers},
         "device_type": torch.device(settings.train.device).type,
-        "dataset": {"files": dataset.source_fingerprint, "rows": len(dataset)},
+        "dataset": {"files": dataset.source_fingerprint, "rows": len(dataset),
+                    "processing": dataset.processing_config},
         "tokenizer": tokenizer_files,
     }
 
@@ -1013,7 +1018,8 @@ def print_model_params(model, config):
 
 def init_model(
     lm_config: LLMTrainRuntimeConfig,
-    settings: LLMTrainConfigureAll
+    settings: LLMTrainConfigureAll,
+    load_initial_weights: bool = True,
 ):
     tokenizer = AutoTokenizer.from_pretrained(settings.loader.tokenizer_path)
     if len(tokenizer) != lm_config.vocab_size:
@@ -1027,7 +1033,7 @@ def init_model(
     model = OWenTLLMForCausalLM(lm_config)
 
     # 复用 tokenizer 不会复用 Embedding；from_weight 为 kNone 时，全部权重从头训练。
-    if settings.train.from_weight != LLMTrainWeightType.kNone:
+    if load_initial_weights and settings.train.from_weight != LLMTrainWeightType.kNone:
         weight_path = find_weight_file(f"{settings.save.dir}/output", settings, settings.train.from_weight)
         weights = torch.load(weight_path, map_location='cpu', weights_only=True)
         model.load_state_dict(weights)
@@ -1063,21 +1069,28 @@ class SkipBatchSampler(Sampler):
         total_batches = (len(self.sampler) + self.batch_size - 1) // self.batch_size
         return max(0, total_batches - self.skip_batches)
 
+def load_training_json(data_path, *, kind, features=None, cache_dir=None):
+    data_files = [str(Path(path).resolve()) for path in sorted(glob.glob(os.fspath(data_path), recursive=True)) if Path(path).is_file()]
+    if not data_files:
+        raise FileNotFoundError(f"未找到本地 JSON/JSONL 数据文件：{data_path}")
+    fingerprints = [sha256_file(path) for path in data_files]
+    content_id = hashlib.sha256("".join(fingerprints).encode("ascii")).hexdigest()
+    samples = load_dataset('json', name=f"{kind}-{content_id}", data_files=data_files,
+                           split='train', features=features, cache_dir=cache_dir)
+    return samples, fingerprints
+
+
 # 预训练数据提取
 class PretrainDataset(torch.utils.data.Dataset):
-    def __init__(self, data_path, tokenizer, max_length=512):
+    def __init__(self, data_path, tokenizer, max_length=512, *, cache_dir=None):
         super().__init__()
         if max_length < 3:
             raise ValueError("max_length 至少为 3，以容纳 BOS、正文和 EOS")
         self.tokenizer = tokenizer
         self.max_length = max_length
-        data_files = [str(Path(path).resolve()) for path in sorted(glob.glob(os.fspath(data_path), recursive=True)) if Path(path).is_file()]
-        if not data_files:
-            raise FileNotFoundError(f"未找到本地 JSON/JSONL 数据文件：{data_path}")
-        self.source_fingerprint = [sha256_file(path) for path in data_files]
         # 同大小、同时间戳的文件替换也必须重新构建 Arrow 缓存。
-        content_id = hashlib.sha256("".join(self.source_fingerprint).encode("ascii")).hexdigest()
-        self.samples = load_dataset('json', name=f"pretrain-{content_id}", data_files=data_files, split='train')
+        self.samples, self.source_fingerprint = load_training_json(data_path, kind="pretrain", cache_dir=cache_dir)
+        self.processing_config = {"kind": "pretrain", "version": 1}
 
     def __len__(self):
         return len(self.samples)
@@ -1097,19 +1110,41 @@ class PretrainDataset(torch.utils.data.Dataset):
 
 # 后训练数据提取
 class SFTDataset(torch.utils.data.Dataset):
-    def __init__(self, jsonl_path, tokenizer, max_length=1024):
+    def __init__(self, jsonl_path, tokenizer, max_length=1024, *, seed=42,
+                 add_system_ratio=0.2, empty_think_ratio=0.2, cache_dir=None):
         super().__init__()
+        if max_length < 3 or not tokenizer.is_fast:
+            raise ValueError("SFT 要求 max_length 至少为 3，并使用支持 offset_mapping 的 fast tokenizer")
+        if not 0 <= add_system_ratio <= 1 or not 0 <= empty_think_ratio <= 1:
+            raise ValueError("SFT 增强概率必须在 [0, 1] 内")
         self.tokenizer = tokenizer
         self.max_length = max_length
+        self.seed, self.epoch = seed, 0
+        self.add_system_ratio, self.empty_think_ratio = add_system_ratio, empty_think_ratio
         features = Features({'conversations': [{'role': Value('string'), 'content': Value('string'), 'reasoning_content': Value('string'), 'tools': Value('string'), 'tool_calls': Value('string')}]})
-        self.samples = load_dataset('json', data_files=jsonl_path, split='train', features=features)
-        self.bos_id = tokenizer(f'{tokenizer.bos_token}assistant\n', add_special_tokens=False).input_ids
-        self.eos_id = tokenizer(f'{tokenizer.eos_token}\n', add_special_tokens=False).input_ids
+        self.samples, self.source_fingerprint = load_training_json(jsonl_path, kind="sft", features=features, cache_dir=cache_dir)
+        # MiniMind 模板的 assistant 分支记录独立字符区间；不在正文中搜索角色标记。
+        assistant_branch = '{%- elif message.role == "assistant" %}'
+        tool_branch = '{%- elif message.role == "tool" %}'
+        template = tokenizer.get_chat_template()
+        if template.count(assistant_branch) != 1 or template.count(tool_branch) != 1 or "{% generation" in template:
+            raise ValueError("此 SFT 示例要求使用 MiniMind 的 assistant/tool 分支模板")
+        self.training_template = template.replace(assistant_branch, assistant_branch + '{% generation -%}').replace(
+            tool_branch, '{%- endgeneration %}' + tool_branch)
+        self.assistant_header = f'{tokenizer.bos_token}assistant\n'
+        self.processing_config = {
+            "kind": "sft", "version": 1, "seed": seed,
+            "add_system_ratio": add_system_ratio, "empty_think_ratio": empty_think_ratio,
+            "template_sha256": hashlib.sha256(self.training_template.encode("utf-8")).hexdigest(),
+        }
 
     def __len__(self):
         return len(self.samples)
 
-    def create_chat_prompt(self, conversations):
+    def set_epoch(self, epoch):
+        self.epoch = epoch
+
+    def create_chat_prompt(self, conversations, *, return_spans=False):
         messages = []
         tools = None
         for message in conversations:
@@ -1119,32 +1154,24 @@ class SFTDataset(torch.utils.data.Dataset):
             if message.get("tool_calls") and isinstance(message["tool_calls"], str):
                 message["tool_calls"] = json.loads(message["tool_calls"])
             messages.append(message)
-        return self.tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
-            add_generation_prompt=False,
-            tools=tools
+        rendered, spans = render_jinja_template(
+            conversations=[messages], chat_template=self.training_template,
+            return_assistant_tokens_mask=True, add_generation_prompt=False,
+            tools=tools, **self.tokenizer.special_tokens_map,
         )
+        return (rendered[0], spans[0]) if return_spans else rendered[0]
 
-    def generate_labels(self, input_ids):
+    def generate_labels(self, input_ids, offsets, spans):
         labels = [-100] * len(input_ids)
-        i = 0
-        while i < len(input_ids):
-            if input_ids[i:i + len(self.bos_id)] == self.bos_id:
-                start = i + len(self.bos_id)
-                end = start
-                while end < len(input_ids):
-                    if input_ids[end:end + len(self.eos_id)] == self.eos_id:
-                        break
-                    end += 1
-                for j in range(start, min(end + len(self.eos_id), self.max_length)):
-                    labels[j] = input_ids[j]
-                i = end + len(self.eos_id) if end < len(input_ids) else len(input_ids)
-            else:
-                i += 1
+        for start, end in spans:
+            for index, (left, right) in enumerate(offsets):
+                if right > left and start <= left and right <= end:
+                    labels[index] = input_ids[index]
         return labels
 
-    def pre_processing_chat(self, conversations, add_system_ratio=0.2):
+    def pre_processing_chat(self, conversations, rng):
+        if not conversations:
+            raise ValueError("SFT conversations 不能为空")
         # tool use 数据完整保留不做处理
         if any(conv.get('tools') for conv in conversations): return conversations
 
@@ -1162,31 +1189,105 @@ class SFTDataset(torch.utils.data.Dataset):
         ]
         # 概率性添加system
         if conversations[0].get('role') != 'system':
-            if random.random() < add_system_ratio:
-                return [{'role': 'system', 'content': random.choice(SYSTEM_PROMPTS)}] + conversations
+            if rng.random() < self.add_system_ratio:
+                return [{'role': 'system', 'content': rng.choice(SYSTEM_PROMPTS)}] + conversations
         return conversations
 
-    def post_processing_chat(self, prompt_content, empty_think_ratio=0.2):
-        # 以80%概率移除空思考标签
-        if '<think>\n\n</think>\n\n' in prompt_content and random.random() > empty_think_ratio:
-            prompt_content = prompt_content.replace('<think>\n\n</think>\n\n', '')
+    def post_processing_chat(self, prompt_content, rng):
+        # 只处理模板在 assistant 开头生成的空标签，保留正文中引用的相同文本。
+        empty_prefix = self.assistant_header + '<think>\n\n</think>\n\n'
+        if prompt_content.startswith(empty_prefix) and rng.random() > self.empty_think_ratio:
+            prompt_content = self.assistant_header + prompt_content[len(empty_prefix):]
         return prompt_content
     def __getitem__(self, index):
         sample = self.samples[index]
-        conversations = self.pre_processing_chat(sample['conversations'])
-        prompt = self.create_chat_prompt(conversations)
-        prompt = self.post_processing_chat(prompt)
-        input_ids = self.tokenizer(prompt).input_ids[:self.max_length]
-        input_ids += [self.tokenizer.pad_token_id] * (self.max_length - len(input_ids))
-        labels = self.generate_labels(input_ids)
+        rng = random.Random(f"{self.seed}:{self.epoch}:{index}")
+        conversations = self.pre_processing_chat(sample['conversations'], rng)
+        prompt, spans = self.create_chat_prompt(conversations, return_spans=True)
+        pieces, assistant_spans, cursor, length = [], [], 0, 0
+        for start, end in spans:
+            prefix = prompt[cursor:start]
+            segment = self.post_processing_chat(prompt[start:end], rng)
+            if not segment.startswith(self.assistant_header):
+                raise ValueError("MiniMind assistant 模板前缀不匹配")
+            pieces.extend((prefix, segment))
+            length += len(prefix)
+            assistant_spans.append((length + len(self.assistant_header), length + len(segment)))
+            length += len(segment)
+            cursor = end
+        pieces.append(prompt[cursor:])
+        prompt = "".join(pieces)
+        encoded = self.tokenizer(prompt, add_special_tokens=False, return_offsets_mapping=True,
+                                 truncation=True, max_length=self.max_length)
+        input_ids = encoded.input_ids
+        labels = self.generate_labels(input_ids, encoded.offset_mapping, assistant_spans)
+        valid_length = len(input_ids)
+        padding = self.max_length - valid_length
+        input_ids += [self.tokenizer.pad_token_id] * padding
+        labels += [-100] * padding
         # # === 调试打印 ===
         # print(f"\n--- Sample {index} ---")
         # for i, (x, y) in enumerate(zip(input_ids[:-1], labels[1:])):
         #     print(f"{i:3d}: X={self.tokenizer.decode([x])!r:16s} ---> Y={self.tokenizer.decode([input_ids[i+1]])!r:16s} label={y}")
         # # ================
-        return torch.tensor(input_ids, dtype=torch.long), torch.tensor(labels, dtype=torch.long)
+        attention_mask = torch.arange(self.max_length) < valid_length
+        return torch.tensor(input_ids, dtype=torch.long), torch.tensor(labels, dtype=torch.long), attention_mask
 
 # ============================================ 流程入口 ============================================
+def configure_training_stage(settings, stage, from_weight=None, *, resume=False):
+    settings.train.stage = stage
+    settings.save.save_weight = LLMTrainWeightType.kFullSFT if stage == "sft" else LLMTrainWeightType.kPretrain
+    if from_weight is not None:
+        settings.train.from_weight = {
+            "none": LLMTrainWeightType.kNone, "pretrain": LLMTrainWeightType.kPretrain,
+            "fullsft": LLMTrainWeightType.kFullSFT,
+        }[from_weight]
+    elif stage == "sft" and settings.train.from_weight == LLMTrainWeightType.kNone and not resume:
+        settings.train.from_weight = LLMTrainWeightType.kPretrain
+
+
+def create_train_dataset(settings, data_path, tokenizer, *, cache_dir=None):
+    if settings.train.stage == "pretrain":
+        return PretrainDataset(data_path, tokenizer, settings.loader.data_item_max_length, cache_dir=cache_dir)
+    return SFTDataset(data_path, tokenizer, settings.loader.data_item_max_length, seed=settings.train.seed,
+                      add_system_ratio=settings.loader.sft_add_system_ratio,
+                      empty_think_ratio=settings.loader.sft_empty_think_ratio, cache_dir=cache_dir)
+
+
+def create_train_loader(settings, dataset, epoch, start_step=0):
+    if hasattr(dataset, "set_epoch"):
+        dataset.set_epoch(epoch)
+    sampler = DistributedSampler(dataset, seed=settings.train.seed) if dist.is_initialized() else None
+    if sampler is not None:
+        sampler.set_epoch(epoch)
+    else:
+        generator = torch.Generator().manual_seed(settings.train.seed + epoch)
+        sampler = torch.randperm(len(dataset), generator=generator).tolist()
+    iters = (len(sampler) + settings.train.batch_size - 1) // settings.train.batch_size
+    if not 0 <= start_step <= iters:
+        raise ValueError("检查点 step 超出了当前数据范围")
+    rank = dist.get_rank() if dist.is_initialized() else 0
+    loader = DataLoader(
+        dataset, batch_sampler=SkipBatchSampler(sampler, settings.train.batch_size, start_step),
+        num_workers=settings.loader.num_workers, pin_memory=torch.device(settings.train.device).type == "cuda",
+        generator=torch.Generator().manual_seed(settings.train.seed + epoch + rank),
+    )
+    return loader, iters
+
+
+def save_training_checkpoint(settings, epoch, step, iters, wandb, resume_metadata):
+    if is_main_process():
+        ckp = f"{settings.save.dir}/output/{lm_get_ckp_file_name(settings, settings.save.save_weight)}"
+        raw_model = model.module if isinstance(model, DistributedDataParallel) else model
+        raw_model = getattr(raw_model, "_orig_mod", raw_model)
+        os.makedirs(os.path.dirname(ckp), exist_ok=True)
+        torch.save(
+            {k: v.half().cpu() if v.is_floating_point() else v.cpu() for k, v in raw_model.state_dict().items()}, ckp,
+        )
+    lm_checkpoint(settings, model=model, optimizer=optimizer, scaler=scaler,
+                  epoch=epoch, step=step, wandb=wandb, iters=iters, resume_metadata=resume_metadata)
+
+
 # 开始一轮训练
 def train_epoch(settings: LLMTrainConfigureAll, epoch: int, loader: DataLoader, iters: int, start_step: int = 0, wandb: Any = None, *, resume_metadata) -> None:
     if settings.train.accumulation_steps < 1 or settings.save.step_interval < 1:
@@ -1205,8 +1306,15 @@ def train_epoch(settings: LLMTrainConfigureAll, epoch: int, loader: DataLoader, 
         world_size = dist.get_world_size() if dist.is_initialized() else 1
         if dist.is_initialized():
             dist.all_reduce(total_tokens)
-        loss_scale = world_size / max(total_tokens.item(), 1)
         window_end = step + len(window)
+        if total_tokens.item() == 0:
+            save_pending = window_end == iters or step // settings.save.step_interval < window_end // settings.save.step_interval
+            step = window_end
+            Logger(f"Epoch {epoch + 1}, step {step}: 累积窗口没有监督 token，跳过参数更新")
+            if save_pending:
+                save_training_checkpoint(settings, epoch, step, iters, wandb, resume_metadata)
+            continue
+        loss_scale = world_size / total_tokens.item()
         lr = get_learning_rate(epoch * iters + window_end, settings.train.epochs * iters, settings.train.learning_rate)
         for param_group in optimizer.param_groups:
             param_group["lr"] = lr
@@ -1250,20 +1358,7 @@ def train_epoch(settings: LLMTrainConfigureAll, epoch: int, loader: DataLoader, 
 
         # 保存间隔仍按 microbatch 计数；若落在累积窗口中间，延后到本窗口更新完成。
         if save_pending:
-            if is_main_process():
-                ckp = f"{settings.save.dir}/output/{lm_get_ckp_file_name(settings, settings.save.save_weight)}"
-                raw_model = model.module if isinstance(model, DistributedDataParallel) else model
-                raw_model = getattr(raw_model, "_orig_mod", raw_model)
-                os.makedirs(os.path.dirname(ckp), exist_ok=True)
-                torch.save(
-                    {k: v.half().cpu() if v.is_floating_point() else v.cpu() for k, v in raw_model.state_dict().items()},
-                    ckp,
-                )
-            lm_checkpoint(
-                settings, model=model, optimizer=optimizer, scaler=scaler,
-                epoch=epoch, step=step, wandb=wandb, iters=iters,
-                resume_metadata=resume_metadata,
-            )
+            save_training_checkpoint(settings, epoch, step, iters, wandb, resume_metadata)
 
 
 def parse_args(argv=None):
@@ -1272,7 +1367,7 @@ def parse_args(argv=None):
     parser.add_argument(
         "--input-data-path",
         type=str,
-        default="../dataset/pretrain_t2t_mini.jsonl",
+        default=None,
         help="(预)训练数据路径",
         dest="input_data_path"
     )
@@ -1288,11 +1383,18 @@ def parse_args(argv=None):
         type=str,
         help="tokenizer文件路径",
     )
+    parser.add_argument("--stage", choices=("pretrain", "sft"), default=LLM_TRAIN_SETTINGS.train.stage,
+                        help="训练目标，与初始权重来源独立")
+    parser.add_argument("--from-weight", choices=("none", "pretrain", "fullsft"), default=None,
+                        help="新训练的初始权重；SFT 默认使用 pretrain，续训直接恢复检查点")
     return parser.parse_args(argv)
 
 
 if __name__ == "__main__":
     args = parse_args()
+    configure_training_stage(LLM_TRAIN_SETTINGS, args.stage, args.from_weight, resume=args.resume)
+    if args.input_data_path is None:
+        args.input_data_path = f"../dataset/{'sft' if args.stage == 'sft' else 'pretrain'}_t2t_mini.jsonl"
 
     # ========== 1. 初始化环境和随机种子 ==========
     local_rank = init_distributed_mode(LLM_TRAIN_SETTINGS)
@@ -1313,14 +1415,10 @@ if __name__ == "__main__":
     )
 
     # ========== 4. 加载模型、数据，核对续训配置与输入内容 ==========
-    model, tokenizer = init_model(lm_config, LLM_TRAIN_SETTINGS)
-    if LLM_TRAIN_SETTINGS.train.from_weight == LLMTrainWeightType.kNone:
-        train_ds = PretrainDataset(args.input_data_path, tokenizer, max_length=LLM_TRAIN_SETTINGS.loader.data_item_max_length)
-    else:
-        train_ds = SFTDataset(args.input_data_path, tokenizer, max_length=LLM_TRAIN_SETTINGS.loader.data_item_max_length)
+    model, tokenizer = init_model(lm_config, LLM_TRAIN_SETTINGS, load_initial_weights=not args.resume)
+    train_ds = create_train_dataset(LLM_TRAIN_SETTINGS, args.input_data_path, tokenizer)
     resume_metadata = build_resume_metadata(LLM_TRAIN_SETTINGS, train_ds, tokenizer)
     ckp_data = lm_checkpoint(LLM_TRAIN_SETTINGS, resume_metadata=resume_metadata) if args.resume else None
-    train_sampler = DistributedSampler(train_ds, seed=LLM_TRAIN_SETTINGS.train.seed) if dist.is_initialized() else None
     # CPU 执行 FP32；仅 CUDA FP16 启用 GradScaler。
     # GradScaler的作用是什么？
     scaler = torch.amp.GradScaler(device_type, enabled=(device_type == "cuda" and dtype == torch.float16))
@@ -1357,27 +1455,11 @@ if __name__ == "__main__":
 
     # ========== 8. 开始训练 ==========
     for epoch in range(start_epoch, LLM_TRAIN_SETTINGS.train.epochs):
-        train_sampler and train_sampler.set_epoch(epoch)
         rank = dist.get_rank() if dist.is_initialized() else 0
         setup_seed(LLM_TRAIN_SETTINGS.train.seed + epoch + rank)
         # 数据打乱和 DataLoader 的种子使用独立 Generator，不消耗模型 dropout 的 RNG。
-        sampler_generator = torch.Generator().manual_seed(LLM_TRAIN_SETTINGS.train.seed + epoch)
-        indices = torch.randperm(len(train_ds), generator=sampler_generator).tolist() if train_sampler is None else None
         skip = start_step if (epoch == start_epoch and start_step > 0) else 0
-        sample_count = len(train_sampler) if train_sampler is not None else len(indices)
-        iters = (sample_count + LLM_TRAIN_SETTINGS.train.batch_size - 1) // LLM_TRAIN_SETTINGS.train.batch_size
-        if skip > iters:
-            raise ValueError("检查点 step 超出了当前数据范围")
-        batch_sampler = SkipBatchSampler(
-            train_sampler or indices, LLM_TRAIN_SETTINGS.train.batch_size, skip
-        )
-        loader = DataLoader(
-            train_ds,
-            batch_sampler=batch_sampler,
-            num_workers=LLM_TRAIN_SETTINGS.loader.num_workers,
-            pin_memory=True,
-            generator=torch.Generator().manual_seed(LLM_TRAIN_SETTINGS.train.seed + epoch + rank),
-        )
+        loader, iters = create_train_loader(LLM_TRAIN_SETTINGS, train_ds, epoch, skip)
         if ckp_data and epoch == start_epoch:
             if ckp_data.get("iters", iters) != iters:
                 raise ValueError("数据批次数与检查点不一致，无法按保存位置续训")
