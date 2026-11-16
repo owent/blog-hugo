@@ -38,6 +38,8 @@ warnings.filterwarnings("ignore")
 
 # 下载数据集 modelscope download --dataset gongjy/minimind_dataset README.md --local_dir ./dataset
 
+PYTORCH_IGNORE_INDEX: int = -100
+
 
 class LLMTrainWeightType(Enum):
     kNone = 0
@@ -918,6 +920,7 @@ class OWenTLLMModel(torch.nn.Module):
             config.vocab_size,
             config.num_hidden_layers,
         )
+        # 随机初始化后训练Word Embedding
         self.embed_tokens = torch.nn.Embedding(config.vocab_size, config.hidden_size)
         self.dropout = torch.nn.Dropout(config.dropout)
         self.layers = torch.nn.ModuleList(
@@ -1025,7 +1028,7 @@ class OWenTLLMForCausalLM(PreTrainedModel, GenerationMixin):
             loss = torch.nn.functional.cross_entropy(
                 x.view(-1, x.size(-1)),
                 y.view(-1),
-                ignore_index=-100,
+                ignore_index=PYTORCH_IGNORE_INDEX,
                 reduction=loss_reduction,
             )
         return MoeCausalLMOutputWithPast(
@@ -1164,6 +1167,7 @@ def init_model(
     settings: LLMTrainConfigureAll,
     load_initial_weights: bool = True,
 ):
+    # 加载词表
     tokenizer = AutoTokenizer.from_pretrained(settings.loader.tokenizer_path)
     if len(tokenizer) != lm_config.vocab_size:
         raise ValueError(
@@ -1177,7 +1181,7 @@ def init_model(
             raise ValueError(f"tokenizer 的 {name} 与模型配置不一致")
     model = OWenTLLMForCausalLM(lm_config)
 
-    # 复用 tokenizer 不会复用 Embedding；from_weight 为 kNone 时，全部权重从头训练。
+    # 仅仅复用 tokenizer；from_weight 为 kNone 时，全部权重从头训练。
     if load_initial_weights and settings.train.from_weight != LLMTrainWeightType.kNone:
         weight_path = find_weight_file(
             f"{settings.save.dir}/output", settings, settings.train.from_weight
@@ -1261,6 +1265,7 @@ class PretrainDataset(torch.utils.data.Dataset):
         tokens = self.tokenizer(
             str(sample["text"]),
             add_special_tokens=False,
+            # 裁剪数据不能超过 max_length，并且预留BOS和EOS。
             max_length=self.max_length - 2,
             truncation=True,
         ).input_ids
@@ -1271,11 +1276,12 @@ class PretrainDataset(torch.utils.data.Dataset):
         input_ids = torch.tensor(input_ids, dtype=torch.long)
         labels = input_ids.clone()
         # 按实际长度屏蔽 padding，即使 PAD 与 EOS 使用同一 token ID，也保留真实 EOS 标签。
-        labels[len(tokens) :] = -100
+        # 预训练的输入和监督目标是一样的
+        labels[len(tokens) :] = PYTORCH_IGNORE_INDEX
         attention_mask = torch.arange(self.max_length) < len(tokens)
-        # 返回的数据
-        #   - 实际输入模型的 token ID；短序列用 PAD 补齐。
-        #   - 各位置的预测目标；不参与监督的位置为 -100。
+        # 返回的数据（这个结构由train_epoch里的消费实现决定）
+        #   - 实际输入模型的 token ID；短序列用 PAD 补齐到 max_length。
+        #   - 各位置的预测目标；不参与监督的位置为 PYTORCH_IGNORE_INDEX。
         #   - 真实 token 为 1，padding 为 0，控制注意力和 MoE 负载统计)。
         return input_ids, labels, attention_mask
 
@@ -1323,7 +1329,7 @@ class SFTDataset(torch.utils.data.Dataset):
         self.samples, self.source_fingerprint = load_training_json(
             jsonl_path, kind="sft", features=features, cache_dir=cache_dir
         )
-        # MiniMind 模板的 assistant 分支记录独立字符区间；不在正文中搜索角色标记。
+        # assistant 分支记录独立字符区间；不在正文中搜索角色标记。
         assistant_branch = '{%- elif message.role == "assistant" %}'
         tool_branch = '{%- elif message.role == "tool" %}'
         template = tokenizer.get_chat_template()
@@ -1332,7 +1338,9 @@ class SFTDataset(torch.utils.data.Dataset):
             or template.count(tool_branch) != 1
             or "{% generation" in template
         ):
-            raise ValueError("此 SFT 示例要求使用 MiniMind 的 assistant/tool 分支模板")
+            raise ValueError("此 SFT 示例要求使用包含 assistant/tool 的模板")
+        # transformers.utils.chat_template_utils.render_jinja_template 接口约定
+        # - {% generation %}...{% endgeneration %} 是 transformers 注册的 Jinja 自定义标签。
         self.training_template = template.replace(
             assistant_branch, assistant_branch + "{% generation -%}"
         ).replace(tool_branch, "{%- endgeneration %}" + tool_branch)
@@ -1379,11 +1387,19 @@ class SFTDataset(torch.utils.data.Dataset):
         return (rendered[0], spans[0]) if return_spans else rendered[0]
 
     def generate_labels(self, input_ids, offsets, spans):
-        labels = [-100] * len(input_ids)
-        for start, end in spans:
-            for index, (left, right) in enumerate(offsets):
-                if right > left and start <= left and right <= end:
-                    labels[index] = input_ids[index]
+        labels = [PYTORCH_IGNORE_INDEX] * len(input_ids)
+        span_index = 0
+        for index, (left, right) in enumerate(offsets):
+            if right <= left:  # 空 offset，防御性跳过
+                continue
+            while span_index < len(spans) and left >= spans[span_index][1]:
+                span_index += 1  # token 已越过当前 span → 移到下一个
+            if (
+                span_index < len(spans)
+                and spans[span_index][0] <= left
+                and right <= spans[span_index][1]
+            ):
+                labels[index] = input_ids[index]  # 完全落在 span 内 → 监督
         return labels
 
     def pre_processing_chat(self, conversations, rng):
@@ -1418,6 +1434,7 @@ class SFTDataset(torch.utils.data.Dataset):
         empty_prefix = self.assistant_header + "<think>\n\n</think>\n\n"
         if (
             prompt_content.startswith(empty_prefix)
+            # 概率性保留空思考标签，让模型既见过“带空思考块”也见过“直接回答”两种格式
             and rng.random() > self.empty_think_ratio
         ):
             prompt_content = self.assistant_header + prompt_content[len(empty_prefix) :]
@@ -1426,14 +1443,18 @@ class SFTDataset(torch.utils.data.Dataset):
     def __getitem__(self, index):
         sample = self.samples[index]
         rng = random.Random(f"{self.seed}:{self.epoch}:{index}")
+        # chat模板一般第一个消息是系统提示词
         conversations = self.pre_processing_chat(sample["conversations"], rng)
+        # 按模板渲染完整prompt文本
         prompt, spans = self.create_chat_prompt(conversations, return_spans=True)
         pieces, assistant_spans, cursor, length = [], [], 0, 0
         for start, end in spans:
             prefix = prompt[cursor:start]
             segment = self.post_processing_chat(prompt[start:end], rng)
+            # 模板里注入{% generation %}的后面有 '<|im_start|>' + message.role + '\n<think>\n'
+            # 所以下面的校验总是满足条件
             if not segment.startswith(self.assistant_header):
-                raise ValueError("MiniMind assistant 模板前缀不匹配")
+                raise ValueError("assistant 模板前缀不匹配")
             pieces.extend((prefix, segment))
             length += len(prefix)
             assistant_spans.append(
@@ -1443,6 +1464,7 @@ class SFTDataset(torch.utils.data.Dataset):
             cursor = end
         pieces.append(prompt[cursor:])
         prompt = "".join(pieces)
+        # 完整prompt转换成token
         encoded = self.tokenizer(
             prompt,
             add_special_tokens=False,
@@ -1451,19 +1473,21 @@ class SFTDataset(torch.utils.data.Dataset):
             max_length=self.max_length,
         )
         input_ids = encoded.input_ids
+        # 监督目标是assistant、reasoning_content和tool_calls的部分，user、tool的部分由用户或工具输入，不作为预测目标。
         labels = self.generate_labels(
             input_ids, encoded.offset_mapping, assistant_spans
         )
         valid_length = len(input_ids)
+
+        # 对齐到 max_length, 补PAD token
         padding = self.max_length - valid_length
         input_ids += [self.tokenizer.pad_token_id] * padding
-        labels += [-100] * padding
-        # # === 调试打印 ===
-        # print(f"\n--- Sample {index} ---")
-        # for i, (x, y) in enumerate(zip(input_ids[:-1], labels[1:])):
-        #     print(f"{i:3d}: X={self.tokenizer.decode([x])!r:16s} ---> Y={self.tokenizer.decode([input_ids[i+1]])!r:16s} label={y}")
-        # # ================
+        labels += [PYTORCH_IGNORE_INDEX] * padding
         attention_mask = torch.arange(self.max_length) < valid_length
+        # 返回的数据（这个结构由train_epoch里的消费实现决定）
+        #   - 实际输入模型的 token ID；短序列用 PAD 补齐。
+        #   - 各位置的预测目标；不参与监督的位置为 PYTORCH_IGNORE_INDEX。
+        #   - 真实 token 为 1，padding 为 0，控制注意力和 MoE 负载统计)。
         return (
             torch.tensor(input_ids, dtype=torch.long),
             torch.tensor(labels, dtype=torch.long),
@@ -1583,6 +1607,7 @@ def train_epoch(
         raise ValueError("检查点必须位于梯度累积窗口结束处")
     start_time = time.time()
     model.train()
+    # 初始清空梯度
     optimizer.zero_grad(set_to_none=True)
     batches = iter(loader)
     step = start_step
@@ -1720,10 +1745,6 @@ if __name__ == "__main__":
     configure_training_stage(
         LLM_TRAIN_SETTINGS, args.stage, args.from_weight, resume=args.resume
     )
-    if args.input_data_path is None:
-        args.input_data_path = (
-            f"../dataset/{'sft' if args.stage == 'sft' else 'pretrain'}_t2t_mini.jsonl"
-        )
 
     # ========== 1. 初始化环境和随机种子 ==========
     local_rank = init_distributed_mode(LLM_TRAIN_SETTINGS)
@@ -1735,7 +1756,7 @@ if __name__ == "__main__":
     if args.tokenizer:
         LLM_TRAIN_SETTINGS.loader.tokenizer_path = args.tokenizer
 
-    # ========== 2. 配置目录和模型参数 ==========
+    # ========== 2. 转换成训练用的配置目录和模型参数 ==========
     os.makedirs(f"{LLM_TRAIN_SETTINGS.save.dir}/output", exist_ok=True)
     lm_config = LLMTrainRuntimeConfig(LLM_TRAIN_SETTINGS)
 
@@ -1752,7 +1773,9 @@ if __name__ == "__main__":
     model, tokenizer = init_model(
         lm_config, LLM_TRAIN_SETTINGS, load_initial_weights=not args.resume
     )
+    # 读取训练数据集的加载器
     train_ds = create_train_dataset(LLM_TRAIN_SETTINGS, args.input_data_path, tokenizer)
+    # 续训时，用这个resume_metadata来校验关键设置要匹配
     resume_metadata = build_resume_metadata(LLM_TRAIN_SETTINGS, train_ds, tokenizer)
     ckp_data = (
         lm_checkpoint(LLM_TRAIN_SETTINGS, resume_metadata=resume_metadata)
@@ -1812,6 +1835,8 @@ if __name__ == "__main__":
         # 数据打乱和 DataLoader 的种子使用独立 Generator，不消耗模型 dropout 的 RNG。
         skip = start_step if (epoch == start_epoch and start_step > 0) else 0
         loader, iters = create_train_loader(LLM_TRAIN_SETTINGS, train_ds, epoch, skip)
+
+        # 续训时第一个epoch回复随机数状态
         if ckp_data and epoch == start_epoch:
             if ckp_data.get("iters", iters) != iters:
                 raise ValueError("数据批次数与检查点不一致，无法按保存位置续训")
@@ -1822,6 +1847,8 @@ if __name__ == "__main__":
             Logger(
                 f"Epoch [{epoch + 1}/{LLM_TRAIN_SETTINGS.train.epochs}]: 跳过前{start_step}个step，从step {start_step + 1}开始"
             )
+
+        # 执行一个epoch训练
         train_epoch(
             LLM_TRAIN_SETTINGS,
             scaler,
