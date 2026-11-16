@@ -38,15 +38,18 @@ warnings.filterwarnings("ignore")
 
 # 下载数据集 modelscope download --dataset gongjy/minimind_dataset README.md --local_dir ./dataset
 
+
 class LLMTrainWeightType(Enum):
     kNone = 0
     kPretrain = 1
     kFullSFT = 2
 
+
 class LLMTrainConfigureSave(BaseModel):
     save_weight: LLMTrainWeightType
     dir: str
     step_interval: int
+
 
 class LLMTrainConfigureRopeScaling(BaseModel):
     beta_fast: int
@@ -55,7 +58,6 @@ class LLMTrainConfigureRopeScaling(BaseModel):
     original_max_position_embeddings: int
     attention_factor: float
     type: str
-
 
 
 class LLMTrainConfigureTrain(BaseModel):
@@ -105,14 +107,18 @@ class LLMTrainConfigureLoader(BaseModel):
     sft_add_system_ratio: float = Field(default=0.2, ge=0, le=1)
     sft_empty_think_ratio: float = Field(default=0.2, ge=0, le=1)
 
+
 class LLMTrainConfigureVisualizationWanDB(BaseModel):
     project: str
+
 
 class LLMTrainConfigureVisualization(BaseModel):
     wandb: LLMTrainConfigureVisualizationWanDB | None
 
+
 class LLMTrainConfigureLog(BaseModel):
     step_interval: int
+
 
 class LLMTrainConfigureAll(BaseModel):
     model_name: str
@@ -123,6 +129,7 @@ class LLMTrainConfigureAll(BaseModel):
     visualization: LLMTrainConfigureVisualization | None
     log: LLMTrainConfigureLog
 
+
 # torchrun 启动时会设置 RANK 和 LOCAL_RANK 环境变量
 def init_distributed_mode(settings: LLMTrainConfigureAll):
     distributed = int(os.environ.get("RANK", -1)) != -1
@@ -130,10 +137,23 @@ def init_distributed_mode(settings: LLMTrainConfigureAll):
     device = torch.device(settings.train.device)
     if device.type == "cuda":
         if distributed and not dist.is_nccl_available():
-            raise RuntimeError("当前 PyTorch 未提供 NCCL/RCCL，无法启动 GPU DDP；请使用单进程 GPU，或在支持该后端的环境中运行。CPU DDP 可将 train.device 设为 cpu。")
+            raise RuntimeError(
+                "当前 PyTorch 未提供 NCCL/RCCL，无法启动 GPU DDP；请使用单进程 GPU，或在支持该后端的环境中运行。CPU DDP 可将 train.device 设为 cpu。"
+            )
         if not torch.cuda.is_available():
             raise RuntimeError("配置要求 CUDA/ROCm 设备，但当前环境不可用")
-        device = torch.device("cuda", local_rank if distributed else (device.index if device.index is not None else torch.cuda.current_device()))
+        device = torch.device(
+            "cuda",
+            (
+                local_rank
+                if distributed
+                else (
+                    device.index
+                    if device.index is not None
+                    else torch.cuda.current_device()
+                )
+            ),
+        )
         torch.cuda.set_device(device)
     elif device.type != "cpu":
         raise ValueError("本示例支持的训练设备为 cpu 和 cuda")
@@ -144,6 +164,7 @@ def init_distributed_mode(settings: LLMTrainConfigureAll):
             raise RuntimeError("当前 PyTorch 未提供 Gloo，无法启动 CPU DDP")
         dist.init_process_group(backend=backend)
     return local_rank
+
 
 LLM_TRAIN_CONST_VALUE_HIDDEN_SIZE: int = 768
 LLM_TRAIN_SETTINGS = LLMTrainConfigureAll.model_validate(
@@ -187,7 +208,8 @@ LLM_TRAIN_SETTINGS = LLMTrainConfigureAll.model_validate(
             # 隐藏层维度，某些模型可以有额外的投影层让隐藏层维度和word embedding的维度不同。
             # 当前脚本没有投影层，所以隐藏层维度、注意力、FFN 和残差连接要和word embedding的维度相同
             "hidden_size": LLM_TRAIN_CONST_VALUE_HIDDEN_SIZE,
-            # 隐藏层数量，隐藏层越多，是否世界知识越丰富？
+            # 隐藏层数量。每个隐藏层就是让模型对整句话做一轮“收集信息 → 加工 → 写回”的过程。
+            # 即让模型完成读->想->写的过程。加深通常比加宽更能提升“多步推理”类能力，但收益递减，且层数串行执行、推理耗时线性增长。
             "num_hidden_layers": 8,
             # dropout。大规模预训练经常使用 0，常见原因是语料规模大、重复次数有限，模型更常受容量和训练计算量限制，而不是明显过拟合；
             # Dropout 还会引入额外噪声，可能减慢收敛。
@@ -219,10 +241,10 @@ LLM_TRAIN_SETTINGS = LLMTrainConfigureAll.model_validate(
             )
             * 64,
             # 当前代码用它确定预计算 RoPE 正余弦表的长度，因此可表示位置：0 ～ 32767
-            # RoPE是做什么的？
+            # RoPE: Rotary Position Embedding，旋转位置编码。详见 “RoPE: Rotary Position Embedding，旋转位置编码” 章节。
             "max_position_embeddings": 32768,
             # RoPE 的频率基数。对维度为 d 的注意力头，第 j 个频率为： $f_j=\theta^{-2j/d}$
-            # rope_theta 决定不同维度的旋转周期，什么作用？
+            # rope_theta 决定不同维度的旋转周期。
             "rope_theta": 1e6,
             # 表示输入 Embedding 和输出 lm_head 共享同一个参数矩阵
             "tie_word_embeddings": True,
@@ -260,9 +282,10 @@ LLM_TRAIN_SETTINGS = LLMTrainConfigureAll.model_validate(
         "log": {
             # 日志打印间隔
             "step_interval": 100,
-        }
+        },
     }
 )
+
 if LLM_TRAIN_SETTINGS.param.inference_rope_scaling:
     LLM_TRAIN_SETTINGS.param.rope_scaling = LLMTrainConfigureRopeScaling.model_validate(
         {
@@ -324,7 +347,9 @@ class LLMTrainRuntimeConfig(PretrainedConfig):
 
     def __init__(self, settings: LLMTrainConfigureAll | None = None, **kwargs):
         param = (settings or LLM_TRAIN_SETTINGS).param
-        values = param.model_dump(exclude={"dtype", "eps", "moe_num_experts", "moe_num_experts_per_tok"})
+        values = param.model_dump(
+            exclude={"dtype", "eps", "moe_num_experts", "moe_num_experts_per_tok"}
+        )
         values.update(
             rms_norm_eps=param.eps,
             num_experts=param.moe_num_experts,
@@ -343,16 +368,27 @@ class LLMTrainRuntimeConfig(PretrainedConfig):
         values["rope_parameters"] = rope_parameters
         super().__init__(**values)
 
-def lm_get_ckp_file_name(settings : LLMTrainConfigureAll, weight : LLMTrainWeightType):
-    moe_path = '-moe' if settings.param.use_moe else ''
+
+def lm_get_ckp_file_name(settings: LLMTrainConfigureAll, weight: LLMTrainWeightType):
+    moe_path = "-moe" if settings.param.use_moe else ""
     return f"{weight.name[1:].lower()}-{settings.param.hidden_size}{moe_path}.pth"
-def lm_get_ckp_resume_file_name(settings : LLMTrainConfigureAll, weight : LLMTrainWeightType):
-    moe_path = '-moe' if settings.param.use_moe else ''
-    return f"{weight.name[1:].lower()}-{settings.param.hidden_size}{moe_path}.resume.pth"
+
+
+def lm_get_ckp_resume_file_name(
+    settings: LLMTrainConfigureAll, weight: LLMTrainWeightType
+):
+    moe_path = "-moe" if settings.param.use_moe else ""
+    return (
+        f"{weight.name[1:].lower()}-{settings.param.hidden_size}{moe_path}.resume.pth"
+    )
 
 
 def find_weight_file(directory, settings, weight, *, resume=False):
-    name = lm_get_ckp_resume_file_name(settings, weight) if resume else lm_get_ckp_file_name(settings, weight)
+    name = (
+        lm_get_ckp_resume_file_name(settings, weight)
+        if resume
+        else lm_get_ckp_file_name(settings, weight)
+    )
     current = Path(directory) / name
     legacy_name = f"{str(weight)[1:]}-{settings.param.hidden_size}{'-moe' if settings.param.use_moe else ''}"
     legacy = Path(directory) / (legacy_name + (".resume.pth" if resume else ".pth"))
@@ -375,16 +411,25 @@ def build_resume_metadata(settings, dataset, tokenizer):
         tokenizer.save_pretrained(directory)
         tokenizer_files = {
             path.relative_to(directory).as_posix(): sha256_file(path)
-            for path in sorted(Path(directory).rglob("*")) if path.is_file()
+            for path in sorted(Path(directory).rglob("*"))
+            if path.is_file()
         }
     return {
         "version": 2,
-        "train": settings.train.model_dump(mode="json", exclude={"device", "from_weight"}),
+        "train": settings.train.model_dump(
+            mode="json", exclude={"device", "from_weight"}
+        ),
         "model": settings.param.model_dump(mode="json"),
-        "loader": {"data_item_max_length": dataset.max_length, "num_workers": settings.loader.num_workers},
+        "loader": {
+            "data_item_max_length": dataset.max_length,
+            "num_workers": settings.loader.num_workers,
+        },
         "device_type": torch.device(settings.train.device).type,
-        "dataset": {"files": dataset.source_fingerprint, "rows": len(dataset),
-                    "processing": dataset.processing_config},
+        "dataset": {
+            "files": dataset.source_fingerprint,
+            "rows": len(dataset),
+            "processing": dataset.processing_config,
+        },
         "tokenizer": tokenizer_files,
     }
 
@@ -392,10 +437,18 @@ def build_resume_metadata(settings, dataset, tokenizer):
 def validate_resume_metadata(checkpoint, expected):
     saved = checkpoint.get("resume_metadata")
     if saved is None:
-        raise ValueError("旧检查点缺少完整续训信息，无法核对模型、精度、数据及 tokenizer；请通过 train.from_weight 加载对应导出权重，开始新训练。")
-    changed = sorted(key for key in saved.keys() | expected.keys() if saved.get(key) != expected.get(key))
+        raise ValueError(
+            "旧检查点缺少完整续训信息，无法核对模型、精度、数据及 tokenizer；请通过 train.from_weight 加载对应导出权重，开始新训练。"
+        )
+    changed = sorted(
+        key
+        for key in saved.keys() | expected.keys()
+        if saved.get(key) != expected.get(key)
+    )
     if changed:
-        raise ValueError(f"续训配置或输入内容与检查点不一致：{', '.join(changed)}；请恢复原配置与数据，或从权重开始新训练。")
+        raise ValueError(
+            f"续训配置或输入内容与检查点不一致：{', '.join(changed)}；请恢复原配置与数据，或从权重开始新训练。"
+        )
 
 
 def capture_rng_state(device):
@@ -405,7 +458,9 @@ def capture_rng_state(device):
         "python": random.getstate(),
         "numpy": (numpy_state[0], numpy_state[1].tolist(), *numpy_state[2:]),
         "torch": torch.get_rng_state(),
-        "cuda": torch.cuda.get_rng_state(device=device) if device.type == "cuda" else None,
+        "cuda": (
+            torch.cuda.get_rng_state(device=device) if device.type == "cuda" else None
+        ),
     }
 
 
@@ -415,18 +470,36 @@ def restore_rng_state(state, device):
         raise ValueError("随机数状态的设备类型与当前训练设备不一致")
     random.setstate(state["python"])
     numpy_state = state["numpy"]
-    numpy.random.set_state((numpy_state[0], numpy.array(numpy_state[1], dtype=numpy.uint32), *numpy_state[2:]))
+    numpy.random.set_state(
+        (
+            numpy_state[0],
+            numpy.array(numpy_state[1], dtype=numpy.uint32),
+            *numpy_state[2:],
+        )
+    )
     torch.set_rng_state(state["torch"])
     if device.type == "cuda":
         torch.cuda.set_rng_state(state["cuda"], device=device)
 
 
 # 读取或保存检查点
-def lm_checkpoint(settings : LLMTrainConfigureAll, model=None, optimizer=None, epoch=0, step=0, wandb=None, *, resume_metadata, **kwargs):
+def lm_checkpoint(
+    settings: LLMTrainConfigureAll,
+    model=None,
+    optimizer=None,
+    epoch=0,
+    step=0,
+    wandb=None,
+    *,
+    resume_metadata,
+    **kwargs,
+):
     save_dir = f"{settings.save.dir}/checkpoint"
     os.makedirs(save_dir, exist_ok=True)
-    ckp_path = f'{save_dir}/{lm_get_ckp_file_name(settings, settings.save.save_weight)}'
-    resume_path = f'{save_dir}/{lm_get_ckp_resume_file_name(settings, settings.save.save_weight)}'
+    ckp_path = f"{save_dir}/{lm_get_ckp_file_name(settings, settings.save.save_weight)}"
+    resume_path = (
+        f"{save_dir}/{lm_get_ckp_resume_file_name(settings, settings.save.save_weight)}"
+    )
 
     if model is not None:
         # 所有 rank 都参与收集；只由主进程写文件。
@@ -437,56 +510,73 @@ def lm_checkpoint(settings : LLMTrainConfigureAll, model=None, optimizer=None, e
             dist.all_gather_object(rng_states, local_rng_state)
         if not is_main_process():
             return
-        raw_model = model.module if isinstance(model, DistributedDataParallel) else model
-        raw_model = getattr(raw_model, '_orig_mod', raw_model)
+        raw_model = (
+            model.module if isinstance(model, DistributedDataParallel) else model
+        )
+        raw_model = getattr(raw_model, "_orig_mod", raw_model)
         state_dict = raw_model.state_dict()
         state_dict = {k: v.detach().cpu() for k, v in state_dict.items()}
-        ckp_tmp = ckp_path + '.tmp'
-        torch.save({k: v.half() if v.is_floating_point() else v for k, v in state_dict.items()}, ckp_tmp)
+        ckp_tmp = ckp_path + ".tmp"
+        torch.save(
+            {
+                k: v.half() if v.is_floating_point() else v
+                for k, v in state_dict.items()
+            },
+            ckp_tmp,
+        )
         os.replace(ckp_tmp, ckp_path)
         wandb_id = None
         if wandb:
-            if hasattr(wandb, 'get_run'):
+            if hasattr(wandb, "get_run"):
                 run = wandb.get_run()
-                wandb_id = getattr(run, 'id', None) if run else None
+                wandb_id = getattr(run, "id", None) if run else None
             else:
-                wandb_id = getattr(wandb, 'id', None)
+                wandb_id = getattr(wandb, "id", None)
 
         resume_data = {
-            'model': state_dict,
-            'optimizer': optimizer.state_dict(),
-            'epoch': epoch,
-            'step': step,
-            'world_size': dist.get_world_size() if dist.is_initialized() else 1,
-            'wandb_id': wandb_id,
-            'rng_states': rng_states,
-            'resume_metadata': resume_metadata,
+            "model": state_dict,
+            "optimizer": optimizer.state_dict(),
+            "epoch": epoch,
+            "step": step,
+            "world_size": dist.get_world_size() if dist.is_initialized() else 1,
+            "wandb_id": wandb_id,
+            "rng_states": rng_states,
+            "resume_metadata": resume_metadata,
         }
         for key, value in kwargs.items():
             if value is not None:
-                if hasattr(value, 'state_dict'):
-                    raw_value = value.module if isinstance(value, DistributedDataParallel) else value
-                    raw_value = getattr(raw_value, '_orig_mod', raw_value)
+                if hasattr(value, "state_dict"):
+                    raw_value = (
+                        value.module
+                        if isinstance(value, DistributedDataParallel)
+                        else value
+                    )
+                    raw_value = getattr(raw_value, "_orig_mod", raw_value)
                     resume_data[key] = raw_value.state_dict()
                 else:
                     resume_data[key] = value
 
-        resume_tmp = resume_path + '.tmp'
+        resume_tmp = resume_path + ".tmp"
         torch.save(resume_data, resume_tmp)
         os.replace(resume_tmp, resume_path)
         del state_dict, resume_data
         torch.cuda.empty_cache()
     else:  # 加载模式
-        resume_path = find_weight_file(save_dir, settings, settings.save.save_weight, resume=True)
-        ckp_data = torch.load(resume_path, map_location='cpu', weights_only=True)
-        saved_ws = ckp_data.get('world_size', 1)
+        resume_path = find_weight_file(
+            save_dir, settings, settings.save.save_weight, resume=True
+        )
+        ckp_data = torch.load(resume_path, map_location="cpu", weights_only=True)
+        saved_ws = ckp_data.get("world_size", 1)
         current_ws = dist.get_world_size() if dist.is_initialized() else 1
         if saved_ws != current_ws:
-            raise ValueError(f'续训要求 world_size 保持一致（保存值 {saved_ws}，当前值 {current_ws}）；改变 GPU 数量请从模型权重开始新训练。')
+            raise ValueError(
+                f"续训要求 world_size 保持一致（保存值 {saved_ws}，当前值 {current_ws}）；改变 GPU 数量请从模型权重开始新训练。"
+            )
         validate_resume_metadata(ckp_data, resume_metadata)
-        if len(ckp_data.get('rng_states', [])) != current_ws:
-            raise ValueError('检查点缺少各 rank 的随机数状态，无法续训')
+        if len(ckp_data.get("rng_states", [])) != current_ws:
+            raise ValueError("检查点缺少各 rank 的随机数状态，无法续训")
         return ckp_data
+
 
 # ==================================== 模型内容部分 ====================================
 
@@ -525,7 +615,8 @@ def precompute_freqs_cis(
         1.0,
     )
     if (
-        rope_scaling is not None and rope_scaling.get("rope_type", rope_scaling.get("type", "yarn")) == "yarn"
+        rope_scaling is not None
+        and rope_scaling.get("rope_type", rope_scaling.get("type", "yarn")) == "yarn"
     ):  # YaRN: f'(i) = f(i)((1-γ) + γ/s), where γ∈[0,1] is linear ramp
         orig_max, factor, beta_fast, beta_slow, attn_factor = (
             rope_scaling.get("original_max_position_embeddings", 2048),
@@ -652,7 +743,9 @@ class Attention(torch.nn.Module):
             if attention_mask is not None and not torch.all(attention_mask == 1):
                 sdpa_mask = attention_mask[:, None, None, :].bool()
                 if self.is_causal:
-                    causal_mask = torch.ones(seq_len, seq_len, dtype=torch.bool, device=x.device).tril()
+                    causal_mask = torch.ones(
+                        seq_len, seq_len, dtype=torch.bool, device=x.device
+                    ).tril()
                     sdpa_mask = sdpa_mask & causal_mask
             output = torch.nn.functional.scaled_dot_product_attention(
                 xq,
@@ -669,8 +762,15 @@ class Attention(torch.nn.Module):
                     (seq_len, seq_len), float("-inf"), device=scores.device
                 ).triu(1)
             if attention_mask is not None:
-                scores += (1.0 - attention_mask.unsqueeze(1).unsqueeze(2).to(scores.dtype)) * -1e9
-            output = self.attn_dropout(torch.nn.functional.softmax(scores, dim=-1).type_as(xq)) @ xv
+                scores += (
+                    1.0 - attention_mask.unsqueeze(1).unsqueeze(2).to(scores.dtype)
+                ) * -1e9
+            output = (
+                self.attn_dropout(
+                    torch.nn.functional.softmax(scores, dim=-1).type_as(xq)
+                )
+                @ xv
+            )
         output = output.transpose(1, 2).reshape(bsz, seq_len, -1)
         output = self.resid_dropout(self.o_proj(output))
         return output, past_kv
@@ -680,9 +780,15 @@ class FeedForward(torch.nn.Module):
     def __init__(self, config: LLMTrainRuntimeConfig, intermediate_size: int = None):
         super().__init__()
         intermediate_size = intermediate_size or config.intermediate_size
-        self.gate_proj = torch.nn.Linear(config.hidden_size, intermediate_size, bias=False)
-        self.down_proj = torch.nn.Linear(intermediate_size, config.hidden_size, bias=False)
-        self.up_proj = torch.nn.Linear(config.hidden_size, intermediate_size, bias=False)
+        self.gate_proj = torch.nn.Linear(
+            config.hidden_size, intermediate_size, bias=False
+        )
+        self.down_proj = torch.nn.Linear(
+            intermediate_size, config.hidden_size, bias=False
+        )
+        self.up_proj = torch.nn.Linear(
+            config.hidden_size, intermediate_size, bias=False
+        )
         self.act_fn = ACT2FN[config.hidden_act]
 
     def forward(self, x):
@@ -736,11 +842,19 @@ class MOEFeedForward(torch.nn.Module):
             elif self.training:
                 y[0, 0] += 0 * sum(p.sum() for p in expert.parameters())
         if self.training and self.config.router_aux_loss_coef > 0:
-            valid = token_mask.reshape(-1).bool() if token_mask is not None else torch.ones(
-                batch_size * seq_len, dtype=torch.bool, device=x.device
+            valid = (
+                token_mask.reshape(-1).bool()
+                if token_mask is not None
+                else torch.ones(batch_size * seq_len, dtype=torch.bool, device=x.device)
             )
             if valid.any():
-                load = torch.nn.functional.one_hot(topk_idx[valid], self.config.num_experts).float().mean(0)
+                load = (
+                    torch.nn.functional.one_hot(
+                        topk_idx[valid], self.config.num_experts
+                    )
+                    .float()
+                    .mean(0)
+                )
                 self.aux_loss = (
                     (load * scores[valid].mean(0)).sum()
                     * self.config.num_experts
@@ -783,7 +897,11 @@ class OWenTLLMBlock(torch.nn.Module):
         hidden_states += residual
         mlp_input = self.post_attention_layernorm(hidden_states)
         if isinstance(self.mlp, MOEFeedForward):
-            token_mask = attention_mask[:, -hidden_states.shape[1]:] if attention_mask is not None else None
+            token_mask = (
+                attention_mask[:, -hidden_states.shape[1] :]
+                if attention_mask is not None
+                else None
+            )
             mlp_output = self.mlp(mlp_input, token_mask=token_mask)
         else:
             mlp_output = self.mlp(mlp_input)
@@ -905,7 +1023,9 @@ class OWenTLLMForCausalLM(PreTrainedModel, GenerationMixin):
         if labels is not None:
             x, y = logits[..., :-1, :].contiguous(), labels[..., 1:].contiguous()
             loss = torch.nn.functional.cross_entropy(
-                x.view(-1, x.size(-1)), y.view(-1), ignore_index=-100,
+                x.view(-1, x.size(-1)),
+                y.view(-1),
+                ignore_index=-100,
                 reduction=loss_reduction,
             )
         return MoeCausalLMOutputWithPast(
@@ -1046,7 +1166,9 @@ def init_model(
 ):
     tokenizer = AutoTokenizer.from_pretrained(settings.loader.tokenizer_path)
     if len(tokenizer) != lm_config.vocab_size:
-        raise ValueError(f"tokenizer 词表大小 {len(tokenizer)} 与模型词表大小 {lm_config.vocab_size} 不一致")
+        raise ValueError(
+            f"tokenizer 词表大小 {len(tokenizer)} 与模型词表大小 {lm_config.vocab_size} 不一致"
+        )
     for name in ("bos_token_id", "eos_token_id", "pad_token_id"):
         token_id = getattr(tokenizer, name)
         if token_id is None or not 0 <= token_id < lm_config.vocab_size:
@@ -1057,8 +1179,10 @@ def init_model(
 
     # 复用 tokenizer 不会复用 Embedding；from_weight 为 kNone 时，全部权重从头训练。
     if load_initial_weights and settings.train.from_weight != LLMTrainWeightType.kNone:
-        weight_path = find_weight_file(f"{settings.save.dir}/output", settings, settings.train.from_weight)
-        weights = torch.load(weight_path, map_location='cpu', weights_only=True)
+        weight_path = find_weight_file(
+            f"{settings.save.dir}/output", settings, settings.train.from_weight
+        )
+        weights = torch.load(weight_path, map_location="cpu", weights_only=True)
         model.load_state_dict(weights)
 
     print_model_params(model, lm_config)
@@ -1066,6 +1190,7 @@ def init_model(
         f"Trainable Params: {sum(p.numel() for p in model.parameters() if p.requires_grad) / 1e6:.3f}M"
     )
     return model.to(settings.train.device), tokenizer
+
 
 class SkipBatchSampler(Sampler):
     def __init__(self, sampler, batch_size, skip_batches=0):
@@ -1092,14 +1217,25 @@ class SkipBatchSampler(Sampler):
         total_batches = (len(self.sampler) + self.batch_size - 1) // self.batch_size
         return max(0, total_batches - self.skip_batches)
 
+
 def load_training_json(data_path, *, kind, features=None, cache_dir=None):
-    data_files = [str(Path(path).resolve()) for path in sorted(glob.glob(os.fspath(data_path), recursive=True)) if Path(path).is_file()]
+    data_files = [
+        str(Path(path).resolve())
+        for path in sorted(glob.glob(os.fspath(data_path), recursive=True))
+        if Path(path).is_file()
+    ]
     if not data_files:
         raise FileNotFoundError(f"未找到本地 JSON/JSONL 数据文件：{data_path}")
     fingerprints = [sha256_file(path) for path in data_files]
     content_id = hashlib.sha256("".join(fingerprints).encode("ascii")).hexdigest()
-    samples = load_dataset('json', name=f"{kind}-{content_id}", data_files=data_files,
-                           split='train', features=features, cache_dir=cache_dir)
+    samples = load_dataset(
+        "json",
+        name=f"{kind}-{content_id}",
+        data_files=data_files,
+        split="train",
+        features=features,
+        cache_dir=cache_dir,
+    )
     return samples, fingerprints
 
 
@@ -1112,7 +1248,9 @@ class PretrainDataset(torch.utils.data.Dataset):
         self.tokenizer = tokenizer
         self.max_length = max_length
         # 同大小、同时间戳的文件替换也必须重新构建 Arrow 缓存。
-        self.samples, self.source_fingerprint = load_training_json(data_path, kind="pretrain", cache_dir=cache_dir)
+        self.samples, self.source_fingerprint = load_training_json(
+            data_path, kind="pretrain", cache_dir=cache_dir
+        )
         self.processing_config = {"kind": "pretrain", "version": 1}
 
     def __len__(self):
@@ -1120,13 +1258,20 @@ class PretrainDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         sample = self.samples[index]
-        tokens = self.tokenizer(str(sample['text']), add_special_tokens=False, max_length=self.max_length - 2, truncation=True).input_ids
+        tokens = self.tokenizer(
+            str(sample["text"]),
+            add_special_tokens=False,
+            max_length=self.max_length - 2,
+            truncation=True,
+        ).input_ids
         tokens = [self.tokenizer.bos_token_id] + tokens + [self.tokenizer.eos_token_id]
-        input_ids = tokens + [self.tokenizer.pad_token_id] * (self.max_length - len(tokens))
+        input_ids = tokens + [self.tokenizer.pad_token_id] * (
+            self.max_length - len(tokens)
+        )
         input_ids = torch.tensor(input_ids, dtype=torch.long)
         labels = input_ids.clone()
         # 按实际长度屏蔽 padding，即使 PAD 与 EOS 使用同一 token ID，也保留真实 EOS 标签。
-        labels[len(tokens):] = -100
+        labels[len(tokens) :] = -100
         attention_mask = torch.arange(self.max_length) < len(tokens)
         # 返回的数据
         #   - 实际输入模型的 token ID；短序列用 PAD 补齐。
@@ -1134,34 +1279,73 @@ class PretrainDataset(torch.utils.data.Dataset):
         #   - 真实 token 为 1，padding 为 0，控制注意力和 MoE 负载统计)。
         return input_ids, labels, attention_mask
 
+
 # 后训练数据提取
 class SFTDataset(torch.utils.data.Dataset):
-    def __init__(self, jsonl_path, tokenizer, max_length=1024, *, seed=42,
-                 add_system_ratio=0.2, empty_think_ratio=0.2, cache_dir=None):
+    def __init__(
+        self,
+        jsonl_path,
+        tokenizer,
+        max_length=1024,
+        *,
+        seed=42,
+        add_system_ratio=0.2,
+        empty_think_ratio=0.2,
+        cache_dir=None,
+    ):
         super().__init__()
         if max_length < 3 or not tokenizer.is_fast:
-            raise ValueError("SFT 要求 max_length 至少为 3，并使用支持 offset_mapping 的 fast tokenizer")
+            raise ValueError(
+                "SFT 要求 max_length 至少为 3，并使用支持 offset_mapping 的 fast tokenizer"
+            )
         if not 0 <= add_system_ratio <= 1 or not 0 <= empty_think_ratio <= 1:
             raise ValueError("SFT 增强概率必须在 [0, 1] 内")
         self.tokenizer = tokenizer
         self.max_length = max_length
         self.seed, self.epoch = seed, 0
-        self.add_system_ratio, self.empty_think_ratio = add_system_ratio, empty_think_ratio
-        features = Features({'conversations': [{'role': Value('string'), 'content': Value('string'), 'reasoning_content': Value('string'), 'tools': Value('string'), 'tool_calls': Value('string')}]})
-        self.samples, self.source_fingerprint = load_training_json(jsonl_path, kind="sft", features=features, cache_dir=cache_dir)
+        self.add_system_ratio, self.empty_think_ratio = (
+            add_system_ratio,
+            empty_think_ratio,
+        )
+        features = Features(
+            {
+                "conversations": [
+                    {
+                        "role": Value("string"),
+                        "content": Value("string"),
+                        "reasoning_content": Value("string"),
+                        "tools": Value("string"),
+                        "tool_calls": Value("string"),
+                    }
+                ]
+            }
+        )
+        self.samples, self.source_fingerprint = load_training_json(
+            jsonl_path, kind="sft", features=features, cache_dir=cache_dir
+        )
         # MiniMind 模板的 assistant 分支记录独立字符区间；不在正文中搜索角色标记。
         assistant_branch = '{%- elif message.role == "assistant" %}'
         tool_branch = '{%- elif message.role == "tool" %}'
         template = tokenizer.get_chat_template()
-        if template.count(assistant_branch) != 1 or template.count(tool_branch) != 1 or "{% generation" in template:
+        if (
+            template.count(assistant_branch) != 1
+            or template.count(tool_branch) != 1
+            or "{% generation" in template
+        ):
             raise ValueError("此 SFT 示例要求使用 MiniMind 的 assistant/tool 分支模板")
-        self.training_template = template.replace(assistant_branch, assistant_branch + '{% generation -%}').replace(
-            tool_branch, '{%- endgeneration %}' + tool_branch)
-        self.assistant_header = f'{tokenizer.bos_token}assistant\n'
+        self.training_template = template.replace(
+            assistant_branch, assistant_branch + "{% generation -%}"
+        ).replace(tool_branch, "{%- endgeneration %}" + tool_branch)
+        self.assistant_header = f"{tokenizer.bos_token}assistant\n"
         self.processing_config = {
-            "kind": "sft", "version": 1, "seed": seed,
-            "add_system_ratio": add_system_ratio, "empty_think_ratio": empty_think_ratio,
-            "template_sha256": hashlib.sha256(self.training_template.encode("utf-8")).hexdigest(),
+            "kind": "sft",
+            "version": 1,
+            "seed": seed,
+            "add_system_ratio": add_system_ratio,
+            "empty_think_ratio": empty_think_ratio,
+            "template_sha256": hashlib.sha256(
+                self.training_template.encode("utf-8")
+            ).hexdigest(),
         }
 
     def __len__(self):
@@ -1176,14 +1360,21 @@ class SFTDataset(torch.utils.data.Dataset):
         for message in conversations:
             message = dict(message)
             if message.get("role") == "system" and message.get("tools"):
-                tools = json.loads(message["tools"]) if isinstance(message["tools"], str) else message["tools"]
+                tools = (
+                    json.loads(message["tools"])
+                    if isinstance(message["tools"], str)
+                    else message["tools"]
+                )
             if message.get("tool_calls") and isinstance(message["tool_calls"], str):
                 message["tool_calls"] = json.loads(message["tool_calls"])
             messages.append(message)
         rendered, spans = render_jinja_template(
-            conversations=[messages], chat_template=self.training_template,
-            return_assistant_tokens_mask=True, add_generation_prompt=False,
-            tools=tools, **self.tokenizer.special_tokens_map,
+            conversations=[messages],
+            chat_template=self.training_template,
+            return_assistant_tokens_mask=True,
+            add_generation_prompt=False,
+            tools=tools,
+            **self.tokenizer.special_tokens_map,
         )
         return (rendered[0], spans[0]) if return_spans else rendered[0]
 
@@ -1199,7 +1390,8 @@ class SFTDataset(torch.utils.data.Dataset):
         if not conversations:
             raise ValueError("SFT conversations 不能为空")
         # tool use 数据完整保留不做处理
-        if any(conv.get('tools') for conv in conversations): return conversations
+        if any(conv.get("tools") for conv in conversations):
+            return conversations
 
         SYSTEM_PROMPTS = [
             "你是一个知识丰富的AI，尽力为用户提供准确的信息。",
@@ -1211,24 +1403,30 @@ class SFTDataset(torch.utils.data.Dataset):
             "You are OWenTExprLLM, a lightweight intelligent assistant.",
             "You are a friendly chatbot. Please answer the user's questions carefully.",
             "You are a knowledgeable AI. Try your best to provide accurate information.",
-            "You are OWenTExprLLM, a small but useful language model."
+            "You are OWenTExprLLM, a small but useful language model.",
         ]
         # 概率性添加system
-        if conversations[0].get('role') != 'system':
+        if conversations[0].get("role") != "system":
             if rng.random() < self.add_system_ratio:
-                return [{'role': 'system', 'content': rng.choice(SYSTEM_PROMPTS)}] + conversations
+                return [
+                    {"role": "system", "content": rng.choice(SYSTEM_PROMPTS)}
+                ] + conversations
         return conversations
 
     def post_processing_chat(self, prompt_content, rng):
         # 只处理模板在 assistant 开头生成的空标签，保留正文中引用的相同文本。
-        empty_prefix = self.assistant_header + '<think>\n\n</think>\n\n'
-        if prompt_content.startswith(empty_prefix) and rng.random() > self.empty_think_ratio:
-            prompt_content = self.assistant_header + prompt_content[len(empty_prefix):]
+        empty_prefix = self.assistant_header + "<think>\n\n</think>\n\n"
+        if (
+            prompt_content.startswith(empty_prefix)
+            and rng.random() > self.empty_think_ratio
+        ):
+            prompt_content = self.assistant_header + prompt_content[len(empty_prefix) :]
         return prompt_content
+
     def __getitem__(self, index):
         sample = self.samples[index]
         rng = random.Random(f"{self.seed}:{self.epoch}:{index}")
-        conversations = self.pre_processing_chat(sample['conversations'], rng)
+        conversations = self.pre_processing_chat(sample["conversations"], rng)
         prompt, spans = self.create_chat_prompt(conversations, return_spans=True)
         pieces, assistant_spans, cursor, length = [], [], 0, 0
         for start, end in spans:
@@ -1238,15 +1436,24 @@ class SFTDataset(torch.utils.data.Dataset):
                 raise ValueError("MiniMind assistant 模板前缀不匹配")
             pieces.extend((prefix, segment))
             length += len(prefix)
-            assistant_spans.append((length + len(self.assistant_header), length + len(segment)))
+            assistant_spans.append(
+                (length + len(self.assistant_header), length + len(segment))
+            )
             length += len(segment)
             cursor = end
         pieces.append(prompt[cursor:])
         prompt = "".join(pieces)
-        encoded = self.tokenizer(prompt, add_special_tokens=False, return_offsets_mapping=True,
-                                 truncation=True, max_length=self.max_length)
+        encoded = self.tokenizer(
+            prompt,
+            add_special_tokens=False,
+            return_offsets_mapping=True,
+            truncation=True,
+            max_length=self.max_length,
+        )
         input_ids = encoded.input_ids
-        labels = self.generate_labels(input_ids, encoded.offset_mapping, assistant_spans)
+        labels = self.generate_labels(
+            input_ids, encoded.offset_mapping, assistant_spans
+        )
         valid_length = len(input_ids)
         padding = self.max_length - valid_length
         input_ids += [self.tokenizer.pad_token_id] * padding
@@ -1257,33 +1464,60 @@ class SFTDataset(torch.utils.data.Dataset):
         #     print(f"{i:3d}: X={self.tokenizer.decode([x])!r:16s} ---> Y={self.tokenizer.decode([input_ids[i+1]])!r:16s} label={y}")
         # # ================
         attention_mask = torch.arange(self.max_length) < valid_length
-        return torch.tensor(input_ids, dtype=torch.long), torch.tensor(labels, dtype=torch.long), attention_mask
+        return (
+            torch.tensor(input_ids, dtype=torch.long),
+            torch.tensor(labels, dtype=torch.long),
+            attention_mask,
+        )
+
 
 # ============================================ 流程入口 ============================================
 def configure_training_stage(settings, stage, from_weight=None, *, resume=False):
     settings.train.stage = stage
-    settings.save.save_weight = LLMTrainWeightType.kFullSFT if stage == "sft" else LLMTrainWeightType.kPretrain
+    settings.save.save_weight = (
+        LLMTrainWeightType.kFullSFT if stage == "sft" else LLMTrainWeightType.kPretrain
+    )
     if from_weight is not None:
         settings.train.from_weight = {
-            "none": LLMTrainWeightType.kNone, "pretrain": LLMTrainWeightType.kPretrain,
+            "none": LLMTrainWeightType.kNone,
+            "pretrain": LLMTrainWeightType.kPretrain,
             "fullsft": LLMTrainWeightType.kFullSFT,
         }[from_weight]
-    elif stage == "sft" and settings.train.from_weight == LLMTrainWeightType.kNone and not resume:
+    elif (
+        stage == "sft"
+        and settings.train.from_weight == LLMTrainWeightType.kNone
+        and not resume
+    ):
         settings.train.from_weight = LLMTrainWeightType.kPretrain
 
 
 def create_train_dataset(settings, data_path, tokenizer, *, cache_dir=None):
     if settings.train.stage == "pretrain":
-        return PretrainDataset(data_path, tokenizer, settings.loader.data_item_max_length, cache_dir=cache_dir)
-    return SFTDataset(data_path, tokenizer, settings.loader.data_item_max_length, seed=settings.train.seed,
-                      add_system_ratio=settings.loader.sft_add_system_ratio,
-                      empty_think_ratio=settings.loader.sft_empty_think_ratio, cache_dir=cache_dir)
+        return PretrainDataset(
+            data_path,
+            tokenizer,
+            settings.loader.data_item_max_length,
+            cache_dir=cache_dir,
+        )
+    return SFTDataset(
+        data_path,
+        tokenizer,
+        settings.loader.data_item_max_length,
+        seed=settings.train.seed,
+        add_system_ratio=settings.loader.sft_add_system_ratio,
+        empty_think_ratio=settings.loader.sft_empty_think_ratio,
+        cache_dir=cache_dir,
+    )
 
 
 def create_train_loader(settings, dataset, epoch, start_step=0):
     if hasattr(dataset, "set_epoch"):
         dataset.set_epoch(epoch)
-    sampler = DistributedSampler(dataset, seed=settings.train.seed) if dist.is_initialized() else None
+    sampler = (
+        DistributedSampler(dataset, seed=settings.train.seed)
+        if dist.is_initialized()
+        else None
+    )
     if sampler is not None:
         sampler.set_epoch(epoch)
     else:
@@ -1294,8 +1528,10 @@ def create_train_loader(settings, dataset, epoch, start_step=0):
         raise ValueError("检查点 step 超出了当前数据范围")
     rank = dist.get_rank() if dist.is_initialized() else 0
     loader = DataLoader(
-        dataset, batch_sampler=SkipBatchSampler(sampler, settings.train.batch_size, start_step),
-        num_workers=settings.loader.num_workers, pin_memory=torch.device(settings.train.device).type == "cuda",
+        dataset,
+        batch_sampler=SkipBatchSampler(sampler, settings.train.batch_size, start_step),
+        num_workers=settings.loader.num_workers,
+        pin_memory=torch.device(settings.train.device).type == "cuda",
         generator=torch.Generator().manual_seed(settings.train.seed + epoch + rank),
     )
     return loader, iters
@@ -1304,18 +1540,43 @@ def create_train_loader(settings, dataset, epoch, start_step=0):
 def save_training_checkpoint(settings, epoch, step, iters, wandb, resume_metadata):
     if is_main_process():
         ckp = f"{settings.save.dir}/output/{lm_get_ckp_file_name(settings, settings.save.save_weight)}"
-        raw_model = model.module if isinstance(model, DistributedDataParallel) else model
+        raw_model = (
+            model.module if isinstance(model, DistributedDataParallel) else model
+        )
         raw_model = getattr(raw_model, "_orig_mod", raw_model)
         os.makedirs(os.path.dirname(ckp), exist_ok=True)
         torch.save(
-            {k: v.half().cpu() if v.is_floating_point() else v.cpu() for k, v in raw_model.state_dict().items()}, ckp,
+            {
+                k: v.half().cpu() if v.is_floating_point() else v.cpu()
+                for k, v in raw_model.state_dict().items()
+            },
+            ckp,
         )
-    lm_checkpoint(settings, model=model, optimizer=optimizer, scaler=scaler,
-                  epoch=epoch, step=step, wandb=wandb, iters=iters, resume_metadata=resume_metadata)
+    lm_checkpoint(
+        settings,
+        model=model,
+        optimizer=optimizer,
+        scaler=scaler,
+        epoch=epoch,
+        step=step,
+        wandb=wandb,
+        iters=iters,
+        resume_metadata=resume_metadata,
+    )
 
 
 # 开始一轮训练
-def train_epoch(settings: LLMTrainConfigureAll, scaler: torch.amp.GradScaler, epoch: int, loader: DataLoader, iters: int, start_step: int = 0, wandb: Any = None, *, resume_metadata) -> None:
+def train_epoch(
+    settings: LLMTrainConfigureAll,
+    scaler: torch.amp.GradScaler,
+    epoch: int,
+    loader: DataLoader,
+    iters: int,
+    start_step: int = 0,
+    wandb: Any = None,
+    *,
+    resume_metadata,
+) -> None:
     if settings.train.accumulation_steps < 1 or settings.save.step_interval < 1:
         raise ValueError("accumulation_steps 和保存间隔必须为正数")
     if start_step % settings.train.accumulation_steps and start_step != iters:
@@ -1328,31 +1589,52 @@ def train_epoch(settings: LLMTrainConfigureAll, scaler: torch.amp.GradScaler, ep
     while window := list(islice(batches, settings.train.accumulation_steps)):
         # 只预取一个累积窗口的 CPU batch，按所有 rank 的有效预测 token 数归一化。
         token_counts = [int((labels[:, 1:] != -100).sum()) for _, labels, _ in window]
-        total_tokens = torch.tensor(sum(token_counts), device=settings.train.device, dtype=torch.long)
+        total_tokens = torch.tensor(
+            sum(token_counts), device=settings.train.device, dtype=torch.long
+        )
         world_size = dist.get_world_size() if dist.is_initialized() else 1
         if dist.is_initialized():
             dist.all_reduce(total_tokens)
         window_end = step + len(window)
         if total_tokens.item() == 0:
-            save_pending = window_end == iters or step // settings.save.step_interval < window_end // settings.save.step_interval
+            save_pending = (
+                window_end == iters
+                or step // settings.save.step_interval
+                < window_end // settings.save.step_interval
+            )
             step = window_end
-            Logger(f"Epoch {epoch + 1}, step {step}: 累积窗口没有监督 token，跳过参数更新")
+            Logger(
+                f"Epoch {epoch + 1}, step {step}: 累积窗口没有监督 token，跳过参数更新"
+            )
             if save_pending:
-                save_training_checkpoint(settings, epoch, step, iters, wandb, resume_metadata)
+                save_training_checkpoint(
+                    settings, epoch, step, iters, wandb, resume_metadata
+                )
             continue
         loss_scale = world_size / total_tokens.item()
-        lr = get_learning_rate(epoch * iters + window_end, settings.train.epochs * iters, settings.train.learning_rate)
+        lr = get_learning_rate(
+            epoch * iters + window_end,
+            settings.train.epochs * iters,
+            settings.train.learning_rate,
+        )
         for param_group in optimizer.param_groups:
             param_group["lr"] = lr
         save_pending = False
 
-        for (input_ids, labels, attention_mask), token_count in zip(window, token_counts):
+        for (input_ids, labels, attention_mask), token_count in zip(
+            window, token_counts
+        ):
             step += 1
             input_ids = input_ids.to(settings.train.device)
             labels = labels.to(settings.train.device)
             attention_mask = attention_mask.to(settings.train.device)
             with autocast_ctx:
-                res = model(input_ids, attention_mask=attention_mask, labels=labels, loss_reduction="sum")
+                res = model(
+                    input_ids,
+                    attention_mask=attention_mask,
+                    labels=labels,
+                    loss_reduction="sum",
+                )
                 # CE 是 token 损失之和；辅助损失按各 microbatch 的有效预测 token 数加权。
                 loss = (res.loss + res.aux_loss * token_count) * loss_scale
             # 每次都做反向传播，累计梯度
@@ -1370,11 +1652,15 @@ def train_epoch(settings: LLMTrainConfigureAll, scaler: torch.amp.GradScaler, ep
                     f"Epoch:[{epoch + 1}/{settings.train.epochs}]({step}/{iters}), loss: {current_loss:.4f}, logits_loss: {current_logits_loss:.4f}, aux_loss: {current_aux_loss:.4f}, lr: {current_lr:.8f}, epoch_time: {eta_min:.1f}min"
                 )
                 if wandb:
-                    wandb.log({
-                        "loss": current_loss, "logits_loss": current_logits_loss,
-                        "aux_loss": current_aux_loss, "learning_rate": current_lr,
-                        "epoch_time": eta_min,
-                    })
+                    wandb.log(
+                        {
+                            "loss": current_loss,
+                            "logits_loss": current_logits_loss,
+                            "aux_loss": current_aux_loss,
+                            "learning_rate": current_lr,
+                            "epoch_time": eta_min,
+                        }
+                    )
             del input_ids, labels, attention_mask, res, loss
 
         scaler.unscale_(optimizer)
@@ -1386,18 +1672,21 @@ def train_epoch(settings: LLMTrainConfigureAll, scaler: torch.amp.GradScaler, ep
 
         # 保存间隔仍按 microbatch 计数；若落在累积窗口中间，延后到本窗口更新完成。
         if save_pending:
-            save_training_checkpoint(settings, epoch, step, iters, wandb, resume_metadata)
+            save_training_checkpoint(
+                settings, epoch, step, iters, wandb, resume_metadata
+            )
 
 
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(
-        description=f"{LLM_TRAIN_SETTINGS.model_name} {LLM_TRAIN_SETTINGS.save.save_weight.name}")
+        description=f"{LLM_TRAIN_SETTINGS.model_name} {LLM_TRAIN_SETTINGS.save.save_weight.name}"
+    )
     parser.add_argument(
         "--input-data-path",
         type=str,
         default=None,
         help="(预)训练数据路径",
-        dest="input_data_path"
+        dest="input_data_path",
     )
     parser.add_argument(
         "--resume",
@@ -1411,22 +1700,37 @@ def parse_args(argv=None):
         type=str,
         help="tokenizer文件路径",
     )
-    parser.add_argument("--stage", choices=("pretrain", "sft"), default=LLM_TRAIN_SETTINGS.train.stage,
-                        help="训练目标，与初始权重来源独立")
-    parser.add_argument("--from-weight", choices=("none", "pretrain", "fullsft"), default=None,
-                        help="新训练的初始权重；SFT 默认使用 pretrain，续训直接恢复检查点")
+    parser.add_argument(
+        "--stage",
+        choices=("pretrain", "sft"),
+        default=LLM_TRAIN_SETTINGS.train.stage,
+        help="训练目标，与初始权重来源独立",
+    )
+    parser.add_argument(
+        "--from-weight",
+        choices=("none", "pretrain", "fullsft"),
+        default=None,
+        help="新训练的初始权重；SFT 默认使用 pretrain，续训直接恢复检查点",
+    )
     return parser.parse_args(argv)
 
 
 if __name__ == "__main__":
     args = parse_args()
-    configure_training_stage(LLM_TRAIN_SETTINGS, args.stage, args.from_weight, resume=args.resume)
+    configure_training_stage(
+        LLM_TRAIN_SETTINGS, args.stage, args.from_weight, resume=args.resume
+    )
     if args.input_data_path is None:
-        args.input_data_path = f"../dataset/{'sft' if args.stage == 'sft' else 'pretrain'}_t2t_mini.jsonl"
+        args.input_data_path = (
+            f"../dataset/{'sft' if args.stage == 'sft' else 'pretrain'}_t2t_mini.jsonl"
+        )
 
     # ========== 1. 初始化环境和随机种子 ==========
     local_rank = init_distributed_mode(LLM_TRAIN_SETTINGS)
-    setup_seed(LLM_TRAIN_SETTINGS.train.seed + (dist.get_rank() if dist.is_initialized() else 0))
+    setup_seed(
+        LLM_TRAIN_SETTINGS.train.seed
+        + (dist.get_rank() if dist.is_initialized() else 0)
+    )
 
     if args.tokenizer:
         LLM_TRAIN_SETTINGS.loader.tokenizer_path = args.tokenizer
@@ -1439,25 +1743,40 @@ if __name__ == "__main__":
     device_type = "cuda" if "cuda" in LLM_TRAIN_SETTINGS.train.device else "cpu"
     dtype = getattr(torch, LLM_TRAIN_SETTINGS.param.dtype)
     autocast_ctx = (
-        nullcontext() if device_type == "cpu" or dtype == torch.float32 else torch.amp.autocast(device_type, dtype=dtype)
+        nullcontext()
+        if device_type == "cpu" or dtype == torch.float32
+        else torch.amp.autocast(device_type, dtype=dtype)
     )
 
     # ========== 4. 加载模型、数据，核对续训配置与输入内容 ==========
-    model, tokenizer = init_model(lm_config, LLM_TRAIN_SETTINGS, load_initial_weights=not args.resume)
+    model, tokenizer = init_model(
+        lm_config, LLM_TRAIN_SETTINGS, load_initial_weights=not args.resume
+    )
     train_ds = create_train_dataset(LLM_TRAIN_SETTINGS, args.input_data_path, tokenizer)
     resume_metadata = build_resume_metadata(LLM_TRAIN_SETTINGS, train_ds, tokenizer)
-    ckp_data = lm_checkpoint(LLM_TRAIN_SETTINGS, resume_metadata=resume_metadata) if args.resume else None
+    ckp_data = (
+        lm_checkpoint(LLM_TRAIN_SETTINGS, resume_metadata=resume_metadata)
+        if args.resume
+        else None
+    )
     # CPU 执行 FP32；仅 CUDA FP16 启用 GradScaler。
     # GradScaler的作用是保证 FP16 混合精度训练的数值稳定性。检测到 inf 或 NaN 梯度时，跳过本次参数更新。
     # 梯度过小，在 FP16 中变成 0；缩放后过大又可能变成 inf。
-    scaler = torch.amp.GradScaler(device_type, enabled=(device_type == "cuda" and dtype == torch.float16))
+    scaler = torch.amp.GradScaler(
+        device_type, enabled=(device_type == "cuda" and dtype == torch.float16)
+    )
 
     # 创建优化器，即根据梯度计算并执行参数更新的算法。在 PyTorch 中，优化器对象还保存学习率、动量等运行状态。
     optimizer = create_optimizer(model, LLM_TRAIN_SETTINGS)
 
     # ========== 5. 配wandb可视化， https://wandb.ai/ 注册账号和项目 ==========
     wandb = None
-    if is_main_process() and LLM_TRAIN_SETTINGS.visualization and LLM_TRAIN_SETTINGS.visualization.wandb and LLM_TRAIN_SETTINGS.visualization.wandb.project:
+    if (
+        is_main_process()
+        and LLM_TRAIN_SETTINGS.visualization
+        and LLM_TRAIN_SETTINGS.visualization.wandb
+        and LLM_TRAIN_SETTINGS.visualization.wandb.project
+    ):
         import swanlab as wandb
 
         wandb_id = ckp_data.get("wandb_id") if ckp_data else None
@@ -1482,7 +1801,9 @@ if __name__ == "__main__":
         model = torch.compile(model)
         Logger("torch.compile enabled")
     if dist.is_initialized():
-        model = DistributedDataParallel(model, device_ids=[local_rank] if device_type == "cuda" else None)
+        model = DistributedDataParallel(
+            model, device_ids=[local_rank] if device_type == "cuda" else None
+        )
 
     # ========== 8. 开始训练 ==========
     for epoch in range(start_epoch, LLM_TRAIN_SETTINGS.train.epochs):
@@ -1494,12 +1815,23 @@ if __name__ == "__main__":
         if ckp_data and epoch == start_epoch:
             if ckp_data.get("iters", iters) != iters:
                 raise ValueError("数据批次数与检查点不一致，无法按保存位置续训")
-            restore_rng_state(ckp_data["rng_states"][rank], LLM_TRAIN_SETTINGS.train.device)
+            restore_rng_state(
+                ckp_data["rng_states"][rank], LLM_TRAIN_SETTINGS.train.device
+            )
         if skip > 0:
             Logger(
                 f"Epoch [{epoch + 1}/{LLM_TRAIN_SETTINGS.train.epochs}]: 跳过前{start_step}个step，从step {start_step + 1}开始"
             )
-        train_epoch(LLM_TRAIN_SETTINGS, scaler, epoch, loader, iters, skip, wandb, resume_metadata=resume_metadata)
+        train_epoch(
+            LLM_TRAIN_SETTINGS,
+            scaler,
+            epoch,
+            loader,
+            iters,
+            skip,
+            wandb,
+            resume_metadata=resume_metadata,
+        )
 
     # ========== 9. 清理分布进程 ==========
     if dist.is_initialized():
