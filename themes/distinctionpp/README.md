@@ -254,6 +254,11 @@ All diagram and chart renderers accept `width`, `height`, `max-width`, `max-heig
 | **Plotly.js** | `![](file.plotly.json)` | ` ```plotly ` | `{{</* plotly src="file.plotly.json" */>}}` | `{{</* plotly */>}}JSON{{</* /plotly */>}}` |
 | **D2** | `![](file.d2)` | ` ```d2 ` | `{{</* d2 src="file.d2" */>}}` | `{{</* d2 */>}}code{{</* /d2 */>}}` |
 | **PlantUML** | `![](file.puml)` / `.plantuml` | ` ```plantuml ` | `{{</* plantuml src="file.puml" */>}}` | `{{</* plantuml */>}}code{{</* /plantuml */>}}` |
+| **Code files** | `![](file.py)` | — | `{{</* codeblock src="file.py" */>}}` | — |
+
+### External code files
+
+Image references to local files that are neither image formats (`png`, `jpg`, `svg`, …) nor the diagram formats above render as highlighted code blocks; the `codeblock` shortcode uses the same partial. Both accept `lang` (or `language`), `from`, `to`, `class`, and `title`. The image syntax passes them in the title's `{...}` block, e.g. `![](file.py "caption {lang=python from=6 to=8}")`; the shortcode uses named parameters. Without `lang`, the file extension maps to a highlight.js language (`.py` → `python`, `.cc` → `cpp`, `.toml` → `ini`, …); unmapped extensions are emitted without a language class so the client-side highlight.js auto-detection applies. `from`/`to` select a 1-based inclusive line range. Files are read at build time from local paths relative to the article; remote URLs, absolute paths, missing files, and invalid ranges fail the build. The block reuses the standard `<pre><code class="language-…">` markup from fenced code blocks, so no extra scripts or styles are loaded.
 
 ### D2 build integration
 

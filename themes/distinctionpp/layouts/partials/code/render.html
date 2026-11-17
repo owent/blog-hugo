@@ -1,0 +1,200 @@
+{{- /* Renders a local source file as a <pre><code> block highlighted by the */ -}}
+{{- /* shared highlight.js pipeline (same markup as render-codeblock.html). */ -}}
+{{- /* Inputs: page, src (optional here, falls back to attrs.src), attrs with */ -}}
+{{- /* lang/language, from, to, class, title, and label for error messages. */ -}}
+{{- $page := .page -}}
+{{- $attrs := .attrs | default dict -}}
+{{- $label := .label | default "Codeblock" -}}
+{{- $src := .src | default (index $attrs "src") | default "" -}}
+{{- $lang := index $attrs "lang" | default (index $attrs "language") | default "" -}}
+{{- $class := index $attrs "class" | default "" -}}
+{{- $title := index $attrs "title" | default "" -}}
+{{- $fromRaw := index $attrs "from" | default "" -}}
+{{- $toRaw := index $attrs "to" | default "" -}}
+{{- $content := "" -}}
+
+{{- if not $src -}}
+  {{- errorf "%s in %s: requires a src attribute with a local path relative to the article" $label $page.File.Path -}}
+{{- else if or (findRE `^[a-zA-Z][a-zA-Z0-9+.-]*:` $src) (strings.HasPrefix $src "/") -}}
+  {{- errorf "%s in %s: src must be a local path relative to the article, got %q" $label $page.File.Path $src -}}
+{{- else -}}
+  {{- $baseDir := path.Dir (replace $page.File.Filename `\` "/") -}}
+  {{- $filename := path.Join $baseDir (replace $src `\` "/") -}}
+  {{- $readPath := strings.TrimPrefix (printf "%s/" (replace hugo.WorkingDir `\` "/")) $filename -}}
+  {{- if os.FileExists $readPath -}}
+    {{- $content = replace (os.ReadFile $readPath) "\r\n" "\n" -}}
+  {{- else -}}
+    {{- errorf "%s in %s: source file not found: %s" $label $page.File.Path $src -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Line ranges are 1-based and inclusive; without a range the whole file is */ -}}
+{{- /* trimmed like the diagram sources, with a range the lines stay verbatim. */ -}}
+{{- if and $content (or $fromRaw $toRaw) -}}
+  {{- $from := 1 -}}
+  {{- $to := 0 -}}
+  {{- with $fromRaw -}}
+    {{- if not (findRE `^[0-9]+$` .) -}}
+      {{- errorf "%s in %s: invalid from value %q: expected a decimal line number" $label $page.File.Path . -}}
+    {{- else -}}
+      {{- $from = int . -}}
+    {{- end -}}
+  {{- end -}}
+  {{- with $toRaw -}}
+    {{- if not (findRE `^[0-9]+$` .) -}}
+      {{- errorf "%s in %s: invalid to value %q: expected a decimal line number" $label $page.File.Path . -}}
+    {{- else -}}
+      {{- $to = int . -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $lines := split $content "\n" -}}
+  {{- /* Drop the empty element produced by a trailing newline so line counts */ -}}
+  {{- /* match what editors show for the file. */ -}}
+  {{- if eq (index $lines (sub (len $lines) 1)) "" -}}
+    {{- $lines = first (sub (len $lines) 1) $lines -}}
+  {{- end -}}
+  {{- $lineCount := len $lines -}}
+  {{- if eq $to 0 -}}
+    {{- $to = $lineCount -}}
+  {{- end -}}
+  {{- if or (lt $from 1) (lt $to 1) -}}
+    {{- errorf "%s in %s: from and to are 1-based line numbers, got from=%d to=%d in %s" $label $page.File.Path $from $to $src -}}
+  {{- else if gt $from $lineCount -}}
+    {{- errorf "%s in %s: from (%d) exceeds line count %d of %s" $label $page.File.Path $from $lineCount $src -}}
+  {{- else if gt $to $lineCount -}}
+    {{- errorf "%s in %s: to (%d) exceeds line count %d of %s" $label $page.File.Path $to $lineCount $src -}}
+  {{- else if gt $from $to -}}
+    {{- errorf "%s in %s: from (%d) must not exceed to (%d) in %s" $label $page.File.Path $from $to $src -}}
+  {{- else -}}
+    {{- $content = delimit (first (add (sub $to $from) 1) (after (sub $from 1) $lines)) "\n" -}}
+  {{- end -}}
+{{- else if $content -}}
+  {{- $content = trim $content " \t\r\n" -}}
+{{- end -}}
+
+{{- /* Explicit lang wins, then the file extension, then highlight.js */ -}}
+{{- /* auto-detection: no language- class makes the client script run */ -}}
+{{- /* highlightAuto. lang="nohighlight" matches the client skip rule. */ -}}
+{{- $extLangs := dict
+        "asm" "x86asm"
+        "atom" "xml"
+        "bash" "bash"
+        "bat" "dos"
+        "c" "c"
+        "cc" "cpp"
+        "cfg" "ini"
+        "cjs" "javascript"
+        "clj" "clojure"
+        "cljc" "clojure"
+        "cmd" "dos"
+        "cmake" "cmake"
+        "conf" "ini"
+        "containerfile" "dockerfile"
+        "cpp" "cpp"
+        "css" "css"
+        "csv" "plaintext"
+        "cts" "typescript"
+        "cxx" "cpp"
+        "dart" "dart"
+        "diff" "diff"
+        "dockerfile" "dockerfile"
+        "editorconfig" "ini"
+        "edn" "clojure"
+        "env" "ini"
+        "erl" "erlang"
+        "ex" "elixir"
+        "exs" "elixir"
+        "fs" "fsharp"
+        "fsi" "fsharp"
+        "go" "go"
+        "gql" "graphql"
+        "gradle" "groovy"
+        "graphql" "graphql"
+        "groovy" "groovy"
+        "h" "c"
+        "hcl" "hcl"
+        "hh" "cpp"
+        "hpp" "cpp"
+        "hrl" "erlang"
+        "hs" "haskell"
+        "htm" "xml"
+        "html" "xml"
+        "http" "http"
+        "hxx" "cpp"
+        "ini" "ini"
+        "ino" "cpp"
+        "ipynb" "json"
+        "java" "java"
+        "jl" "julia"
+        "js" "javascript"
+        "json" "json"
+        "jsonc" "json"
+        "jsx" "javascript"
+        "kt" "kotlin"
+        "kts" "kotlin"
+        "less" "less"
+        "lisp" "lisp"
+        "log" "plaintext"
+        "lsp" "lisp"
+        "lua" "lua"
+        "m" "objectivec"
+        "makefile" "makefile"
+        "markdown" "markdown"
+        "md" "markdown"
+        "mjs" "javascript"
+        "mk" "makefile"
+        "mm" "objectivec"
+        "mts" "typescript"
+        "nim" "nim"
+        "nginx" "nginx"
+        "pas" "delphi"
+        "patch" "diff"
+        "php" "php"
+        "pl" "perl"
+        "plist" "xml"
+        "pm" "perl"
+        "props" "properties"
+        "properties" "properties"
+        "proto" "protobuf"
+        "ps1" "powershell"
+        "psd1" "powershell"
+        "psm1" "powershell"
+        "py" "python"
+        "pyi" "python"
+        "pyw" "python"
+        "r" "r"
+        "rb" "ruby"
+        "rs" "rust"
+        "rss" "xml"
+        "sass" "sass"
+        "scala" "scala"
+        "scss" "scss"
+        "sh" "bash"
+        "sql" "sql"
+        "svg" "xml"
+        "swift" "swift"
+        "tf" "hcl"
+        "tfvars" "hcl"
+        "tex" "latex"
+        "latex" "latex"
+        "text" "plaintext"
+        "toml" "ini"
+        "ts" "typescript"
+        "tsx" "typescript"
+        "txt" "plaintext"
+        "vb" "vbnet"
+        "vim" "vim"
+        "xaml" "xml"
+        "xhtml" "xml"
+        "xml" "xml"
+        "yaml" "yaml"
+        "yml" "yaml"
+        "zig" "zig"
+  -}}
+{{- if not $lang -}}
+  {{- $lang = index $extLangs (strings.TrimPrefix "." (lower (path.Ext $src))) | default "" -}}
+{{- end -}}
+
+{{- with $content -}}
+<pre{{ with $class }} class="{{ . }}"{{ end }}{{ with $title }} title="{{ . }}"{{ end }}><code{{ with $lang }} class="language-{{ . }}"{{ end }}>{{ . }}</code></pre>
+{{- end -}}

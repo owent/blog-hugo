@@ -987,6 +987,9 @@ class OWenTLLMModel(torch.nn.Module):
 
 
 # 完整模型
+# HuggingFace Transformers 生态的标准双层模式
+# - 外层 OWenTLLMForCausalLM：负责任务头 + 训练/生成接口
+# - 里层OWenTLLMModel(纯 Transformer 主干): 负责“token ID → 隐藏状态”的表征计算
 class OWenTLLMForCausalLM(PreTrainedModel, GenerationMixin):
     config_class = LLMTrainRuntimeConfig
     _tied_weights_keys = {"lm_head.weight": "model.embed_tokens.weight"}
@@ -995,9 +998,13 @@ class OWenTLLMForCausalLM(PreTrainedModel, GenerationMixin):
         self.config = config or LLMTrainRuntimeConfig(LLM_TRAIN_SETTINGS)
         super().__init__(self.config)
         self.model = OWenTLLMModel(self.config)
+
+        # 输出嵌入(Output Embedding)
         self.lm_head = torch.nn.Linear(
             self.config.hidden_size, self.config.vocab_size, bias=False
         )
+
+        # 输入嵌入(Word Embedding)和输出嵌入(Output Embedding)使用相同的
         if self.config.tie_word_embeddings:
             self.model.embed_tokens.weight = self.lm_head.weight
         self.post_init()
@@ -1606,14 +1613,22 @@ def train_epoch(
     if start_step % settings.train.accumulation_steps and start_step != iters:
         raise ValueError("检查点必须位于梯度累积窗口结束处")
     start_time = time.time()
+    # 标记训练模式
     model.train()
     # 初始清空梯度
     optimizer.zero_grad(set_to_none=True)
     batches = iter(loader)
     step = start_step
+
+    # 每accumulation_steps个batches更新参数。每个batch提取batch_size的操作由loader里的SkipBatchSampler完成
     while window := list(islice(batches, settings.train.accumulation_steps)):
         # 只预取一个累积窗口的 CPU batch，按所有 rank 的有效预测 token 数归一化。
-        token_counts = [int((labels[:, 1:] != -100).sum()) for _, labels, _ in window]
+        token_counts = [
+            # labels 第 0 维（batch）全部保留。第 1 维（列/位置）：从下标 1 取到末尾 → 丢掉第 0 列
+            # forward 里 logits[..., :-1] 为什么对 labels[..., 1:] 。因为因果预测是预测下一个token，所以要丢掉第 0 列
+            int((labels[:, 1:] != PYTORCH_IGNORE_INDEX).sum())
+            for _, labels, _ in window
+        ]
         total_tokens = torch.tensor(
             sum(token_counts), device=settings.train.device, dtype=torch.long
         )
@@ -1623,7 +1638,9 @@ def train_epoch(
         window_end = step + len(window)
         if total_tokens.item() == 0:
             save_pending = (
+                # 最后一个窗口总是保存
                 window_end == iters
+                # 跨保存窗口间隔总是保存
                 or step // settings.save.step_interval
                 < window_end // settings.save.step_interval
             )
@@ -1636,7 +1653,10 @@ def train_epoch(
                     settings, epoch, step, iters, wandb, resume_metadata
                 )
             continue
+        # world_size 是DDP并发时的进程数,对应 “梯度累积与参数更新” 章节里的 $\frac{W}{N}$
         loss_scale = world_size / total_tokens.item()
+
+        # 计算本轮学习率
         lr = get_learning_rate(
             epoch * iters + window_end,
             settings.train.epochs * iters,
@@ -1654,6 +1674,7 @@ def train_epoch(
             labels = labels.to(settings.train.device)
             attention_mask = attention_mask.to(settings.train.device)
             with autocast_ctx:
+                # 这个会传到模型的forward接口里
                 res = model(
                     input_ids,
                     attention_mask=attention_mask,
@@ -1661,11 +1682,15 @@ def train_epoch(
                     loss_reduction="sum",
                 )
                 # CE 是 token 损失之和；辅助损失按各 microbatch 的有效预测 token 数加权。
+                # 对应 “梯度累积与参数更新” 章节里的 $\ell_i = \frac{W}{N}\left(C_i + n_i A_i\right)$
                 loss = (res.loss + res.aux_loss * token_count) * loss_scale
-            # 每次都做反向传播，累计梯度
+            # 每次都放大后做反向传播，累计梯度
             scaler.scale(loss).backward()
+
+            # checkpoint 保存点，同样最后一个窗口总是保存
             save_pending |= step % settings.save.step_interval == 0 or step == iters
 
+            # 日志打印周期
             if step % settings.log.step_interval == 0 or step == iters:
                 spend_time = time.time() - start_time
                 current_logits_loss = res.loss.item() / max(token_count, 1)
@@ -1688,11 +1713,18 @@ def train_epoch(
                     )
             del input_ids, labels, attention_mask, res, loss
 
+        # 对应前面的scaler.scale(loss)，把反向传播得到的梯度除回缩放系数，恢复成真实梯度
         scaler.unscale_(optimizer)
+
+        # 梯度裁剪，防止更新过猛、损失剧烈波动。
         torch.nn.utils.clip_grad_norm_(model.parameters(), settings.train.grad_clip)
-        # 更新参数，然后清空梯度
+        # 更新参数
         scaler.step(optimizer)
+
+        # 根据本轮是否溢出，调整下一轮的 S （GradScaler算法的一部分）
         scaler.update()
+
+        # 然后清空梯度
         optimizer.zero_grad(set_to_none=True)
 
         # 保存间隔仍按 microbatch 计数；若落在累积窗口中间，延后到本窗口更新完成。

@@ -10,6 +10,11 @@
 {{- $isPlotly := strings.HasSuffix (lower $src) ".plotly.json" -}}
 {{- $isD2 := strings.HasSuffix (lower $src) ".d2" -}}
 
+{{- /* Local relative references that are not image files render as code blocks. */ -}}
+{{- $imageExts := slice "apng" "avif" "bmp" "gif" "ico" "jfif" "jpeg" "jpg" "png" "svg" "tif" "tiff" "webp" -}}
+{{- $isLocalRelative := and $src (not (strings.HasPrefix $src "/")) (not (strings.HasPrefix $src "#")) (not (findRE `^[a-zA-Z][a-zA-Z0-9+.-]*:` $src)) -}}
+{{- $isCodeFile := and $isLocalRelative (not (in $imageExts (strings.TrimPrefix "." (lower (path.Ext $src))))) -}}
+
 {{- /* Parse attributes from title (format: "title {width=xxx height=xxx}") */ -}}
 {{- $width := "100%" -}}
 {{- $height := "auto" -}}
@@ -18,6 +23,9 @@
 {{- $class := "" -}}
 {{- $style := "" -}}
 {{- $extensions := "" -}}
+{{- $lang := "" -}}
+{{- $from := "" -}}
+{{- $to := "" -}}
 {{- $actualTitle := $title -}}
 
 {{- if $title -}}
@@ -46,6 +54,14 @@
           {{- $style = $val -}}
         {{- else if eq $key "extensions" -}}
           {{- $extensions = $val -}}
+        {{- else if eq $key "lang" -}}
+          {{- $lang = $val -}}
+        {{- else if eq $key "language" -}}
+          {{- $lang = $val -}}
+        {{- else if eq $key "from" -}}
+          {{- $from = $val -}}
+        {{- else if eq $key "to" -}}
+          {{- $to = $val -}}
         {{- end -}}
       {{- end -}}
     {{- end -}}
@@ -315,6 +331,10 @@
   <div id="{{ $id | safeHTMLAttr }}" class="plotly-chart plotly-pending" data-plotly-src="{{ $src }}" data-plotly-extensions="{{ $extensions }}" style="width: 100%; height: 100%;">{{ with $alt }}{{ . }}{{ else }}Loading Plotly...{{ end }}</div>
 </div>
   {{- end -}}
+{{- else if $isCodeFile -}}
+  {{- /* External source file rendered as a highlighted code block. */ -}}
+  {{- $codeAttrs := dict "lang" $lang "from" $from "to" $to "class" $class "title" $actualTitle -}}
+  {{- partial "code/render.html" (dict "page" .Page "src" $src "attrs" $codeAttrs "label" "Codeblock") -}}
 {{- else -}}
   {{- /* Normal image rendering */ -}}
   {{- /*
