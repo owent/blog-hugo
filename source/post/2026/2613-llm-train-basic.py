@@ -30,6 +30,7 @@ from torch.utils.data import DataLoader, DistributedSampler, Sampler
 from transformers.activations import ACT2FN
 from transformers import PreTrainedModel, GenerationMixin, PretrainedConfig
 from transformers import AutoTokenizer, AutoModel, AutoModelForSequenceClassification
+from transformers.cache_utils import Cache
 from transformers.modeling_outputs import MoeCausalLMOutputWithPast
 from transformers.utils.chat_template_utils import render_jinja_template
 
@@ -677,8 +678,9 @@ def repeat_kv(x: torch.Tensor, n_rep: int) -> torch.Tensor:
 
 
 class Attention(torch.nn.Module):
-    def __init__(self, config: LLMTrainRuntimeConfig):
+    def __init__(self, config: LLMTrainRuntimeConfig, layer_idx: int = None):
         super().__init__()
+        self.layer_idx = layer_idx
         self.num_key_value_heads = (
             config.num_attention_heads
             if config.num_key_value_heads is None
@@ -727,10 +729,19 @@ class Attention(torch.nn.Module):
         xq, xk = self.q_norm(xq), self.k_norm(xk)
         cos, sin = position_embeddings
         xq, xk = apply_rotary_pos_emb(xq, xk, cos, sin)
-        if past_key_value is not None:
-            xk = torch.cat([past_key_value[0], xk], dim=1)
-            xv = torch.cat([past_key_value[1], xv], dim=1)
-        past_kv = (xk, xv) if use_cache else None
+        if isinstance(past_key_value, Cache):
+            # transformers 5.x Cache（如 DynamicCache）期望 (B, heads, seq, head_dim) 布局，
+            # update 沿 seq 维追加并返回完整 K/V；缓存本体就地更新，无需逐层返回
+            keys, values = past_key_value.update(
+                xk.transpose(1, 2), xv.transpose(1, 2), self.layer_idx
+            )
+            xk, xv = keys.transpose(1, 2), values.transpose(1, 2)
+            past_kv = None
+        else:
+            if past_key_value is not None:
+                xk = torch.cat([past_key_value[0], xk], dim=1)
+                xv = torch.cat([past_key_value[1], xv], dim=1)
+            past_kv = (xk, xv) if use_cache else None
         xq, xk, xv = (
             xq.transpose(1, 2),
             repeat_kv(xk, self.n_rep).transpose(1, 2),
@@ -873,7 +884,7 @@ class MOEFeedForward(torch.nn.Module):
 class OWenTLLMBlock(torch.nn.Module):
     def __init__(self, layer_id: int, config: LLMTrainRuntimeConfig):
         super().__init__()
-        self.self_attn = Attention(config)
+        self.self_attn = Attention(config, layer_idx=layer_id)
         self.input_layernorm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = RMSNorm(
             config.hidden_size, eps=config.rms_norm_eps
@@ -945,12 +956,20 @@ class OWenTLLMModel(torch.nn.Module):
         **kwargs,
     ):
         batch_size, seq_length = input_ids.shape
-        if hasattr(past_key_values, "layers"):
-            past_key_values = None
-        past_key_values = past_key_values or [None] * len(self.layers)
-        start_pos = (
-            past_key_values[0][0].shape[1] if past_key_values[0] is not None else 0
-        )
+        # 并行支持两种缓存格式：transformers 5.x 的 Cache 类对象（如 DynamicCache）
+        # 与旧版 list[(K, V)] 元组（每层一个 (K, V)，K/V 形状 (B, T_cached, 4, 96)）
+        is_hf_cache = isinstance(past_key_values, Cache)
+        if is_hf_cache:
+            # Cache 对象由各层 Attention 调 update 就地更新，已处理长度从缓存读取；
+            # 每层拿到同一个 Cache 对象，靠 layer_idx 区分各层的 K/V
+            start_pos = past_key_values.get_seq_length()
+            layer_caches = [past_key_values] * len(self.layers)
+        else:
+            past_key_values = past_key_values or [None] * len(self.layers)
+            start_pos = (
+                past_key_values[0][0].shape[1] if past_key_values[0] is not None else 0
+            )
+            layer_caches = past_key_values
         hidden_states = self.dropout(self.embed_tokens(input_ids))
         # Recompute RoPE buffers lost during meta-device init (transformers>=5.x)
         if self.freqs_cos[0, 0] == 0:
@@ -968,7 +987,7 @@ class OWenTLLMModel(torch.nn.Module):
             self.freqs_sin[start_pos : start_pos + seq_length],
         )
         presents = []
-        for layer, past_key_value in zip(self.layers, past_key_values):
+        for layer, past_key_value in zip(self.layers, layer_caches):
             hidden_states, present = layer(
                 hidden_states,
                 position_embeddings,
@@ -983,7 +1002,7 @@ class OWenTLLMModel(torch.nn.Module):
             [l.mlp.aux_loss for l in self.layers if isinstance(l.mlp, MOEFeedForward)],
             hidden_states.new_zeros(1).squeeze(),
         )
-        return hidden_states, presents, aux_loss
+        return hidden_states, (past_key_values if is_hf_cache else presents), aux_loss
 
 
 # 完整模型
@@ -1046,6 +1065,8 @@ class OWenTLLMForCausalLM(PreTrainedModel, GenerationMixin):
             hidden_states=hidden_states,
         )
 
+    # 自回归解码循环：把训练学到的“单步预测下一个 token”能力，迭代成一段完整的回复。
+    # 此接口给推理使用，训练时不使用
     # https://github.com/jingyaogong/minimind/discussions/611
     @torch.inference_mode()
     def generate(
@@ -1064,20 +1085,48 @@ class OWenTLLMForCausalLM(PreTrainedModel, GenerationMixin):
         repetition_penalty=1.0,
         **kwargs,
     ):
+        # 调用方可能用两种风格传 prompt：
+        # - model.generate(inputs=prompt_ids)
+        # - model.generate(input_ids=prompt_ids)
+        # 这里复制 num_return_sequences 次以生成多条候选
         input_ids = kwargs.pop("input_ids", inputs).repeat(num_return_sequences, 1)
         attention_mask = (
             attention_mask.repeat(num_return_sequences, 1)
             if attention_mask is not None
             else None
         )
+
+        # 每层算出来的K/V历史，也是KV Cache 的载体。结构如下
+        # past_key_values               : list，长度 = 层数（8 层，每层一份）
+        # ├─ [0]  → (K₀, V₀)            第 1 层的缓存
+        # │    ├─ [0] → K₀ : (B, T_cached, 4, 96)   ← past_key_values[0][0]
+        # │    └─ [1] → V₀ : (B, T_cached, 4, 96)
+        # ├─ [1]  → (K₁, V₁)            第 2 层
+        # │    ...
+        # └─ [7]  → (K₇, V₇)            第 8 层
+        # T_cached = 已经处理过的 token 总数（prompt + 已生成部分）
+        # 4 = num_key_value_heads（GQA），96 = head_dim
+        # 也支持传入 transformers 5.x 的 Cache 对象（如 DynamicCache）：
+        # K/V 改存为 (B, heads, seq, head_dim)，由各层 Attention 调 update 就地维护
         past_key_values = kwargs.pop("past_key_values", None)
+
+        # input_ids                     : (B, T_total)
+        #                         B = batch（generate 里 = num_return_sequences）
+        #                         T_total = prompt 长度 + 已生成的 token 数
         finished = torch.zeros(
             input_ids.shape[0], dtype=torch.bool, device=input_ids.device
         )
+
+        # 先把 prompt 输入推给消费流（UI上先显示出问题）
+        # .cpu() 是 PyTorch 张量的设备迁移方法：把张量从它当前所在的设备（GPU 显存）复制到主机内存（CPU RAM），返回一个位于 CPU 的新张量。
         if streamer:
             streamer.put(input_ids.cpu())
         for _ in range(max_new_tokens):
-            past_len = past_key_values[0][0].shape[1] if past_key_values else 0
+            past_len = (
+                past_key_values.get_seq_length()
+                if isinstance(past_key_values, Cache)
+                else (past_key_values[0][0].shape[1] if past_key_values else 0)
+            )
             outputs = self.forward(
                 input_ids[:, past_len:],
                 attention_mask,
@@ -1085,6 +1134,8 @@ class OWenTLLMForCausalLM(PreTrainedModel, GenerationMixin):
                 use_cache=use_cache,
                 **kwargs,
             )
+            # 每生成一个token， input_ids会增加一个，mask也要增加一个
+            # 使用 attention_mask.new_ones 是为了保持和原掩码同 dtype、同设备
             attention_mask = (
                 torch.cat(
                     [
@@ -1096,43 +1147,74 @@ class OWenTLLMForCausalLM(PreTrainedModel, GenerationMixin):
                 if attention_mask is not None
                 else None
             )
+            # 这个是注意力公式里的 / temperature
+            # outputs.logits : (batch, seq_len, vocab_size) = (B, S, 6400)
+            #                     │      │        └ 第 2 维：词表 6400 个 token 各自的打分（logit）
+            #                     │      └ 第 1 维：序列位置——每个位置一份"下一词预测分布"
+            #                     └ 第 0 维：batch（generate 里 = num_return_sequences 行）
+            # 每次计算最后生成的token 的 logit，所以去最后一个
             logits = outputs.logits[:, -1, :] / temperature
+
+            # 复读惩罚，对“上下文中已出现过的 token”做软性降分。
+            # 小模型在采样时特别容易陷入循环：反复输出同一个短语，或几句话来回打转。
             if repetition_penalty != 1.0:
-                for i in range(input_ids.shape[0]):
-                    seen = torch.unique(input_ids[i])
-                    score = logits[i, seen]
+                for i in range(input_ids.shape[0]):  # 逐行（每条候选独立处理）
+                    seen = torch.unique(
+                        input_ids[i]
+                    )  # 该行上下文里出现过的所有 token ID
+                    # 取子集，“花式索引”（advanced indexing，也叫按值索引/gather 式收集）。
+                    score = logits[i, seen]  # 取出这些 token 当前的 logit
                     logits[i, seen] = torch.where(
                         score > 0,
-                        score / repetition_penalty,
-                        score * repetition_penalty,
+                        score / repetition_penalty,  # 正分 → 除以惩罚系数，向 0 收缩
+                        score * repetition_penalty,  # 负分 → 乘惩罚系数，推向更负
+                        # 保证计算法只降不升
                     )
+            # 取top k
             if top_k > 0:
+                # torch.topk(logits, top_k)          : 每行取前 top_k 大：返回 (values, indices)
+                # [0]                                : 只要 values，形状 (B, top_k)，已降序
+                # [..., -1, None]                    : -1 = top_k 个里的最后一个 = 第 k 名的分数（门槛值）
+                #                                    : 前面的-1操作会导致降一维，所以这里要用 None 补回来
+                # logits < (门槛值)                  : (B, V) 布尔掩码：True = 名次在 k 之外
+                # logits[掩码] = -inf                : 布尔掩码写入：一次性置 -inf
                 logits[logits < torch.topk(logits, top_k)[0][..., -1, None]] = -float(
                     "inf"
                 )
             if top_p < 1.0:
                 sorted_logits, sorted_indices = torch.sort(logits, descending=True)
+                # mask记录了截止到哪里的累加和超过top_p
                 mask = (
                     torch.cumsum(torch.softmax(sorted_logits, dim=-1), dim=-1) > top_p
                 )
+                # mask右移一位，让最大概率的token永远存活
                 mask[..., 1:], mask[..., 0] = mask[..., :-1].clone(), 0
+                # scatter(1, sorted_indices, mask) 按 sorted_indices[i, r]（第 r 名的原位置）把决策写回原词表坐标系
+                # 结果[i, 原位置] = mask[i, r]
                 logits[mask.scatter(1, sorted_indices, mask)] = -float("inf")
             next_token = (
+                # torch.multinomial 是使用 logits 作为权重随机，分数越高概率越大。
+                # 前面的softmax只是为了排除非候选项，这里才是真正的算权重取token。
                 torch.multinomial(torch.softmax(logits, dim=-1), num_samples=1)
                 if do_sample
                 else torch.argmax(logits, dim=-1, keepdim=True)
             )
             if eos_token_id is not None:
                 next_token = torch.where(
-                    finished.unsqueeze(-1),
+                    # 后面增加一维
+                    finished.unsqueeze(-1),  # 此行是否已结束
+                    # 用 eos_token_id 填充张量
                     next_token.new_full((next_token.shape[0], 1), eos_token_id),
                     next_token,
                 )
+            # 下一次生成 token 的输入加上这一次的预测结果
             input_ids = torch.cat([input_ids, next_token], dim=-1)
             past_key_values = outputs.past_key_values if use_cache else None
+            # 每生成下一个token后，推给输出端流
             if streamer:
                 streamer.put(next_token.cpu())
             if eos_token_id is not None:
+                # 记录是否结束，因为next_token的维度是（B, 1）, 比finished 多一个维度，所以这里要降维
                 finished |= next_token.squeeze(-1).eq(eos_token_id)
                 if finished.all():
                     break
