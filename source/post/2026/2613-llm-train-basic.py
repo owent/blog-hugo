@@ -934,16 +934,24 @@ class OWenTLLMModel(torch.nn.Module):
         # 随机初始化后训练Word Embedding
         self.embed_tokens = torch.nn.Embedding(config.vocab_size, config.hidden_size)
         self.dropout = torch.nn.Dropout(config.dropout)
+
+        # 复制到 num_hidden_layers 个隐藏层
         self.layers = torch.nn.ModuleList(
             [OWenTLLMBlock(l, config) for l in range(self.num_hidden_layers)]
         )
+
+        # 初始的归一化算法
         self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+
+        # 位置嵌入
         freqs_cos, freqs_sin = precompute_freqs_cis(
             dim=config.head_dim,
             end=config.max_position_embeddings,
             rope_base=config.rope_parameters["rope_theta"],
             rope_scaling=config.rope_parameters,
         )
+
+        # 数据注册到缓存，不需要更新但要跟着设备迁移
         self.register_buffer("freqs_cos", freqs_cos, persistent=False)
         self.register_buffer("freqs_sin", freqs_sin, persistent=False)
 
@@ -972,6 +980,7 @@ class OWenTLLMModel(torch.nn.Module):
             layer_caches = past_key_values
         hidden_states = self.dropout(self.embed_tokens(input_ids))
         # Recompute RoPE buffers lost during meta-device init (transformers>=5.x)
+        # register_buffer设置了persistent=False非持久化，如果丢失了就重建
         if self.freqs_cos[0, 0] == 0:
             freqs_cos, freqs_sin = precompute_freqs_cis(
                 dim=self.config.head_dim,
@@ -1019,6 +1028,9 @@ class OWenTLLMForCausalLM(PreTrainedModel, GenerationMixin):
         self.model = OWenTLLMModel(self.config)
 
         # 输出嵌入(Output Embedding)
+        #   nn.Linear(in_features, out_features) 线性变换的两个参数不是权重矩阵的形状。
+        #     构造参数是 (输入维, 输出维)
+        #   $y = x \dot W^{\top}$
         self.lm_head = torch.nn.Linear(
             self.config.hidden_size, self.config.vocab_size, bias=False
         )
@@ -1039,24 +1051,60 @@ class OWenTLLMForCausalLM(PreTrainedModel, GenerationMixin):
         loss_reduction="mean",
         **kwargs,
     ):
+        # 返回 (隐藏层矩阵, K/V缓存, MoE 的负载均衡辅助损失 $A_i$)
+        # hidden_states 形状 (batch, seq_len, hidden_size) = (B, T, 768) 的三维浮点张量。
+        #                     第 0 维 batch、第 1 维序列位置、第 2 维每个位置的特征向量。
+        #                     seq_len 对应输入 input_ids 的位置。
         hidden_states, past_key_values, aux_loss = self.model(
             input_ids, attention_mask, past_key_values, use_cache, **kwargs
         )
+
+        # 最后 logits_to_keep 个序列位置才做 lm_head 投影，其余位置的 logits 干脆不算。
+        # 训练时要全算，但是推理时取最后一个就行了。
         slice_indices = (
             slice(-logits_to_keep, None)
             if isinstance(logits_to_keep, int)
             else logits_to_keep
         )
+
+        # (B, T', hidden_size) -> (B, T', vocab_size))
         logits = self.lm_head(hidden_states[:, slice_indices, :])
         loss = None
+        # labels的形状是 (B, T)
         if labels is not None:
-            x, y = logits[..., :-1, :].contiguous(), labels[..., 1:].contiguous()
+            # labels 与 logits 同窗错位：logits 的槽位 t 预测原序列 t+1 处的 token。
+            # logits_to_keep=0 时窗口为全量，等价于原先的 labels[..., 1:]；
+            # logits_to_keep>0 时若不同步切片，x 的行数 B*(k-1) 与 y 的行数 B*(T-1)
+            # 不相等，cross_entropy 会直接报 batch_size 不匹配。
+            if isinstance(logits_to_keep, int):
+                y = labels[..., slice_indices][..., 1:]
+            else:
+                # 张量索引形式：槽位是前 k-1 个被保留位置，目标取各自 +1 处
+                y = labels[..., logits_to_keep[:-1] + 1]
+            # 连续布局 (contiguous) 的含义：如果张量的内存布局与逻辑形状一致，原样返回；
+            #   否则新分配一块内存，把数据按逻辑顺序重新排布一份副本。
+            #   它不改变形状和数值，改变的只是“数值在内存里摆放的顺序”。
+            #   逻辑形状:            [[a, b, c],
+            #                        [d, e, f]]
+            #   连续布局 (contiguous): 内存 abcdef，strides=(3, 1)
+            #                         → 元素(i,j) 在偏移 i*3 + j 处
+            x, y = logits[..., :-1, :].contiguous(), y.contiguous()
+
+            # cross_entropy 行为，对每一行
+            # ① softmax 归一化：  p_j = exp(x_{n,j}) / Σ_j exp(x_{n,j})
+            # ② 取正确答案的概率：p = p_{y_n}     （y_n = 该位置真实 token 的 ID）
+            # ③ 取负对数：        ℓ_n = -log(p)
+            # 然后对这些行算出来的值按reduction计算。train里传入的是求和
             loss = torch.nn.functional.cross_entropy(
-                x.view(-1, x.size(-1)),
-                y.view(-1),
+                x.view(
+                    -1, x.size(-1)
+                ),  # x 拉平到二维，最后一维使用 x.size(-1)，第一维自动计算（B*(T'-1)）
+                y.view(-1),  # y 强制拉平到一维（B*(T'-1)）
                 ignore_index=PYTORCH_IGNORE_INDEX,
                 reduction=loss_reduction,
             )
+
+        # 打包结果返回
         return MoeCausalLMOutputWithPast(
             loss=loss,
             aux_loss=aux_loss,
