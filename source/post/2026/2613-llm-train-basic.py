@@ -802,9 +802,17 @@ class FeedForward(torch.nn.Module):
         self.up_proj = torch.nn.Linear(
             config.hidden_size, intermediate_size, bias=False
         )
+        # 使用配置的激活函数
         self.act_fn = ACT2FN[config.hidden_act]
 
     def forward(self, x):
+        # 非线性激活只有在足够宽的空间里才有东西可选。
+        # 升维是“展开工作空间”，激活是“筛选”，降维是“把结论压缩回输入的空间结构”。
+        # 输入x的形状是  (B, T, hidden_size)，流程如下:
+        # 1. (B,T,hidden_size) -> (B,T,intermediate_size): gate_proj调用，做线性投影（升维）。产出门控原始分。
+        # 2. (B,T,intermediate_size) ->（逐元素门控） : act_fn调用，转换成门控系数，决定哪些特征保留。值趋零（软关闭）、正值近似保留。
+        # 3. 门控系数 ⊙ up_proj(x): ⊙ 是逐元素乘, up_proj表示特征内容
+        # 4. (B,T,intermediate_size) -> (B,T,hidden_size) 降维，压缩回残差流
         return self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
 
 
@@ -812,71 +820,144 @@ class MOEFeedForward(torch.nn.Module):
     def __init__(self, config: LLMTrainRuntimeConfig):
         super().__init__()
         self.config = config
+
+        # 专家路由的网络，通过隐藏层数据算出选每个专家的权重
+        # $\ y = xW^{\top} + b$
         self.gate = torch.nn.Linear(config.hidden_size, config.num_experts, bias=False)
+
+        # 复制 moe_intermediate_size 个专家
         self.experts = torch.nn.ModuleList(
             [
                 FeedForward(config, intermediate_size=config.moe_intermediate_size)
                 for _ in range(config.num_experts)
             ]
         )
+
+        # 使用配置的激活函数
         self.act_fn = ACT2FN[config.hidden_act]
 
     def forward(self, x, token_mask=None):
         batch_size, seq_len, hidden_dim = x.shape
+        # 搞扁平 (batch_size*seq_len, hidden_dim)
         x_flat = x.view(-1, hidden_dim)
+
+        # 这里用softmax是为了方便后面归一化，且计算专家的权重
         scores = torch.nn.functional.softmax(self.gate(x_flat), dim=-1)
+
+        # topk_weight, topk_idx的形状是  (batch_size*seq_len, num_experts_per_tok)
         topk_weight, topk_idx = torch.topk(
             scores, k=self.config.num_experts_per_tok, dim=-1, sorted=False
         )
         if self.config.norm_topk_prob:
+            # 归一化
             if self.config.num_experts_per_tok > 1:
                 topk_weight = topk_weight / (
                     topk_weight.sum(dim=-1, keepdim=True) + 1e-20
                 )
             else:
+                # t.detach() 的含义是返回一个与 t 共享同一块数据的新张量，requires_grad=False、无 grad_fn——从计算图上"摘下来"
+                #            不拷贝数据。相当于冻结某个值当常数用。
+                # 如果没有这一层，只激活一个专家时，求导过程会变成:
+                #   topk_weight = topk(scores, k=1)[0] / topk(scores, k=1)[0].sum(-1, keepdim=True)
+                #               = p / p = 1.0（常数！）,学不到路由对错。
                 top1 = torch.topk(
+                    # x_flat.detach(): 这里阻断对x_flat的反向传播
+                    # 这里是 STE（Straight-Through Estimator，直通估计器） 的产物。
+                    #   STE 解决的问题是： 反向传播要求每个操作可微。反传时用的梯度不是前向函数的真实导数。
                     torch.nn.functional.softmax(self.gate(x_flat.detach()), dim=-1),
                     k=1,
                     dim=-1,
                     sorted=False,
                 )[0]
                 topk_weight = (
-                    top1 - top1.detach() + 1.0
+                    # 设置为 1.0, 但保持一份梯度（直接 top1 - top1 就消除了）
+                    top1
+                    - top1.detach()
+                    + 1.0
                 )  # k=1: 1.0 forward on purpose, gradient via straight-through
         y = torch.zeros_like(x_flat)
         for i, expert in enumerate(self.experts):
+            # 逐元素比较，mask形状 (batch_size*seq_len, num_experts_per_tok)
+            # 表示这个专家被用到的位置
             mask = topk_idx == i
             if mask.any():
+                # 专家选中。当前专家在某个token的任意一个专家候选里则当前专家被选中。
+                # nonzero返回的是下标。数据示例如下:
+                #   topk_idx (N=6, 2)        mask = topk_idx == 1   (N, 2) bool
+                #   token0: [1, 4]           [[T, F],                token0 选了专家 1
+                #   token1: [0, 2]            [F, F],
+                #   token2: [1, 3]            [T, F],
+                #   token3: [5, 6]            [F, F],
+                #   token4: [1, 2]            [T, F],
+                #   token5: [0, 1]]           [F, T]]
+                #
+                #   ① mask.any(dim=-1)  →  [T, F, T, F, T, T]        (N,)
+                #      "沿候选维(any)看：该 token 的两个候选里有没有专家 1"
+                #
+                #   ② .nonzero()        →  [[0], [2], [4], [5]]      (4, 1)
+                #      "True 元素所在的位置下标"——一维张量里，位置下标 == 行号
+                #
+                #   ③ .flatten()        →  [0, 2, 4, 5]              (4,)
+                #      拍平成行号列表 = 选了专家 1 的 token 编号
                 token_idx = mask.any(dim=-1).nonzero().flatten()
+                # topk_weight[mask] 是指复制topk_weight，抄出所有 True 位置的值
+                #   如果两个张量A: (N, M) float，B: (N, M) bool 。A[B] 的操作是超出所有位置B为True的A的值。
+                #   因为候选专家一定是不重复的，所以mask的最后一维必定只有一个值为True。
+                # 最后.view(-1, 1)是为了还原成2维，然后参与后面的矩阵计算
                 weight = topk_weight[mask].view(-1, 1)
                 y.index_add_(
-                    0, token_idx, (expert(x_flat[token_idx]) * weight).to(y.dtype)
+                    # 这里相当一次性去了某个专家要计算的子集token，丢进去给专家层计算
+                    0,
+                    token_idx,
+                    (expert(x_flat[token_idx]) * weight).to(y.dtype),
                 )
             elif self.training:
+                # 训练时需要让没有分配到token的专家也要被反向传播的图覆盖到。否则没有梯度信息会导致训练错误
                 y[0, 0] += 0 * sum(p.sum() for p in expert.parameters())
+
+        # 详见 “梯度累积与参数更新” 中 “MoE 的负载均衡辅助损失 $A_i$ 计算” 子章节
         if self.training and self.config.router_aux_loss_coef > 0:
             valid = (
+                # reshape(-1) 是把 (batch_size, seq_len) 拉平，降低一维。
                 token_mask.reshape(-1).bool()
                 if token_mask is not None
                 else torch.ones(batch_size * seq_len, dtype=torch.bool, device=x.device)
             )
             if valid.any():
+                # load 的形状: (num_experts_per_tok, num_experts)
                 load = (
+                    # 把最后一维的下标向量转成one-hot向量（即对应位置填1，其他填0）。
+                    # 数据类型是int64，会增加一维。
                     torch.nn.functional.one_hot(
                         topk_idx[valid], self.config.num_experts
                     )
-                    .float()
-                    .mean(0)
+                    .float()  # 然后转float方便求平均
+                    .sum(0)
+                    / topk_idx[valid].numel()  # 是元素总数。相当于公式里的 M * k。
+                    # 结果相当于公式里的 $f_e$（结构不完全一致，但是是这个表达）。
                 )
+                # 这里的aux_loss就是 文章公式里的 $a_{layer}$ 。
                 self.aux_loss = (
+                    # scores[valid].mean(0) 就是公式里的 p̄ ,形状为 (8)。
+                    # load * scores[valid].mean(0)时会先把 scores[valid].mean(0) 广播右对齐。
+                    # 比如:
+                    #   load[0]: [l00, l01, l02, ..., l07]      p̄: [p0, p1, ..., p7]
+                    #   load[1]: [l10, l11, ..., l17]
+                    #
+                    #   乘积 = [[l00·p0, l01·p1, ..., l07·p7],     ← 槽 1 每个专家 × 同一个 p̄
+                    #           [l10·p0, l11·p1, ..., l17·p7]]     ← 槽 2 每个专家 × 同一个 p̄
                     (load * scores[valid].mean(0)).sum()
                     * self.config.num_experts
                     * self.config.router_aux_loss_coef
                 )
             else:
+                # 本轮没有要预测的token，直接用0即可。但是要让反向传播的图覆盖到，保证有梯度信息。
                 self.aux_loss = scores.sum() * 0.0
         else:
+            # 推理时不消费这个，只用专家权重topk_weight。所以这里设置为0即可。
             self.aux_loss = scores.new_zeros(1).squeeze()
+
+        # 转换回和输入一样的形状
         return y.view(batch_size, seq_len, hidden_dim)
 
 
@@ -899,7 +980,9 @@ class OWenTLLMBlock(torch.nn.Module):
         use_cache=False,
         attention_mask=None,
     ):
+        # hidden_states形状 (B, T, hidden_size)
         residual = hidden_states
+        # 注意力计算
         hidden_states, present_key_value = self.self_attn(
             self.input_layernorm(hidden_states),
             position_embeddings,
@@ -907,9 +990,16 @@ class OWenTLLMBlock(torch.nn.Module):
             use_cache,
             attention_mask,
         )
+
+        # 残差连接
         hidden_states += residual
+
+        # 再归一化
         mlp_input = self.post_attention_layernorm(hidden_states)
+
+        # FFN前馈网络
         if isinstance(self.mlp, MOEFeedForward):
+            # attention_mask 包含全部历史，MoE 辅助损失只需要统计本次前向的部分
             token_mask = (
                 attention_mask[:, -hidden_states.shape[1] :]
                 if attention_mask is not None
@@ -918,6 +1008,8 @@ class OWenTLLMBlock(torch.nn.Module):
             mlp_output = self.mlp(mlp_input, token_mask=token_mask)
         else:
             mlp_output = self.mlp(mlp_input)
+
+        # 继续残差连接FFN的结果
         hidden_states = hidden_states + mlp_output
         return hidden_states, present_key_value
 
@@ -991,12 +1083,15 @@ class OWenTLLMModel(torch.nn.Module):
             self.freqs_cos, self.freqs_sin = freqs_cos.to(
                 hidden_states.device
             ), freqs_sin.to(hidden_states.device)
+
+        # 位置权重
         position_embeddings = (
             self.freqs_cos[start_pos : start_pos + seq_length],
             self.freqs_sin[start_pos : start_pos + seq_length],
         )
         presents = []
         for layer, past_key_value in zip(self.layers, layer_caches):
+            # 按隐藏层依次计算,present是本层的K/V Cache
             hidden_states, present = layer(
                 hidden_states,
                 position_embeddings,
@@ -1005,8 +1100,9 @@ class OWenTLLMModel(torch.nn.Module):
                 attention_mask=attention_mask,
             )
             presents.append(present)
+        # 归一化
         hidden_states = self.norm(hidden_states)
-        # 参数更新公式中的 A_i
+        # 参数更新公式中的 $A_i$ ，所有层的 aux_loss 和。详见 “梯度累积与参数更新” 中 “MoE 的负载均衡辅助损失 $A_i$ 计算” 子章节
         aux_loss = sum(
             [l.mlp.aux_loss for l in self.layers if isinstance(l.mlp, MOEFeedForward)],
             hidden_states.new_zeros(1).squeeze(),
@@ -1330,6 +1426,8 @@ def init_model(
     Logger(
         f"Trainable Params: {sum(p.numel() for p in model.parameters() if p.requires_grad) / 1e6:.3f}M"
     )
+
+    # 所有model里的buffer参数迁移到settings.train.device（GPU）
     return model.to(settings.train.device), tokenizer
 
 
