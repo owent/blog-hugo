@@ -361,6 +361,7 @@ class LLMTrainRuntimeConfig(PretrainedConfig):
         # 支持 Transformers 用序列化后的配置重新构造，不覆盖调用者传入的值。
         values.update(kwargs)
         values["head_dim"] = values["hidden_size"] // values["num_attention_heads"]
+
         # Transformers 5 在父类初始化时标准化 RoPE，所需长度须提前可用。
         legacy_rope = values.pop("rope_scaling", None)
         rope_parameters = dict(values.pop("rope_parameters", None) or legacy_rope or {})
@@ -649,6 +650,8 @@ def precompute_freqs_cis(
     return freqs_cos, freqs_sin
 
 
+# 这里的Position Embedding的混入流程和经典 Transformer 的位置编码有所差异。
+# 这里采用的是 RoPE 的方法，详见 “RoPE: Rotary Position Embedding，旋转位置编码” 章节。
 def apply_rotary_pos_emb(q, k, cos, sin, unsqueeze_dim=1):
     def rotate_half(x):
         return torch.cat(
@@ -681,28 +684,47 @@ class Attention(torch.nn.Module):
     def __init__(self, config: LLMTrainRuntimeConfig, layer_idx: int = None):
         super().__init__()
         self.layer_idx = layer_idx
+
+        # MLA 或者 GQA
         self.num_key_value_heads = (
             config.num_attention_heads
             if config.num_key_value_heads is None
             else config.num_key_value_heads
         )
+
         self.n_local_heads = config.num_attention_heads
         self.n_local_kv_heads = self.num_key_value_heads
+
+        # 几个Q共享一个K/V头。
         self.n_rep = self.n_local_heads // self.n_local_kv_heads
+
+        # 每个头的注意力
         self.head_dim = config.head_dim
+
+        # 标记本层是否是因果注意力
         self.is_causal = True
+
+        # Q矩阵
         self.q_proj = torch.nn.Linear(
             config.hidden_size, config.num_attention_heads * self.head_dim, bias=False
         )
+
+        # K矩阵
         self.k_proj = torch.nn.Linear(
             config.hidden_size, self.num_key_value_heads * self.head_dim, bias=False
         )
+
+        # V矩阵
         self.v_proj = torch.nn.Linear(
             config.hidden_size, self.num_key_value_heads * self.head_dim, bias=False
         )
+
+        # O矩阵/输出矩阵
         self.o_proj = torch.nn.Linear(
             config.num_attention_heads * self.head_dim, config.hidden_size, bias=False
         )
+
+        # QK矩阵要参与softmax计算，所以要归一化
         self.q_norm = RMSNorm(self.head_dim, eps=config.rms_norm_eps)
         self.k_norm = RMSNorm(self.head_dim, eps=config.rms_norm_eps)
         self.attn_dropout = torch.nn.Dropout(config.dropout)
@@ -721,20 +743,32 @@ class Attention(torch.nn.Module):
         use_cache=False,
         attention_mask=None,
     ):
+        # x的形状 (batch_size, seq_len, hidden_size)
         bsz, seq_len, _ = x.shape
         xq, xk, xv = self.q_proj(x), self.k_proj(x), self.v_proj(x)
+
+        # 差分成独立的多头注意力，以便后续每个头单独算
         xq = xq.view(bsz, seq_len, self.n_local_heads, self.head_dim)
         xk = xk.view(bsz, seq_len, self.n_local_kv_heads, self.head_dim)
         xv = xv.view(bsz, seq_len, self.n_local_kv_heads, self.head_dim)
         xq, xk = self.q_norm(xq), self.k_norm(xk)
         cos, sin = position_embeddings
+
+        # 附加Position Embedding
         xq, xk = apply_rotary_pos_emb(xq, xk, cos, sin)
+        # past_key_value 是本层的 (K, V) 对，形状是 (B, T_cached, H, D)
+        # 注意这里会把 xk 和 xv prepend 之前的缓存
         if isinstance(past_key_value, Cache):
             # transformers 5.x Cache（如 DynamicCache）期望 (B, heads, seq, head_dim) 布局，
             # update 沿 seq 维追加并返回完整 K/V；缓存本体就地更新，无需逐层返回
             keys, values = past_key_value.update(
-                xk.transpose(1, 2), xv.transpose(1, 2), self.layer_idx
+                # transpose(1, 2)： 交换第1和第2维
+                # (B, T, H, D) → (B, H, T, D)
+                xk.transpose(1, 2),
+                xv.transpose(1, 2),
+                self.layer_idx,
             )
+            # 更新完缓存后转回来
             xk, xv = keys.transpose(1, 2), values.transpose(1, 2)
             past_kv = None
         else:
@@ -742,10 +776,12 @@ class Attention(torch.nn.Module):
                 xk = torch.cat([past_key_value[0], xk], dim=1)
                 xv = torch.cat([past_key_value[1], xv], dim=1)
             past_kv = (xk, xv) if use_cache else None
+
+        # (B, T, H, D) → (B, H, T, D)
         xq, xk, xv = (
             xq.transpose(1, 2),
-            repeat_kv(xk, self.n_rep).transpose(1, 2),
-            repeat_kv(xv, self.n_rep).transpose(1, 2),
+            repeat_kv(xk, self.n_rep).transpose(1, 2),  # K矩阵共享,对齐维度
+            repeat_kv(xv, self.n_rep).transpose(1, 2),  # V矩阵共享,对齐维度
         )
         if (
             self.flash
@@ -753,13 +789,20 @@ class Attention(torch.nn.Module):
             and (not self.is_causal or past_key_value is None)
         ):
             sdpa_mask = None
+            # attention_mask 是 (B, T_kv) 的二维张量——每个元素标记对应 key 位置是否真实（1 真实 / 0 padding）。
             if attention_mask is not None and not torch.all(attention_mask == 1):
+                # 这里 sdpa_mask的操作和下面的 attention_mask.unsqueeze(1).unsqueeze(2) 的操作是一样的
                 sdpa_mask = attention_mask[:, None, None, :].bool()
                 if self.is_causal:
+                    # torch.tril(input, diagonal=0)   # 保留下三角：col − row ≤ diagonal 的元素，其余清零
+                    # tril(): 只保留下三角（含对角线），即第 i 个 token 只能看到 <= i 的 token
                     causal_mask = torch.ones(
                         seq_len, seq_len, dtype=torch.bool, device=x.device
                     ).tril()
                     sdpa_mask = sdpa_mask & causal_mask
+            # SDPA = Scaled Dot Product Attention，缩放点积注意力:
+            # - scaled_dot_product_attention 是PyTorch标准注意力的封装。
+            # - SDPA 是多后端调度器,满足特定条件（比如CUDA + bf16 + 常规形状)可能会用 FlashAttention(https://owent.net/2026/2611.html#flashattention)
             output = torch.nn.functional.scaled_dot_product_attention(
                 xq,
                 xk,
@@ -769,22 +812,37 @@ class Attention(torch.nn.Module):
                 is_causal=self.is_causal and sdpa_mask is None,
             )
         else:
+            # @是矩阵乘法: $Q K^{\top}$
             scores = (xq @ xk.transpose(-2, -1)).float() / math.sqrt(self.head_dim)
+            # scores 的形状是 (B, H, T_q, T_kv)
             if self.is_causal:
+                # 缓存场景下 T_kv 可能长于 T_q，只对最后 seq_len 个 key 做因果上三角掩码。
+                # torch.triu(input, diagonal=0)   # 保留上三角：col − row ≥ diagonal 的元素，其余清零
+                # IEEE 754 规则: 有限值 + (-inf) = -inf
                 scores[:, :, :, -seq_len:] += torch.full(
                     (seq_len, seq_len), float("-inf"), device=scores.device
                 ).triu(1)
+            # attention_mask 是 (B, T_kv) 的二维张量——每个元素标记对应 key 位置是否真实（1 真实 / 0 padding）。
+            #   attention_mask.unsqueeze(1).unsqueeze(2) -> 插入2次维度。 -> (B, 1, 1, T_kv)
+            # 加法会触发右对齐（复制/广播）：(B, 1, 1, T_kv) 与 (B, H, T_q, T_kv) 相加时，
+            #   维度为 1 的轴会被广播展开（size 1 → 目标 size），尾部维度 T_kv 对齐不变。
+            # (1.0 - attention_mask) * -1e9：真实位置得 0，padding 位置得 -1e9，
+            #   加到 scores 上后 softmax（有exp(-x)运算） 权重在带入精度后等于 0，即 padding 不参与注意力加权。
             if attention_mask is not None:
                 scores += (
                     1.0 - attention_mask.unsqueeze(1).unsqueeze(2).to(scores.dtype)
                 ) * -1e9
+            # 注意力算法，softmax后再乘V矩阵，结果形状为 (B, H, T_q, D)
             output = (
                 self.attn_dropout(
                     torch.nn.functional.softmax(scores, dim=-1).type_as(xq)
                 )
                 @ xv
             )
+        # 先转回 (B, T, H, D) 结构，再reshape相当于把多头再cat到一起。
         output = output.transpose(1, 2).reshape(bsz, seq_len, -1)
+
+        # 最后的输出投影矩阵的作用是维度衔接（num_attention_heads*head_dim并不总是等于hidden_size）和跨头信息混合。
         output = self.resid_dropout(self.o_proj(output))
         return output, past_kv
 
