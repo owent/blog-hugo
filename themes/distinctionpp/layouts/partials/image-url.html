@@ -1,0 +1,20 @@
+{{- $src := .src -}}
+{{- $lowerSrc := lower $src -}}
+{{- /* Resolve relative paths against the article, including when its HTML appears in a list. */ -}}
+{{- if and $src (not (or
+    (strings.HasPrefix $src "/")
+    (strings.HasPrefix $src "#")
+    (strings.HasPrefix $lowerSrc "http://")
+    (strings.HasPrefix $lowerSrc "https://")
+    (strings.HasPrefix $lowerSrc "data:")
+    (strings.HasPrefix $lowerSrc "mailto:")
+  )) -}}
+  {{- with .page.RelPermalink -}}
+    {{- $dir := . -}}
+    {{- if not (strings.HasSuffix $dir "/") -}}
+      {{- $dir = printf "%s/" (path.Dir .) -}}
+    {{- end -}}
+    {{- $src = printf "%s%s" $dir $src -}}
+  {{- end -}}
+{{- end -}}
+{{- return $src -}}

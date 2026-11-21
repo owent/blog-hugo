@@ -1,0 +1,50 @@
+{{- if not .IsNamedParams -}}
+  {{- errorf "banner requires named parameters at %s" .Position -}}
+{{- else -}}
+  {{- $allowed := slice "src" "alt" "list" "single" "list-position" "single-position" "class" "style" "list-class" "list-style" "single-class" "single-style" "width" "height" "loading" -}}
+  {{- range $name, $_ := .Params -}}
+    {{- if not (in $allowed $name) -}}
+      {{- errorf "banner has an unknown parameter %q at %s" $name $.Position -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $src := strings.TrimSpace (string (.Get "src")) -}}
+  {{- if not $src -}}
+    {{- errorf "banner requires src at %s" .Position -}}
+  {{- end -}}
+  {{- $visible := dict "list" true "single" true -}}
+  {{- range slice "list" "single" -}}
+    {{- if isset $.Params . -}}
+      {{- $value := string ($.Get .) -}}
+      {{- if not (in (slice "true" "false") $value) -}}
+        {{- errorf "banner %s must be true or false at %s" . $.Position -}}
+      {{- end -}}
+      {{- $visible = merge $visible (dict . (eq $value "true")) -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $listPosition := .Get "list-position" | default "before-summary" -}}
+  {{- if not (in (slice "before-title" "before-summary" "after-summary") $listPosition) -}}
+    {{- errorf "banner has an invalid list-position %q at %s" $listPosition .Position -}}
+  {{- end -}}
+  {{- $singlePosition := .Get "single-position" | default "before-content" -}}
+  {{- if not (in (slice "before-title" "after-title" "before-content" "after-content") $singlePosition) -}}
+    {{- errorf "banner has an invalid single-position %q at %s" $singlePosition .Position -}}
+  {{- end -}}
+  {{- if or (isset .Params "width") (isset .Params "height") -}}
+    {{- if not (and (findRE `^[1-9][0-9]*$` (string (.Get "width"))) (findRE `^[1-9][0-9]*$` (string (.Get "height")))) -}}
+      {{- errorf "banner width and height must both be positive integers at %s" .Position -}}
+    {{- end -}}
+  {{- end -}}
+  {{- with .Get "loading" -}}
+    {{- if not (in (slice "eager" "lazy") .) -}}
+      {{- errorf "banner loading must be eager or lazy at %s" $.Position -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- with .Page.Resources.Get $src -}}
+    {{- $src = .RelPermalink -}}
+  {{- else -}}
+    {{- $src = partial "image-url.html" (dict "src" $src "page" .Page) -}}
+  {{- end -}}
+  {{- /* Layouts read this after content rendering. The declaration emits no body or summary HTML. */ -}}
+  {{- .Page.Store.Set "themePostBanner" (dict "src" $src "params" .Params "list" $visible.list "single" $visible.single "listPosition" $listPosition "singlePosition" $singlePosition) -}}
+{{- end -}}

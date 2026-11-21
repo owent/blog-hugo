@@ -337,30 +337,7 @@
   {{- partial "code/render.html" (dict "page" .Page "src" $src "attrs" $codeAttrs "label" "Codeblock") -}}
 {{- else -}}
   {{- /* Normal image rendering */ -}}
-  {{- /*
-    Resolve relative image paths against the page's permalink directory so the
-    image still loads when the rendered HTML appears in a different URL context
-    (home page, list/taxonomy pages, RSS feeds, etc.). Skip absolute URLs,
-    protocol-relative URLs, root-relative paths, fragments, and data/mailto URIs.
-  */ -}}
-  {{- $resolvedSrc := $src -}}
-  {{- $lowerSrc := lower $src -}}
-  {{- if and $src (not (or
-      (strings.HasPrefix $src "/")
-      (strings.HasPrefix $src "#")
-      (strings.HasPrefix $lowerSrc "http://")
-      (strings.HasPrefix $lowerSrc "https://")
-      (strings.HasPrefix $lowerSrc "data:")
-      (strings.HasPrefix $lowerSrc "mailto:")
-    )) -}}
-    {{- with .Page.RelPermalink -}}
-      {{- $pageDir := . -}}
-      {{- if not (strings.HasSuffix $pageDir "/") -}}
-        {{- $pageDir = printf "%s/" (path.Dir .) -}}
-      {{- end -}}
-      {{- $resolvedSrc = printf "%s%s" $pageDir $src -}}
-    {{- end -}}
-  {{- end -}}
+  {{- $resolvedSrc := partial "image-url.html" (dict "src" $src "page" .Page) -}}
 
   {{- /* Apply parsed width/max-width/max-height/style to the <img>. When any of
        these is set, render as a centered block (matching the SCSS default of

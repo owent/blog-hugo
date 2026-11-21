@@ -127,6 +127,43 @@ the read-more link stay aligned at the bottom. Full article styles are unchanged
 
 ## shortcodes
 
+### banner
+
+Declare one banner per article on its own line, for example immediately after
+the front matter. The theme places it in the selected layout, independently of
+the body and summary. A relative `src` resolves to a page resource or to the
+article's URL directory. Root-relative URLs and HTTPS URLs also work.
+
+```markdown
+{{< banner src="2612-banner.png" list=true single=false width=1919 height=817 >}}
+```
+
+| Parameter | Behavior |
+| --- | --- |
+| `src`, `alt` | Image URL (required) and alternative text. Omit `alt` for decorative images. |
+| `list`, `single` | Independent visibility switches. Both default to `true`. Lists include homepage, category and tag cards. |
+| `list-position` | `before-title`, `before-summary` (default), or `after-summary`. |
+| `single-position` | `before-title`, `after-title` (above the table of contents), `before-content` (default, inside the article body), or `after-content`. |
+| `class`, `style` | Additional classes and inline CSS on the banner wrapper. |
+| `list-class`, `single-class`, `list-style`, `single-style` | Extra classes and styles on the wrapper for the selected layout. Layout-specific inline declarations follow the shared declarations. |
+| `width`, `height` | Optional intrinsic image dimensions in pixels. Supply both to let the browser reserve space before the image loads. |
+| `loading` | Optional `eager` or `lazy`. List banners and `after-content` banners default to `lazy`. Other single-page positions default to `eager`. |
+
+List cards crop the image to fit the available card space, with a default
+maximum of `12rem`. Single pages preserve the image's aspect ratio by default.
+Set `--banner-height` to control the list maximum or the single-page image
+height. Use `--banner-fit` (`cover` by default, or `contain` to fit the whole
+image) and `--banner-focus` to set the cropping alignment.
+
+```markdown
+{{< banner src="cover.webp" list-position="after-summary" single-position="after-title"
+    class="feature-cover" style="border-radius: .5rem; overflow: hidden"
+    list-style="--banner-height: 9rem; --banner-focus: center 35%" >}}
+```
+
+Use Markdown or the `figure` shortcode for images that belong within the prose.
+Articles without a banner declaration retain the leading-image card preview.
+
 ### chart
 
 See http://www.chartjs.org for more detail

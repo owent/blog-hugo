@@ -1,5 +1,27 @@
+{{- $summary := .Summary | replaceRE `\s+id="[^"]*"` "" -}}
+{{- $banner := "" -}}
+{{- $position := "before-summary" -}}
+{{- if .HasShortcode "banner" -}}
+  {{- $content := .Content -}}
+  {{- with .Store.Get "themePostBanner" -}}
+    {{- if .list -}}
+      {{- $position = .listPosition -}}
+      {{- $banner = partial "post/banner.html" (dict "banner" . "context" "list" "position" $position) -}}
+    {{- end -}}
+  {{- end -}}
+{{- else -}}
+  {{- /* Preserve leading-image previews for articles without a banner declaration. */ -}}
+  {{- $image := `(?:<img\b[^>]*>|<a\b[^>]*>\s*<img\b[^>]*>\s*</a>)` -}}
+  {{- $bannerPattern := printf `(?s)^\s*(?:<p\b[^>]*>\s*%s\s*</p>|<figure\b[^>]*>\s*%s\s*</figure>)\s*` $image $image -}}
+  {{- with findRE $bannerPattern $summary 1 -}}
+    {{- $leading := index . 0 -}}
+    {{- $summary = strings.TrimPrefix $leading $summary -}}
+    {{- $banner = printf `<div class="archive-summary-banner">%s</div>` $leading | safeHTML -}}
+  {{- end -}}
+{{- end -}}
 <article class="article-panel archive-article archive-type-{{if .Params.id }}{{ .Params.id }}{{ else }}{{ with .File }}{{ .UniqueID }}{{ end }}{{ end }}">
   <div class="article-panel-inner archive-article-inner">
+    {{- if eq $position "before-title" }}{{ $banner }}{{ end }}
     <div class="archive-card-heading">
       <div class="archive-card-meta">
         {{ partial "post/date.html" . }}
@@ -11,23 +33,13 @@
         <h2 itemprop="name"><a class="article-title" href="{{ .Permalink }}" target="_blank" rel="noopener" itemprop="url" title="{{ .Title }}">{{ .Title }}</a></h2>
       </header>
     </div>
-    {{- /* Keep the leading image outside the padded text, preserving its rendered attributes and link. */ -}}
-    {{- $summary := .Summary | replaceRE `\s+id="[^"]*"` "" -}}
-    {{- $image := `(?:<img\b[^>]*>|<a\b[^>]*>\s*<img\b[^>]*>\s*</a>)` -}}
-    {{- $bannerPattern := printf `(?s)^\s*(?:<p\b[^>]*>\s*%s\s*</p>|<figure\b[^>]*>\s*%s\s*</figure>)\s*` $image $image -}}
-    {{- $banner := "" -}}
-    {{- with findRE $bannerPattern $summary 1 -}}
-      {{- $banner = index . 0 -}}
-      {{- $summary = strings.TrimPrefix $banner $summary -}}
-    {{- end -}}
     <div class="article-summary archive-summary{{ if $banner }} has-banner{{ end }}">
-      {{- with $banner }}
-      <div class="archive-summary-banner">{{ . | safeHTML }}</div>
-      {{- end }}
+      {{- if eq $position "before-summary" }}{{ $banner }}{{ end }}
       {{- if strings.TrimSpace $summary }}
       {{- /* Keep balanced rich text without duplicating heading IDs across cards. */ -}}
       <div class="archive-summary-content">{{ $summary | safeHTML | strings.Truncate 480 "…" }}</div>
       {{- end }}
+      {{- if eq $position "after-summary" }}{{ $banner }}{{ end }}
     </div>
     <footer class="archive-article-footer">
       <div class="archive-card-tags">

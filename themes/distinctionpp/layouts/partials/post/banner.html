@@ -1,0 +1,17 @@
+{{- $params := .banner.params -}}
+{{- $class := $params.class | default "" -}}
+{{- with index $params (printf "%s-class" .context) -}}
+  {{- $class = strings.TrimSpace (printf "%s %s" $class .) -}}
+{{- end -}}
+{{- $style := $params.style | default "" -}}
+{{- with index $params (printf "%s-style" .context) -}}
+  {{- if $style -}}
+    {{- $style = printf "%s; %s" (strings.TrimSuffix ";" (strings.TrimSpace $style)) . -}}
+  {{- else -}}
+    {{- $style = . -}}
+  {{- end -}}
+{{- end -}}
+{{- $loading := $params.loading | default (cond (or (eq .context "list") (eq .position "after-content")) "lazy" "eager") -}}
+<div class="post-banner post-banner--{{ .context }} post-banner--{{ .position }}{{ if eq .context "list" }} archive-summary-banner{{ end }}{{ with $class }} {{ . }}{{ end }}"{{ with $style }} style="{{ . | safeCSS }}"{{ end }}>
+  <img src="{{ .banner.src }}" alt="{{ $params.alt | default "" }}"{{ with $params.width }} width="{{ . }}" height="{{ $params.height }}"{{ end }} loading="{{ $loading }}" decoding="async">
+</div>

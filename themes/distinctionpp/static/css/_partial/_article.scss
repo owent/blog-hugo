@@ -44,6 +44,22 @@
     @media (forced-colors: active) { background-image: none; }
     h1 { font-size: clamp(1.55rem, 3vw, 2.2rem); line-height: 1.45; margin: 0; }
   }
+  .post-banner--before-title + .article-header { margin-top: 0; border-radius: 0; }
+}
+
+.post-banner--single {
+  display: flow-root;
+  margin-block: 0 1rem;
+
+  &.post-banner--after-content { margin-block: 1rem 0; }
+
+  img {
+    display: block;
+    width: 100%;
+    height: var(--banner-height, auto);
+    object-fit: var(--banner-fit, cover);
+    object-position: var(--banner-focus, center);
+  }
 }
 
 .article-layout {

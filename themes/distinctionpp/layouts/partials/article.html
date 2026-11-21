@@ -1,6 +1,19 @@
+{{- $content := .Content -}}
+{{- $banner := "" -}}
+{{- $position := "" -}}
+{{- if .HasShortcode "banner" -}}
+  {{- with .Store.Get "themePostBanner" -}}
+    {{- if .single -}}
+      {{- $position = .singlePosition -}}
+      {{- $banner = partial "post/banner.html" (dict "banner" . "context" "single" "position" $position) -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
 <article id="{{ .Type }}-{{ with .File }}{{ .UniqueID }}{{ end }}" class="article-panel reading-panel article article-type-{{ .Type }}" itemscope itemprop="blogPost">
   <div class="article-panel-inner">
+    {{- if eq $position "before-title" }}{{ $banner }}{{ end }}
     <header class="article-header">{{ partial "post/title.html" . }}</header>
+    {{- if eq $position "after-title" }}{{ $banner }}{{ end }}
     <div class="article-layout{{ if findRE `<li>` .TableOfContents }} has-toc{{ end }}">
       {{- if findRE `<li>` .TableOfContents }}
       <details id="toc" class="toc">
@@ -8,7 +21,11 @@
         {{ .TableOfContents }}
       </details>
       {{- end }}
-      <div class="article-entry" itemprop="articleBody">{{ .Content }}</div>
+      <div class="article-entry" itemprop="articleBody">
+        {{- if eq $position "before-content" }}{{ $banner }}{{ end -}}
+        {{- $content -}}
+        {{- if eq $position "after-content" }}{{ $banner }}{{ end -}}
+      </div>
     </div>
     {{ partial "ads/slot.html" (dict "page" . "kind" "article") }}
     <footer class="article-footer">
