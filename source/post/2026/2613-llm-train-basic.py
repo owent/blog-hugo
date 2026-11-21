@@ -37,7 +37,7 @@ from transformers.utils.chat_template_utils import render_jinja_template
 warnings.filterwarnings("ignore")
 
 
-# 下载数据集 modelscope download --dataset gongjy/minimind_dataset README.md --local_dir ./dataset
+# 下载数据集说明：modelscope download --dataset gongjy/minimind_dataset README.md --local_dir ./dataset
 
 PYTORCH_IGNORE_INDEX: int = -100
 
@@ -176,7 +176,7 @@ LLM_TRAIN_SETTINGS = LLMTrainConfigureAll.model_validate(
         "save": {
             "save_weight": LLMTrainWeightType.kPretrain,
             "dir": "./out",
-            # 模型保存间隔
+            # 每隔多少个 microbatch 保存一次，实际保存延后到窗口结束。
             "step_interval": 1000,
         },
         "train": {
@@ -186,21 +186,20 @@ LLM_TRAIN_SETTINGS = LLMTrainConfigureAll.model_validate(
             "batch_size": 8,
             # 训练轮数
             "epochs": 2,
-            # 初始学习率
+            # 余弦衰减的学习率上限，第一次更新按首个窗口的结束位置取值。
             "learning_rate": 2e-5,
             # 训练设备(如果有多GPU或者AMD的独显+集显，请注意选择正确的显卡设备)
             "device": "cuda" if torch.cuda.is_available() else "cpu",
             # 是否使用torch.compile加速
             "use_compile": False,
-            # 随机种子（每轮每个 rank 为 seed+epoch+rank）。
-            # 这个值初始可以随机，固定值有助于观察训练波动。但是本脚本的续训是必须用原始的随机种子以便更精确的断点续训。
+            # 每个 epoch 的进程随机种子为 seed + epoch + rank，续训要求配置中的 seed 一致。
             "seed": 42,
-            # 梯度累积步数。脚本每处理一个 batch_size=8 的 microbatch 就执行反向传播，但累积 8 个 microbatch 后才更新一次参数。
+            # 梯度累积步数。每个窗口最多 8 个 microbatch，窗口结束时尝试更新一次参数。
             # “梯度累积与参数更新” 章节详解了它的作用原理
             "accumulation_steps": 8,
             # 梯度裁剪阈值。所有参数梯度合在一起后的全局 L2 范数上限。
             # 近似处理公式 $g \leftarrow g \cdot \min\left(1,\frac{1.0}{\lVert g\rVert_2}\right)$
-            # 方式梯度过大导致参数更新过猛、损失剧烈波动。
+            # 总梯度范数超过阈值时，按同一比例缩小所有参数的梯度。
             "grad_clip": 1.0,
         },
         "param": {
@@ -208,14 +207,11 @@ LLM_TRAIN_SETTINGS = LLMTrainConfigureAll.model_validate(
             "eps": 1e-6,
             # 混合精度类型
             "dtype": "bfloat16",
-            # 隐藏层维度，某些模型可以有额外的投影层让隐藏层维度和word embedding的维度不同。
-            # 当前脚本没有投影层，所以隐藏层维度、注意力、FFN 和残差连接要和word embedding的维度相同
+            # Embedding 输出直接进入 Decoder Block。残差流、注意力和 FFN 的输入与输出均为 hidden_size。
             "hidden_size": LLM_TRAIN_CONST_VALUE_HIDDEN_SIZE,
-            # 隐藏层数量。每个隐藏层就是让模型对整句话做一轮“收集信息 → 加工 → 写回”的过程。
-            # 即让模型完成读->想->写的过程。加深通常比加宽更能提升“多步推理”类能力，但收益递减，且层数串行执行、推理耗时线性增长。
+            # Decoder Block 数量，各层依次执行因果自注意力和前馈网络。
             "num_hidden_layers": 8,
-            # dropout。大规模预训练经常使用 0，常见原因是语料规模大、重复次数有限，模型更常受容量和训练计算量限制，而不是明显过拟合；
-            # Dropout 还会引入额外噪声，可能减慢收敛。
+            # Dropout 概率，设为 0 时关闭。
             "dropout": 0.0,
             # 词表大小，包括普通 token 和特殊 token
             "vocab_size": 6400,
@@ -225,7 +221,7 @@ LLM_TRAIN_SETTINGS = LLMTrainConfigureAll.model_validate(
             # EOS，即 End of Sequence，表示序列结束。
             # 这个 ID 必须与 tokenizer 中的定义一致。ID 本身没有特殊语义，语义来自 tokenizer、训练数据和生成代码的共同约定。
             "eos_token_id": 2,
-            # 是否使用Flash Attention
+            # 是否允许走 PyTorch SDPA 路径，具体内核由 PyTorch 选择。
             "flash_attn": True,
             # 多头注意力的头数量，每个头分开计算。然后再concat到一起
             "num_attention_heads": 8,
@@ -251,7 +247,7 @@ LLM_TRAIN_SETTINGS = LLMTrainConfigureAll.model_validate(
             "rope_theta": 1e6,
             # 表示输入 Embedding 和输出 lm_head 共享同一个参数矩阵
             "tie_word_embeddings": True,
-            # 为 True 时，创建后面的 YaRN rope_scaling 配置。
+            # 为 True 时构造 YaRN 配置，训练和推理共用按该配置生成的位置表。
             "inference_rope_scaling": False,
             # None表示使用原始 RoPE，不做额外频率缩放。
             "rope_scaling": None,
@@ -267,16 +263,16 @@ LLM_TRAIN_SETTINGS = LLMTrainConfigureAll.model_validate(
             )
             * 64,
             # 路由器先计算全部 moe_num_experts 个专家的 softmax 概率，再选择 Top-moe_num_experts_per_tok。
-            # 设为 True 时，会把选中的两个权重重新归一化，使其和为 1。
+            # 设为 True 时，多专家权重归一化，Top-1 的前向权重固定为 1。
             "norm_topk_prob": True,
             # 这是每层负载均衡辅助损失的系数，控制 $a_{i,l}$ 对总训练损失的相对影响
             # 详见 “梯度累积与参数更新” 中 “MoE 的负载均衡辅助损失 $A_i$ 计算” 子章节
             "router_aux_loss_coef": 5e-4,
         },
         "loader": {
-            # 加载数据的工作线程数
+            # DataLoader 的 worker 进程数。
             "num_workers": 8,
-            # 每条训练数据的最大截断长度，Unsloth里QWen 3.8 27B默认2048，GPT-20b-oss默认1024
+            # 单条训练序列的长度上限，包含特殊 token。短序列补齐到该长度。Unsloth里QWen 3.8 27B默认2048，GPT-20b-oss默认1024 。
             "data_item_max_length": 2048,
             # tokenizer路径
             "tokenizer_path": "./model",
@@ -302,7 +298,7 @@ if LLM_TRAIN_SETTINGS.param.inference_rope_scaling:
             "original_max_position_embeddings": 2048,
             # 同时缩放 RoPE 的 cos/sin，从而缩放旋转后的 Q、K；当前为 1，表示不做额外的注意力温度修正。
             "attention_factor": 1.0,
-            #  YaRN 缩放算
+            # YaRN 缩放类型。
             "type": "yarn",
         }
     )
@@ -317,8 +313,8 @@ def Logger(content):
         print(content)
 
 
-# 获取本次Step的学习率
-# 带下限的余弦退火（Cosine Annealing）学习率衰减公式。
+# 取 SGDR 的一段余弦衰减曲线，下限为 lr 的 0.1 倍。
+# current_step 是窗口末尾的累计 microbatch 序号，total_steps 是训练计划的总 microbatch 数。
 # SGDR: Stochastic Gradient Descent with Warm Restarts（Loshchilov & Hutter, 2017）
 # lr_t = lr_min + (lr_max - lr_min) * (1 + cos(pi * x)) / 2
 def get_learning_rate(current_step, total_steps, lr):
@@ -326,7 +322,7 @@ def get_learning_rate(current_step, total_steps, lr):
 
 
 # 创建优化器
-# Adam 部分：自适应学习率: 梯度大/波动大的参数（v_t大）自动用更小的步长，梯度稳定的参数用更大的步长。
+# Adam 项按梯度的一阶矩和二阶原始矩调整更新幅度，权重衰减独立应用于参数。
 def create_optimizer(model, settings: LLMTrainConfigureAll, **kargs):
     return torch.optim.AdamW(
         model.parameters(), lr=settings.train.learning_rate, **kargs
@@ -594,8 +590,8 @@ class RMSNorm(torch.nn.Module):
         self.weight = torch.nn.Parameter(torch.ones(dim))
 
     def norm(self, x):
-        # x 的形状通常是 (batch_size, seq_len, hidden_size)，这里指对最后一维进行求平均
-        # 求平均会让一个向量变成一个值，从而使一个维度消失，因此需要 keepdim=True 保持维度不变
+        # x.pow(2) 逐元素平方。mean(-1) 沿最后一维取均值，每个 token 得到一个值。
+        # 对形状为 (B, T, D) 的 x，keepdim=True 让结果为 (B, T, 1)，可以沿特征维广播到 x。
         # 数据举例
         #    x = [[[1, 2, 3],      ← token A，坐标 (b=0, s=0)
         #        [4, 5, 6]]]       ← token B，坐标 (b=0, s=1)
@@ -685,7 +681,7 @@ class Attention(torch.nn.Module):
         super().__init__()
         self.layer_idx = layer_idx
 
-        # MLA 或者 GQA
+        # 默认使用 GQA，由一组 Q 头共享一对 Key/Value 头。
         self.num_key_value_heads = (
             config.num_attention_heads
             if config.num_key_value_heads is None
@@ -724,7 +720,7 @@ class Attention(torch.nn.Module):
             config.num_attention_heads * self.head_dim, config.hidden_size, bias=False
         )
 
-        # QK矩阵要参与softmax计算，所以要归一化
+        # 分别沿 Q 和 Key 的头维度做 RMSNorm。
         self.q_norm = RMSNorm(self.head_dim, eps=config.rms_norm_eps)
         self.k_norm = RMSNorm(self.head_dim, eps=config.rms_norm_eps)
         self.attn_dropout = torch.nn.Dropout(config.dropout)
@@ -747,7 +743,7 @@ class Attention(torch.nn.Module):
         bsz, seq_len, _ = x.shape
         xq, xk, xv = self.q_proj(x), self.k_proj(x), self.v_proj(x)
 
-        # 差分成独立的多头注意力，以便后续每个头单独算
+        # view 将投影的最后一维拆成 (头数, 每头维度)，得到 (B, T, 头数, 每头维度)。
         xq = xq.view(bsz, seq_len, self.n_local_heads, self.head_dim)
         xk = xk.view(bsz, seq_len, self.n_local_kv_heads, self.head_dim)
         xv = xv.view(bsz, seq_len, self.n_local_kv_heads, self.head_dim)
@@ -756,8 +752,7 @@ class Attention(torch.nn.Module):
 
         # 附加Position Embedding
         xq, xk = apply_rotary_pos_emb(xq, xk, cos, sin)
-        # past_key_value 是本层的 (K, V) 对，形状是 (B, T_cached, H, D)
-        # 注意这里会把 xk 和 xv prepend 之前的缓存
+        # 旧缓存是本层的 (K, V) 对，形状为 (B, T_cached, H_kv, D)。新 K/V 沿序列维接到历史之后。
         if isinstance(past_key_value, Cache):
             # transformers 5.x Cache（如 DynamicCache）期望 (B, heads, seq, head_dim) 布局，
             # update 沿 seq 维追加并返回完整 K/V；缓存本体就地更新，无需逐层返回
@@ -827,7 +822,8 @@ class Attention(torch.nn.Module):
             # 加法会触发右对齐（复制/广播）：(B, 1, 1, T_kv) 与 (B, H, T_q, T_kv) 相加时，
             #   维度为 1 的轴会被广播展开（size 1 → 目标 size），尾部维度 T_kv 对齐不变。
             # (1.0 - attention_mask) * -1e9：真实位置得 0，padding 位置得 -1e9，
-            #   加到 scores 上后 softmax（有exp(-x)运算） 权重在带入精度后等于 0，即 padding 不参与注意力加权。
+            #   softmax 对每一行的分数减去该行最大值后取指数。存在可见的真实位置时，
+            #   padding 位置的分数相对低约 1e9，指数项在浮点运算中下溢为 0。
             if attention_mask is not None:
                 scores += (
                     1.0 - attention_mask.unsqueeze(1).unsqueeze(2).to(scores.dtype)
@@ -864,13 +860,11 @@ class FeedForward(torch.nn.Module):
         self.act_fn = ACT2FN[config.hidden_act]
 
     def forward(self, x):
-        # 非线性激活只有在足够宽的空间里才有东西可选。
-        # 升维是“展开工作空间”，激活是“筛选”，降维是“把结论压缩回输入的空间结构”。
-        # 输入x的形状是  (B, T, hidden_size)，流程如下:
-        # 1. (B,T,hidden_size) -> (B,T,intermediate_size): gate_proj调用，做线性投影（升维）。产出门控原始分。
-        # 2. (B,T,intermediate_size) ->（逐元素门控） : act_fn调用，转换成门控系数，决定哪些特征保留。值趋零（软关闭）、正值近似保留。
-        # 3. 门控系数 ⊙ up_proj(x): ⊙ 是逐元素乘, up_proj表示特征内容
-        # 4. (B,T,intermediate_size) -> (B,T,hidden_size) 降维，压缩回残差流
+        # 输入 x 的形状为 (B, T, hidden_size)。
+        # 1. gate_proj 和 up_proj 分别对每个 token 做线性投影，得到两个 (B, T, intermediate_size) 张量。
+        # 2. act_fn 逐元素作用于 gate_proj 的输出。默认 SiLU 的输出可以为负，也可以大于 1。
+        # 3. 这里的 * 是逐元素乘（⊙），用门控分支的各分量缩放 up_proj 的对应分量，形状不变。
+        # 4. down_proj 将乘积投影回 (B, T, hidden_size)，供残差连接使用。
         return self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
 
 
@@ -879,11 +873,10 @@ class MOEFeedForward(torch.nn.Module):
         super().__init__()
         self.config = config
 
-        # 专家路由的网络，通过隐藏层数据算出选每个专家的权重
-        # $\ y = xW^{\top} + b$
+        # 路由器用无偏置线性层计算各专家的 logits，即 $xW^{\top}$。
         self.gate = torch.nn.Linear(config.hidden_size, config.num_experts, bias=False)
 
-        # 复制 moe_intermediate_size 个专家
+        # 创建 num_experts 个独立的 FFN，每个专家的中间维度为 moe_intermediate_size。
         self.experts = torch.nn.ModuleList(
             [
                 FeedForward(config, intermediate_size=config.moe_intermediate_size)
@@ -899,7 +892,7 @@ class MOEFeedForward(torch.nn.Module):
         # 搞扁平 (batch_size*seq_len, hidden_dim)
         x_flat = x.view(-1, hidden_dim)
 
-        # 这里用softmax是为了方便后面归一化，且计算专家的权重
+        # 对全部专家的 logits 做 softmax，得到路由概率，用于 Top-k 选择和负载统计。
         scores = torch.nn.functional.softmax(self.gate(x_flat), dim=-1)
 
         # topk_weight, topk_idx的形状是  (batch_size*seq_len, num_experts_per_tok)
@@ -917,7 +910,7 @@ class MOEFeedForward(torch.nn.Module):
                 #            不拷贝数据。相当于冻结某个值当常数用。
                 # 如果没有这一层，只激活一个专家时，求导过程会变成:
                 #   topk_weight = topk(scores, k=1)[0] / topk(scores, k=1)[0].sum(-1, keepdim=True)
-                #               = p / p = 1.0（常数！）,学不到路由对错。
+                #               = p / p = 1.0，主损失通过这个权重传给路由器的梯度为零,学不到路由对错。
                 top1 = torch.topk(
                     # x_flat.detach(): 这里阻断对x_flat的反向传播
                     # 这里是 STE（Straight-Through Estimator，直通估计器） 的产物。
@@ -958,19 +951,21 @@ class MOEFeedForward(torch.nn.Module):
                 #   ③ .flatten()        →  [0, 2, 4, 5]              (4,)
                 #      拍平成行号列表 = 选了专家 1 的 token 编号
                 token_idx = mask.any(dim=-1).nonzero().flatten()
-                # topk_weight[mask] 是指复制topk_weight，抄出所有 True 位置的值
+                # A[B] 是布尔索引。A、B 形状相同时，返回 A 中 B 为 True 的位置组成的一维张量。
+                # 每行至多有一个 True，所以 topk_weight[mask] 的顺序与上面的 token_idx 一致。
+                # view(-1, 1) 将权重变成 (选中的 token 数, 1)，乘法时沿专家输出的特征维广播。
                 #   如果两个张量A: (N, M) float，B: (N, M) bool 。A[B] 的操作是超出所有位置B为True的A的值。
                 #   因为候选专家一定是不重复的，所以mask的最后一维必定只有一个值为True。
-                # 最后.view(-1, 1)是为了还原成2维，然后参与后面的矩阵计算
                 weight = topk_weight[mask].view(-1, 1)
                 y.index_add_(
-                    # 这里相当一次性去了某个专家要计算的子集token，丢进去给专家层计算
+                    # x_flat[token_idx] 取出本批次分给该专家的所有 token。index_add_ 沿第 0 维原地累加，
+                    # 把加权输出的第 j 行加到 y[token_idx[j]]，同一个 token 可累加多个专家的输出。
                     0,
                     token_idx,
                     (expert(x_flat[token_idx]) * weight).to(y.dtype),
                 )
             elif self.training:
-                # 训练时需要让没有分配到token的专家也要被反向传播的图覆盖到。否则没有梯度信息会导致训练错误
+                # 用零贡献把未被选中的专家接入计算图，使默认 DDP 仍能归约其零梯度。
                 y[0, 0] += 0 * sum(p.sum() for p in expert.parameters())
 
         # 详见 “梯度累积与参数更新” 中 “MoE 的负载均衡辅助损失 $A_i$ 计算” 子章节
@@ -992,7 +987,7 @@ class MOEFeedForward(torch.nn.Module):
                     .float()  # 然后转float方便求平均
                     .sum(0)
                     / topk_idx[valid].numel()  # 是元素总数。相当于公式里的 M * k。
-                    # 结果相当于公式里的 $f_e$（结构不完全一致，但是是这个表达）。
+                    # 沿 Top-k 槽位求和后得到公式中的每专家选择比例 $f_e$。
                 )
                 # 这里的aux_loss就是 文章公式里的 $a_{layer}$ 。
                 self.aux_loss = (
@@ -1009,7 +1004,7 @@ class MOEFeedForward(torch.nn.Module):
                     * self.config.router_aux_loss_coef
                 )
             else:
-                # 本轮没有要预测的token，直接用0即可。但是要让反向传播的图覆盖到，保证有梯度信息。
+                # 这个 microbatch 没有非 padding token。但是要让反向传播的图覆盖到，保证有梯度信息，所以手动设置零。
                 self.aux_loss = scores.sum() * 0.0
         else:
             # 推理时不消费这个，只用专家权重topk_weight。所以这里设置为0即可。
@@ -1085,12 +1080,12 @@ class OWenTLLMModel(torch.nn.Module):
         self.embed_tokens = torch.nn.Embedding(config.vocab_size, config.hidden_size)
         self.dropout = torch.nn.Dropout(config.dropout)
 
-        # 复制到 num_hidden_layers 个隐藏层
+        # 创建 num_hidden_layers 个参数独立的 Decoder Block。
         self.layers = torch.nn.ModuleList(
             [OWenTLLMBlock(l, config) for l in range(self.num_hidden_layers)]
         )
 
-        # 初始的归一化算法
+        # 所有 Decoder Block 之后的 RMSNorm。
         self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
         # 位置嵌入
@@ -1214,7 +1209,7 @@ class OWenTLLMForCausalLM(PreTrainedModel, GenerationMixin):
         )
 
         # 最后 logits_to_keep 个序列位置才做 lm_head 投影，其余位置的 logits 干脆不算。
-        # 训练时要全算，但是推理时取最后一个就行了。
+        # 训练入口用默认值 0，计算全部 logits。逐 token 生成时只消费最后一个位置的 logits。
         slice_indices = (
             slice(-logits_to_keep, None)
             if isinstance(logits_to_keep, int)
@@ -1248,7 +1243,7 @@ class OWenTLLMForCausalLM(PreTrainedModel, GenerationMixin):
             # ① softmax 归一化：  p_j = exp(x_{n,j}) / Σ_j exp(x_{n,j})
             # ② 取正确答案的概率：p = p_{y_n}     （y_n = 该位置真实 token 的 ID）
             # ③ 取负对数：        ℓ_n = -log(p)
-            # 然后对这些行算出来的值按reduction计算。train里传入的是求和
+            # 跳过 ignore_index 标签，再按 reduction 聚合。当前训练上层传入的参数是求和。
             loss = torch.nn.functional.cross_entropy(
                 x.view(
                     -1, x.size(-1)
@@ -1313,7 +1308,7 @@ class OWenTLLMForCausalLM(PreTrainedModel, GenerationMixin):
         past_key_values = kwargs.pop("past_key_values", None)
 
         # input_ids                     : (B, T_total)
-        #                         B = batch（generate 里 = num_return_sequences）
+        #                         B = 输入 batch 大小 × num_return_sequences
         #                         T_total = prompt 长度 + 已生成的 token 数
         finished = torch.zeros(
             input_ids.shape[0], dtype=torch.bool, device=input_ids.device
@@ -1349,15 +1344,15 @@ class OWenTLLMForCausalLM(PreTrainedModel, GenerationMixin):
                 if attention_mask is not None
                 else None
             )
-            # 这个是注意力公式里的 / temperature
+            # 采样温度缩放词表 logits，控制下一 token 的采样分布。
             # outputs.logits : (batch, seq_len, vocab_size) = (B, S, 6400)
             #                     │      │        └ 第 2 维：词表 6400 个 token 各自的打分（logit）
-            #                     │      └ 第 1 维：序列位置——每个位置一份"下一词预测分布"
-            #                     └ 第 0 维：batch（generate 里 = num_return_sequences 行）
-            # 每次计算最后生成的token 的 logit，所以去最后一个
+            #                     │      └ 第 1 维：每个序列位置对应一组下一 token 的 logits
+            #                     └ 第 0 维：复制后的 batch
+            # 用最后一个输入位置的 logits 选择下一 token。
             logits = outputs.logits[:, -1, :] / temperature
 
-            # 复读惩罚，对“上下文中已出现过的 token”做软性降分。
+            # repetition_penalty > 1 时，降低上下文中已出现过的 token 的分数。
             # 小模型在采样时特别容易陷入循环：反复输出同一个短语，或几句话来回打转。
             if repetition_penalty != 1.0:
                 for i in range(input_ids.shape[0]):  # 逐行（每条候选独立处理）
@@ -1366,11 +1361,11 @@ class OWenTLLMForCausalLM(PreTrainedModel, GenerationMixin):
                     )  # 该行上下文里出现过的所有 token ID
                     # 取子集，“花式索引”（advanced indexing，也叫按值索引/gather 式收集）。
                     score = logits[i, seen]  # 取出这些 token 当前的 logit
+                    # torch.where 按元素选择。惩罚系数大于 1 时，正分和负分都会下降，零分保持不变。
                     logits[i, seen] = torch.where(
                         score > 0,
                         score / repetition_penalty,  # 正分 → 除以惩罚系数，向 0 收缩
                         score * repetition_penalty,  # 负分 → 乘惩罚系数，推向更负
-                        # 保证计算法只降不升
                     )
             # 取top k
             if top_k > 0:
@@ -1378,7 +1373,8 @@ class OWenTLLMForCausalLM(PreTrainedModel, GenerationMixin):
                 # [0]                                : 只要 values，形状 (B, top_k)，已降序
                 # [..., -1, None]                    : -1 = top_k 个里的最后一个 = 第 k 名的分数（门槛值）
                 #                                    : 前面的-1操作会导致降一维，所以这里要用 None 补回来
-                # logits < (门槛值)                  : (B, V) 布尔掩码：True = 名次在 k 之外
+                # logits < 该阈值                   : 得到 (B, V) 布尔掩码，True 表示得分低于第 k 名
+                #                                    : 与第 k 名并列的 token 也会保留
                 # logits[掩码] = -inf                : 布尔掩码写入：一次性置 -inf
                 logits[logits < torch.topk(logits, top_k)[0][..., -1, None]] = -float(
                     "inf"
@@ -1389,14 +1385,15 @@ class OWenTLLMForCausalLM(PreTrainedModel, GenerationMixin):
                 mask = (
                     torch.cumsum(torch.softmax(sorted_logits, dim=-1), dim=-1) > top_p
                 )
-                # mask右移一位，让最大概率的token永远存活
+                # 掩码右移一位，保留首个使累计概率超过 top_p 的 token。
+                # 若概率最高的 token 自身已超过 top_p，右移后仍会把它保留为候选。
                 mask[..., 1:], mask[..., 0] = mask[..., :-1].clone(), 0
                 # scatter(1, sorted_indices, mask) 按 sorted_indices[i, r]（第 r 名的原位置）把决策写回原词表坐标系
                 # 结果[i, 原位置] = mask[i, r]
                 logits[mask.scatter(1, sorted_indices, mask)] = -float("inf")
             next_token = (
-                # torch.multinomial 是使用 logits 作为权重随机，分数越高概率越大。
-                # 前面的softmax只是为了排除非候选项，这里才是真正的算权重取token。
+                # softmax 将过滤后的 logits 转为概率，被置为 -inf 的候选概率为 0。
+                # torch.multinomial 以每行概率为权重随机抽样。num_samples=1 时，每行返回一个 token ID。
                 torch.multinomial(torch.softmax(logits, dim=-1), num_samples=1)
                 if do_sample
                 else torch.argmax(logits, dim=-1, keepdim=True)
@@ -1485,7 +1482,7 @@ def init_model(
         f"Trainable Params: {sum(p.numel() for p in model.parameters() if p.requires_grad) / 1e6:.3f}M"
     )
 
-    # 所有model里的buffer参数迁移到settings.train.device（GPU）
+    # 将模型参数和 buffer 迁移到训练设备。
     return model.to(settings.train.device), tokenizer
 
 
@@ -1569,13 +1566,13 @@ class PretrainDataset(torch.utils.data.Dataset):
         input_ids = torch.tensor(input_ids, dtype=torch.long)
         labels = input_ids.clone()
         # 按实际长度屏蔽 padding，即使 PAD 与 EOS 使用同一 token ID，也保留真实 EOS 标签。
-        # 预训练的输入和监督目标是一样的
+        # 非 padding 的标签沿用输入 token ID，计算损失时取下一位置的标签作为目标。
         labels[len(tokens) :] = PYTORCH_IGNORE_INDEX
         attention_mask = torch.arange(self.max_length) < len(tokens)
         # 返回的数据（这个结构由train_epoch里的消费实现决定）
         #   - 实际输入模型的 token ID；短序列用 PAD 补齐到 max_length。
-        #   - 各位置的预测目标；不参与监督的位置为 PYTORCH_IGNORE_INDEX。
-        #   - 真实 token 为 1，padding 为 0，控制注意力和 MoE 负载统计)。
+        #   - 移位前的标签，忽略位置为 PYTORCH_IGNORE_INDEX。
+        #   - 注意力掩码，真实 token 为 True，padding 为 False，也用于 MoE 负载统计。
         return input_ids, labels, attention_mask
 
 
@@ -1698,7 +1695,7 @@ class SFTDataset(torch.utils.data.Dataset):
     def pre_processing_chat(self, conversations, rng):
         if not conversations:
             raise ValueError("SFT conversations 不能为空")
-        # tool use 数据完整保留不做处理
+        # 含工具定义的对话跳过此处的 system 消息增强。
         if any(conv.get("tools") for conv in conversations):
             return conversations
 
@@ -1736,7 +1733,7 @@ class SFTDataset(torch.utils.data.Dataset):
     def __getitem__(self, index):
         sample = self.samples[index]
         rng = random.Random(f"{self.seed}:{self.epoch}:{index}")
-        # chat模板一般第一个消息是系统提示词
+        # 按配置概率为缺少 system 消息的对话添加系统提示词。
         conversations = self.pre_processing_chat(sample["conversations"], rng)
         # 按模板渲染完整prompt文本
         prompt, spans = self.create_chat_prompt(conversations, return_spans=True)
@@ -1744,8 +1741,9 @@ class SFTDataset(torch.utils.data.Dataset):
         for start, end in spans:
             prefix = prompt[cursor:start]
             segment = self.post_processing_chat(prompt[start:end], rng)
-            # 模板里注入{% generation %}的后面有 '<|im_start|>' + message.role + '\n<think>\n'
-            # 所以下面的校验总是满足条件
+            # assistant 区间必须以角色前缀开头，便于在构造监督区间时排除前缀。
+            #   模板里注入{% generation %}的后面有 '<|im_start|>' + message.role + '\n<think>\n'
+            #   所以下面的校验总是满足条件
             if not segment.startswith(self.assistant_header):
                 raise ValueError("assistant 模板前缀不匹配")
             pieces.extend((prefix, segment))
@@ -1766,7 +1764,7 @@ class SFTDataset(torch.utils.data.Dataset):
             max_length=self.max_length,
         )
         input_ids = encoded.input_ids
-        # 监督目标是assistant、reasoning_content和tool_calls的部分，user、tool的部分由用户或工具输入，不作为预测目标。
+        # 只监督完整落在 assistant 输出区间的 token，区间可以包含思考文本和工具调用。
         labels = self.generate_labels(
             input_ids, encoded.offset_mapping, assistant_spans
         )
@@ -1779,8 +1777,8 @@ class SFTDataset(torch.utils.data.Dataset):
         attention_mask = torch.arange(self.max_length) < valid_length
         # 返回的数据（这个结构由train_epoch里的消费实现决定）
         #   - 实际输入模型的 token ID；短序列用 PAD 补齐。
-        #   - 各位置的预测目标；不参与监督的位置为 PYTORCH_IGNORE_INDEX。
-        #   - 真实 token 为 1，padding 为 0，控制注意力和 MoE 负载统计)。
+        #   - 移位前的标签，忽略位置为 PYTORCH_IGNORE_INDEX。
+        #   - 注意力掩码，真实 token 为 True，padding 为 False，也用于 MoE 负载统计。
         return (
             torch.tensor(input_ids, dtype=torch.long),
             torch.tensor(labels, dtype=torch.long),
@@ -1906,12 +1904,13 @@ def train_epoch(
     batches = iter(loader)
     step = start_step
 
-    # 每accumulation_steps个batches更新参数。每个batch提取batch_size的操作由loader里的SkipBatchSampler完成
+    # 每个窗口最多取 accumulation_steps 个 microbatch，最后不足一个窗口的也处理。
     while window := list(islice(batches, settings.train.accumulation_steps)):
         # 只预取一个累积窗口的 CPU batch，按所有 rank 的有效预测 token 数归一化。
         token_counts = [
             # labels 第 0 维（batch）全部保留。第 1 维（列/位置）：从下标 1 取到末尾 → 丢掉第 0 列
-            # forward 里 logits[..., :-1] 为什么对 labels[..., 1:] 。因为因果预测是预测下一个token，所以要丢掉第 0 列
+            #   forward 里 logits[..., :-1] 为什么对 labels[..., 1:] ？因为因果预测是预测下一个token，所以要丢掉第 0 列
+            #   这样处理以后logits某个位置的数据刚好对应labels里一样位置的预测目标。
             int((labels[:, 1:] != PYTORCH_IGNORE_INDEX).sum())
             for _, labels, _ in window
         ]
@@ -1939,10 +1938,10 @@ def train_epoch(
                     settings, epoch, step, iters, wandb, resume_metadata
                 )
             continue
-        # world_size 是DDP并发时的进程数,对应 “梯度累积与参数更新” 章节里的 $\frac{W}{N}$
+        # 对应文章中的 $W/N$。除以全局监督 token 数 N，乘 W 抵消 DDP 的梯度平均系数。
         loss_scale = world_size / total_tokens.item()
 
-        # 计算本轮学习率
+        # 按窗口结束时的累计 microbatch 序号计算学习率。
         lr = get_learning_rate(
             epoch * iters + window_end,
             settings.train.epochs * iters,
@@ -1968,9 +1967,10 @@ def train_epoch(
                     loss_reduction="sum",
                 )
                 # CE 是 token 损失之和；辅助损失按各 microbatch 的有效预测 token 数加权。
-                # 对应 “梯度累积与参数更新” 章节里的 $\ell_i = \frac{W}{N}\left(C_i + n_i A_i\right)$
+                # 对应文章中的 $\ell_{r,i} = \frac{W}{N}\left(C_{r,i} + n_{r,i} A_{r,i}\right)$。
                 loss = (res.loss + res.aux_loss * token_count) * loss_scale
-            # 每次都放大后做反向传播，累计梯度
+            # backward() 将本次梯度加到参数的 .grad。启用 GradScaler 时，scale(loss) 将损失
+            # 乘以缩放因子 S，反向传播得到的梯度也乘以 S。同一窗口内使用相同的 S。
             scaler.scale(loss).backward()
 
             # checkpoint 保存点，同样最后一个窗口总是保存
@@ -1999,21 +1999,23 @@ def train_epoch(
                     )
             del input_ids, labels, attention_mask, res, loss
 
-        # 对应前面的scaler.scale(loss)，把反向传播得到的梯度除回缩放系数，恢复成真实梯度
+        # 对应前面的 scaler.scale(loss)。启用 GradScaler 时，unscale_ 将累积的 .grad
+        # 原地除以缩放因子 S，接下来的梯度裁剪作用于解除缩放后的梯度。
         scaler.unscale_(optimizer)
 
-        # 梯度裁剪，防止更新过猛、损失剧烈波动。
+        # clip_grad_norm_ 把所有梯度视为拼接后的一个向量来计算 L2 范数。
+        # 超过阈值时，原地按同一个比例缩小各参数的梯度。
         torch.nn.utils.clip_grad_norm_(model.parameters(), settings.train.grad_clip)
-        # 更新参数
+        # 尝试更新参数。启用 GradScaler 且检测到非有限梯度时跳过。
         scaler.step(optimizer)
 
-        # 根据本轮是否溢出，调整下一轮的 S （GradScaler算法的一部分）
+        # 按非有限梯度检测结果及连续有效更新次数维护缩放因子。
         scaler.update()
 
         # 然后清空梯度
         optimizer.zero_grad(set_to_none=True)
 
-        # 保存间隔仍按 microbatch 计数；若落在累积窗口中间，延后到本窗口更新完成。
+        # 保存间隔仍按 microbatch 计数，触发后在累积窗口处理完毕时保存。
         if save_pending:
             save_training_checkpoint(
                 settings, epoch, step, iters, wandb, resume_metadata
@@ -2074,7 +2076,7 @@ if __name__ == "__main__":
     if args.tokenizer:
         LLM_TRAIN_SETTINGS.loader.tokenizer_path = args.tokenizer
 
-    # ========== 2. 转换成训练用的配置目录和模型参数 ==========
+    # ========== 2. 创建输出目录并构造模型配置 ==========
     os.makedirs(f"{LLM_TRAIN_SETTINGS.save.dir}/output", exist_ok=True)
     lm_config = LLMTrainRuntimeConfig(LLM_TRAIN_SETTINGS)
 
@@ -2101,8 +2103,8 @@ if __name__ == "__main__":
         else None
     )
     # CPU 执行 FP32；仅 CUDA FP16 启用 GradScaler。
-    # GradScaler的作用是保证 FP16 混合精度训练的数值稳定性。检测到 inf 或 NaN 梯度时，跳过本次参数更新。
-    # 梯度过小，在 FP16 中变成 0；缩放后过大又可能变成 inf。
+    # FP16 无法表示的一些小梯度会舍入为零。缩放损失可减轻这种下溢。
+    # 缩放后的梯度仍可能溢出。检测到 inf 或 NaN 梯度时，跳过本次参数更新。
     scaler = torch.amp.GradScaler(
         device_type, enabled=(device_type == "cuda" and dtype == torch.float16)
     )
@@ -2110,7 +2112,7 @@ if __name__ == "__main__":
     # 创建优化器，即根据梯度计算并执行参数更新的算法。在 PyTorch 中，优化器对象还保存学习率、动量等运行状态。
     optimizer = create_optimizer(model, LLM_TRAIN_SETTINGS)
 
-    # ========== 5. 配wandb可视化， https://wandb.ai/ 注册账号和项目 ==========
+    # ========== 5. 初始化 SwanLab 日志（配置字段名为 wandb） ==========
     wandb = None
     if (
         is_main_process()
@@ -2154,7 +2156,7 @@ if __name__ == "__main__":
         skip = start_step if (epoch == start_epoch and start_step > 0) else 0
         loader, iters = create_train_loader(LLM_TRAIN_SETTINGS, train_ds, epoch, skip)
 
-        # 续训时第一个epoch回复随机数状态
+        # 续训的首个 epoch 从检查点恢复当前 rank 的随机数状态。
         if ckp_data and epoch == start_epoch:
             if ckp_data.get("iters", iters) != iters:
                 raise ValueError("数据批次数与检查点不一致，无法按保存位置续训")
