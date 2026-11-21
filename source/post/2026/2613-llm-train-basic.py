@@ -394,7 +394,7 @@ def find_weight_file(directory, settings, weight, *, resume=False):
         else lm_get_ckp_file_name(settings, weight)
     )
     current = Path(directory) / name
-    legacy_name = f"{str(weight)[1:]}-{settings.param.hidden_size}{'-moe' if settings.param.use_moe else ''}"
+    legacy_name = f"{weight.name[1:]}-{settings.param.hidden_size}{'-moe' if settings.param.use_moe else ''}"
     legacy = Path(directory) / (legacy_name + (".resume.pth" if resume else ".pth"))
     if current.is_file():
         return current
