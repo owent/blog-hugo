@@ -1,0 +1,123 @@
+{
+  "baseOption": {
+    "aria": {
+      "enabled": true,
+      "label": {
+        "description": "三套环境的无加密无压缩 TCP 回环吞吐量。Linux 测试机从 663 增至 2,651 MiB/s，WSL2 和 Windows 原生曲线保留各自主矩阵的分配器。"
+      }
+    },
+    "animation": false,
+    "legend": {
+      "bottom": 2,
+      "itemWidth": 15,
+      "itemGap": 12
+    },
+    "tooltip": {
+      "trigger": "axis",
+      "confine": true,
+      "axisPointer": {
+        "type": "line"
+      }
+    },
+    "grid": {
+      "left": 12,
+      "right": 18,
+      "top": 34,
+      "bottom": 30,
+      "containLabel": true
+    },
+    "xAxis": {
+      "type": "category",
+      "data": ["200 B", "1 KiB", "8 KiB", "64 KiB", "300 KiB"],
+      "axisLabel": {
+        "interval": 0
+      }
+    },
+    "yAxis": {
+      "type": "value",
+      "name": "MiB/s",
+      "min": 0
+    },
+    "series": [
+      {
+        "name": "Linux",
+        "type": "line",
+        "data": [662.7, 1427.6, 2148.1, 2489.9, 2650.9],
+        "symbol": "circle",
+        "symbolSize": 6,
+        "lineStyle": {
+          "width": 2,
+          "type": "solid",
+          "color": "#267a93"
+        },
+        "itemStyle": {
+          "color": "#267a93"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "WSL2",
+        "type": "line",
+        "data": [614.8, 1266.7, 1007.1, 1343.9, 1109.2],
+        "symbol": "rect",
+        "symbolSize": 8,
+        "lineStyle": {
+          "width": 2,
+          "type": "dashed",
+          "color": "#399886"
+        },
+        "itemStyle": {
+          "color": "#399886"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "Windows",
+        "type": "line",
+        "data": [147.7, 252.0, 494.6, 367.2, 551.8],
+        "symbol": "triangle",
+        "symbolSize": 6,
+        "lineStyle": {
+          "width": 2,
+          "type": "dotted",
+          "color": "#b2772d"
+        },
+        "itemStyle": {
+          "color": "#b2772d"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      }
+    ]
+  },
+  "media": [
+    {
+      "query": {
+        "maxWidth": 310
+      },
+      "option": {
+        "xAxis": {
+          "axisLabel": {
+            "rotate": 28,
+            "fontSize": 11
+          }
+        }
+      }
+    },
+    {
+      "option": {
+        "xAxis": {
+          "axisLabel": {
+            "rotate": 0,
+            "fontSize": 12
+          }
+        }
+      }
+    }
+  ]
+}

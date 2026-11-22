@@ -1,0 +1,67 @@
+{
+  "aria": {
+    "enabled": true,
+    "label": {
+      "description": "Linux TCP 的 200 B 消息收包速率。无加密约 347 万条每秒，三种 AES-GCM 约 150 至 154 万条每秒。"
+    }
+  },
+  "animation": false,
+  "tooltip": {
+    "trigger": "axis",
+    "axisPointer": {
+      "type": "shadow"
+    },
+    "confine": true
+  },
+  "grid": {
+    "left": 4,
+    "right": 21,
+    "top": 8,
+    "bottom": 28,
+    "containLabel": true
+  },
+  "xAxis": {
+    "type": "value",
+    "min": 0,
+    "max": 4,
+    "interval": 1,
+    "name": "百万条消息/s",
+    "nameLocation": "middle",
+    "nameGap": 24
+  },
+  "yAxis": {
+    "type": "category",
+    "inverse": true,
+    "data": ["无加密", "AES-128-GCM", "AES-192-GCM", "AES-256-GCM", "ChaCha20-Poly1305", "ChaCha20"],
+    "axisTick": {
+      "show": false
+    },
+    "axisLabel": {
+      "interval": 0,
+      "fontSize": 11
+    }
+  },
+  "series": [
+    {
+      "name": "QPS（百万条消息/s）",
+      "type": "bar",
+      "barMaxWidth": 22,
+      "label": {
+        "show": true,
+        "position": "right",
+        "distance": 4,
+        "fontSize": 11
+      },
+      "itemStyle": {
+        "color": "#267a93",
+        "borderRadius": [
+          0,
+          3,
+          3,
+          0
+        ]
+      },
+      "data": [3.47, 1.53, 1.54, 1.5, 0.87, 0.35]
+    }
+  ]
+}

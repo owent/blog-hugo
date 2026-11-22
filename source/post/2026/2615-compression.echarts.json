@@ -1,0 +1,135 @@
+{
+  "baseOption": {
+    "aria": {
+      "enabled": true,
+      "label": {
+        "description": "Linux TCP 在四档包长下的压缩对比。可压缩的测试载荷上，不压缩的吞吐最高，LZ4 其次，zstd 两个等级的曲线相近。"
+      }
+    },
+    "animation": false,
+    "legend": {
+      "bottom": 2,
+      "itemWidth": 15,
+      "itemGap": 12
+    },
+    "tooltip": {
+      "trigger": "axis",
+      "confine": true,
+      "axisPointer": {
+        "type": "line"
+      }
+    },
+    "grid": {
+      "left": 12,
+      "right": 18,
+      "top": 34,
+      "bottom": 30,
+      "containLabel": true
+    },
+    "xAxis": {
+      "type": "category",
+      "data": ["1 KiB", "8 KiB", "64 KiB", "300 KiB"],
+      "axisLabel": {
+        "interval": 0
+      }
+    },
+    "yAxis": {
+      "type": "value",
+      "name": "MiB/s",
+      "min": 0
+    },
+    "series": [
+      {
+        "name": "无压缩",
+        "type": "line",
+        "data": [1427.6, 2148.1, 2489.9, 2650.9],
+        "symbol": "circle",
+        "symbolSize": 6,
+        "lineStyle": {
+          "width": 2,
+          "type": "solid",
+          "color": "#267a93"
+        },
+        "itemStyle": {
+          "color": "#267a93"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "LZ4 default",
+        "type": "line",
+        "data": [761.2, 947.2, 1168.0, 861.7],
+        "symbol": "rect",
+        "symbolSize": 6,
+        "lineStyle": {
+          "width": 2,
+          "type": "solid",
+          "color": "#399886"
+        },
+        "itemStyle": {
+          "color": "#399886"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "zstd level 3",
+        "type": "line",
+        "data": [170.9, 360.1, 502.1, 455.5],
+        "symbol": "circle",
+        "symbolSize": 6,
+        "lineStyle": {
+          "width": 2,
+          "type": "solid",
+          "color": "#6c79b8"
+        },
+        "itemStyle": {
+          "color": "#6c79b8"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "zstd level 6",
+        "type": "line",
+        "data": [170.1, 360.3, 502.7, 424.2],
+        "symbol": "emptyDiamond",
+        "symbolSize": 8,
+        "lineStyle": {
+          "width": 2,
+          "type": "dashed",
+          "color": "#b2772d"
+        },
+        "itemStyle": {
+          "color": "#b2772d"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      }
+    ]
+  },
+  "media": [
+    {
+      "query": {
+        "maxWidth": 380
+      },
+      "option": {
+        "grid": {
+          "bottom": 54
+        }
+      }
+    },
+    {
+      "option": {
+        "grid": {
+          "bottom": 30
+        }
+      }
+    }
+  ]
+}

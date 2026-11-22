@@ -1,0 +1,105 @@
+{
+  "baseOption": {
+    "aria": {
+      "enabled": true,
+      "label": {
+        "description": "Linux 同批次交错运行的 TCP 与共享内存中位吞吐量。8 KiB 时两条曲线分别为 1,939 与 2,621 MiB/s，64 KiB 时分别为 1,973 与 2,798 MiB/s。"
+      }
+    },
+    "animation": false,
+    "legend": {
+      "bottom": 2,
+      "itemWidth": 15,
+      "itemGap": 12
+    },
+    "tooltip": {
+      "trigger": "axis",
+      "confine": true,
+      "axisPointer": {
+        "type": "line"
+      }
+    },
+    "grid": {
+      "left": 12,
+      "right": 18,
+      "top": 34,
+      "bottom": 30,
+      "containLabel": true
+    },
+    "xAxis": {
+      "type": "category",
+      "data": ["1 KiB", "4 KiB", "8 KiB", "16 KiB", "32 KiB", "64 KiB"],
+      "axisLabel": {
+        "interval": 0
+      }
+    },
+    "yAxis": {
+      "type": "value",
+      "name": "MiB/s",
+      "min": 0
+    },
+    "series": [
+      {
+        "name": "TCP",
+        "type": "line",
+        "data": [1324, 1841, 1939, 1484, 1672, 1973],
+        "symbol": "circle",
+        "symbolSize": 8,
+        "lineStyle": {
+          "width": 2,
+          "type": "dashed",
+          "color": "#267a93"
+        },
+        "itemStyle": {
+          "color": "#267a93"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "共享内存",
+        "type": "line",
+        "data": [1387, 2284, 2621, 2715, 2763, 2798],
+        "symbol": "rect",
+        "symbolSize": 6,
+        "lineStyle": {
+          "width": 2,
+          "type": "solid",
+          "color": "#399886"
+        },
+        "itemStyle": {
+          "color": "#399886"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      }
+    ]
+  },
+  "media": [
+    {
+      "query": {
+        "maxWidth": 310
+      },
+      "option": {
+        "xAxis": {
+          "axisLabel": {
+            "rotate": 28,
+            "fontSize": 11
+          }
+        }
+      }
+    },
+    {
+      "option": {
+        "xAxis": {
+          "axisLabel": {
+            "rotate": 0,
+            "fontSize": 12
+          }
+        }
+      }
+    }
+  ]
+}
