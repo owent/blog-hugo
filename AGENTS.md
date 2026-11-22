@@ -22,8 +22,9 @@
 | --- | --- |
 | 新写文章、把笔记整理成新稿、重写为一篇新文章 | `article-writer` |
 | 润色、扩写、校对或修复已有文章 | `article-refiner` |
+| 解释本站嵌入语法、排查文章在卡片或正文中的渲染、维护内容扩展 | `hugo-content-rendering` |
 
-先读匹配的 `.agents/skills/<name>/SKILL.md`；只有任务需要图表嵌入细节时，再读该 Skill 的 `references/embedding-syntax.md`。主题、样式、脚本或普通仓库维护不触发文章 Skill。
+按交付目标选择 Skill。写稿或改稿涉及嵌入资源时，直接查[博客功能与内容语法](docs/hugo-content.md)的对应小节。审阅文章时，先按目标后缀识别 `![](...)` 引用的是普通图片、图表还是外部代码，再决定是否改动。纯主题样式和一般仓库维护按对应源码处理。
 
 ## 写作基线
 
@@ -120,7 +121,7 @@
 - 按“日常流程”完成语义对照和全文模式检查，分别复核相关页面文案与正文，保留作者判断和必要技术关系。
 - 检查 YAML、围栏语言、资源命名、内部链接和图表说明。
 - 修改文章后运行 `hugo --buildDrafts --renderToMemory`。若本地可用 markdownlint-cli2，按 `.markdownlint-cli2.yaml` 检查改动文章；工具不可用时说明验证边界。
-- 修改图表时运行对应渲染器或语法检查。修改 SCSS 时按下文重新生成 CSS。
+- 修改图表时按[渲染结果验证](docs/hugo-content.md#按渲染结果验证)。D2、PlantUML、其依赖或实例序号有变时，用 `python scripts/build-d2.py --buildDrafts --renderToMemory` 完成构建。移动或移除前面的图片后出现 `SVG missing` 也走此入口。修改 SCSS 时按下文重新生成 CSS。
 - 最后运行 `git diff --check`，复查 diff 中是否有无关改动、临时文件或生成物。
 
 ## AI 提示词与 Skill 维护

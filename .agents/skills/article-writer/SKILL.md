@@ -1,33 +1,11 @@
 ---
 name: article-writer
-description: Use this skill when drafting a new technical blog post in this Hugo repository, including requests to 写文章、起草博客、把笔记或调研整理成新稿, or create a new post's title, summary, front matter, structure, examples, and visuals. Do not use for localized edits, polishing, or factual repairs to an existing article; use article-refiner instead.
+description: 为本站新写 Hugo 技术文章，包括把笔记或调研整理为新稿、拟定标题摘要、组织论证及配套示例。已有文章的定向修改使用 article-refiner。
 ---
 
-# Article Writer
+# 新写技术文章
 
-## Outcome
-
-产出一篇有事实依据、保留作者判断、符合仓库约定的新 Hugo 技术文章；材料不足时，产出可执行的大纲和信息缺口，不补写虚构内容。
-
-## Workflow
-
-1. 读取 `../../../AGENTS.md`，按其“日常流程”确认主题、读者、核心判断、已有材料、适用边界和交付位置。
-2. 搜索同主题文章；需要校准语气时只抽样 2 至 3 篇相关旧文，避免重复背景或模仿固定口头禅。
-3. 将事实、作者判断、待验证信息分开。易变结论使用当前一手来源；无法验证的关键内容标注缺口。
-4. 根据材料建立章节，不强制套用固定模板。优先保留实测数据、代码、失败记录和取舍理由。
-5. 写完内容后再判断是否需要图。需要嵌入细节时读取
-   `references/embedding-syntax.md`，并按 `AGENTS.md` 选择图表类型。
-6. 将标题、摘要、正文和图注一起审阅，确认承诺有依据、作者判断有材料支撑；按 `AGENTS.md` 分别完成语义和风格复核。
-7. 按 `AGENTS.md` 运行 Hugo、Markdown、图表和 diff 验证；修复后再交付。
-
-## Deliverable
-
-- 用户指定目标文件时，直接写入该文件并保留编号和资源命名约束。
-- 用户只要求草稿且未指定文件时，默认给出 3 个短标题候选、推荐标题、摘要、front matter 和正文。
-- 只有图表能明显降低理解成本时，才附图表或资源建议。
-
-## Guardrails
-
-- 不编造作者经历、实验、数据、引用或观点，也不通过故意错字制造“人味”。
-- 不把新文章写成新闻稿、产品说明、论文摘要或每节节奏相同的提纲扩写。
-- 不代替用户做技术选型；给出依据、权衡和待确认项。
+1. 按[仓库指南](../../../AGENTS.md)确认读者、核心判断、已有材料和交付位置。查找相近文章，确定哪些背景可通过内部链接交代。
+2. 先写材料足以支撑的正文，再拟标题、摘要和 front matter。材料有关键缺口时，交付可继续写作的大纲及缺口。用户只要求未指定文件的草稿时，提供三个短标题候选、推荐标题、摘要、front matter 和正文。
+3. 根据论证选择示例。需要展示已有源文件的一段时，核对行号并引用原文件。需要横幅、图表、代码或公式时，查[本站内容语法](../../../docs/hugo-content.md)，选取实际支持的入口和配套资源。
+4. 核对稳定路径、资源命名、摘要承诺和作者判断。按仓库指南构建文章，并在需要展示结果的页面验证新增的嵌入内容。

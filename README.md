@@ -12,6 +12,8 @@ See [About](source/about/_index.md)
 
 新博客系统采用 [Hugo][3] ， 主题是自己开发的 [hugo-theme-distinctionpp][4] 。
 
+文章图片、横幅、图表、外部代码和公式的写法见[博客功能与内容语法](docs/hugo-content.md)。
+
 ```bash
 # We use Graphviz to generate graph and use OptiPNG to make png files smaller,
 # install
@@ -27,7 +29,6 @@ optipng -o6 1807-02.dot.png
 ```
 
 {% include "./LICENSE.md" %}
-
 
 ## Search Engine Support
 

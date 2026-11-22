@@ -25,6 +25,12 @@
 | [Evaluating skill output quality](https://agentskills.io/skill-creation/evaluating-skills) | 将可客观验证的要求写成断言；语气和作者感仍需人工评审。规则增加但质量不升时，优先删减。 | 修改核心流程或收到新的质量反馈 |
 | [Claude Code project memory](https://code.claude.com/docs/en/memory) | Claude 兼容入口使用 `@` 导入 `AGENTS.md`，避免复制全局规则；相对路径从导入文件所在目录解析。 | Claude Code 的加载位置或导入语法变化 |
 
+### 内容渲染 Skill 的识别检查
+
+评估路由时可使用同一个资源提出不同任务。例如要求“把实验笔记写成含代码片段的新文章”，再要求“查明同一个片段为何显示错行”。观察 Agent 选择的 Skill、找到的源文件和给出的调用。只改卡片配色时应走主题样式入口。
+
+评估语法时，让 Agent 根据[2602 的实际示例](../../source/post/2026/2602.md)分别给出可执行的嵌入和教程里展示该调用的写法。把回答放进临时文章，核对源行、语言 class、图表或字面量。横幅另查卡片和单篇。检查对象和源码入口见[博客功能与内容语法](../hugo-content.md)。
+
 ## 去模板化写作
 
 | 来源 | 当前结论 | 应用边界 |

@@ -168,9 +168,8 @@ Articles without a banner declaration retain the leading-image card preview.
 
 See http://www.chartjs.org for more detail
 
-```
-{{< chart id="ID" style="css styles canvas" class="class of canvas" alt="text before rended" >}}
-// json options of [chartjs](http://www.chartjs.org), for example
+```markdown
+{{< chart max-width="720px" alt="Bar chart" >}}
 {
   "type": "bar",
   "data": {
@@ -202,8 +201,8 @@ See http://www.chartjs.org for more detail
 
 See https://mermaidjs.github.io/
 
-```
-{{< mermaid id="ID" style="css styles for div" class="class of div" >}}
+```markdown
+{{< mermaid >}}
 sequenceDiagram
 Alice ->> Bob: Hello Bob, how are you?
 Bob-->>John: How about you John?
@@ -230,15 +229,15 @@ end
 
 See https://echarts.apache.org/ for more detail.
 
-```
-{{</* echarts id="ID" width="100%" max-width="720px" height="500px" style="css styles" class="class" extensions="gl" alt="text before rendered" */>}}
+```markdown
+{{< echarts max-width="720px" height="500px" >}}
 {
   "title": { "text": "Line Chart" },
   "xAxis": { "type": "category", "data": ["Mon", "Tue", "Wed"] },
   "yAxis": { "type": "value" },
   "series": [{ "type": "line", "data": [120, 200, 150] }]
 }
-{{</* /echarts */>}}
+{{< /echarts >}}
 ```
 
 Use `extensions="gl"` to load the ECharts-GL extension for 3D charts.
@@ -247,13 +246,13 @@ Use `extensions="gl"` to load the ECharts-GL extension for 3D charts.
 
 See https://plotly.com/javascript/ for more detail.
 
-```
-{{</* plotly id="ID" width="100%" max-width="720px" height="500px" style="css styles" class="class" extensions="gl3d" alt="text before rendered" */>}}
+```markdown
+{{< plotly max-width="720px" height="500px" >}}
 {
   "data": [{ "type": "scatter", "mode": "lines", "x": [1, 2, 3], "y": [2, 4, 3] }],
   "layout": { "title": "Line Chart" }
 }
-{{</* /plotly */>}}
+{{< /plotly >}}
 ```
 
 Use `extensions="gl3d"` (or `cartesian`, `geo`, `gl2d`, `mapbox`, `finance`) to load a Plotly.js partial bundle. Plotly.js partial bundles redefine the global `Plotly` object and cannot be stacked; when a page mixes minimal charts with extended charts, the loader falls back to the full bundle.
@@ -281,21 +280,25 @@ All diagram and chart renderers accept `width`, `height`, `max-width`, `max-heig
 
 ### Supported Formats
 
-| Type | Image Syntax | Code Block | Shortcode (src) | Shortcode (inline) |
+| Type | Image Syntax | Fence language | Shortcode (src) | Shortcode (inline) |
 |------|-------------|------------|-----------------|-------------------|
-| **Draw.io** | `![](file.drawio)` | ` ```drawio ` | `{{</* drawio src="file.drawio" */>}}` | `{{</* drawio */>}}XML{{</* /drawio */>}}` |
-| **Mermaid** | `![](file.mermaid)` | ` ```mermaid ` | `{{</* mermaid src="file.mermaid" */>}}` | `{{</* mermaid */>}}code{{</* /mermaid */>}}` |
-| **Excalidraw** | `![](file.excalidraw)` | ` ```excalidraw ` | `{{</* excalidraw src="file.excalidraw" */>}}` | `{{</* excalidraw */>}}JSON{{</* /excalidraw */>}}` |
-| **Chart.js** | `![](file.chart.json)` | ` ```chart ` or ` ```chartjs ` | `{{</* chart src="file.chart.json" */>}}` | `{{</* chart */>}}JSON{{</* /chart */>}}` |
-| **ECharts** | `![](file.echarts.json)` | ` ```echarts ` | `{{</* echarts src="file.echarts.json" */>}}` | `{{</* echarts */>}}JSON{{</* /echarts */>}}` |
-| **Plotly.js** | `![](file.plotly.json)` | ` ```plotly ` | `{{</* plotly src="file.plotly.json" */>}}` | `{{</* plotly */>}}JSON{{</* /plotly */>}}` |
-| **D2** | `![](file.d2)` | ` ```d2 ` | `{{</* d2 src="file.d2" */>}}` | `{{</* d2 */>}}code{{</* /d2 */>}}` |
-| **PlantUML** | `![](file.puml)` / `.plantuml` | ` ```plantuml ` | `{{</* plantuml src="file.puml" */>}}` | `{{</* plantuml */>}}code{{</* /plantuml */>}}` |
-| **Code files** | `![](file.py)` | — | `{{</* codeblock src="file.py" */>}}` | — |
+| **Draw.io** | `![](file.drawio)` | `drawio` | `{{< drawio src="file.drawio" >}}{{< /drawio >}}` | `{{< drawio >}}XML{{< /drawio >}}` |
+| **Mermaid** | `![](file.mermaid)` | `mermaid` | `{{< mermaid src="file.mermaid" >}}{{< /mermaid >}}` | `{{< mermaid >}}code{{< /mermaid >}}` |
+| **Excalidraw** | `![](file.excalidraw)` | `excalidraw` | `{{< excalidraw src="file.excalidraw" >}}{{< /excalidraw >}}` | `{{< excalidraw >}}JSON{{< /excalidraw >}}` |
+| **Chart.js** | `![](file.chart.json)` | `chart` or `chartjs` | `{{< chart src="file.chart.json" >}}{{< /chart >}}` | `{{< chart >}}JSON{{< /chart >}}` |
+| **ECharts** | `![](file.echarts.json)` | `echarts` | `{{< echarts src="file.echarts.json" >}}{{< /echarts >}}` | `{{< echarts >}}JSON{{< /echarts >}}` |
+| **Plotly.js** | `![](file.plotly.json)` | `plotly` | `{{< plotly src="file.plotly.json" >}}{{< /plotly >}}` | `{{< plotly >}}JSON{{< /plotly >}}` |
+| **D2** | `![](file.d2)` | `d2` | `{{< d2 src="file.d2" >}}{{< /d2 >}}` | `{{< d2 >}}code{{< /d2 >}}` |
+| **PlantUML** | `![](file.puml)` / `.plantuml` | `plantuml` | `{{< plantuml src="file.puml" >}}{{< /plantuml >}}` | `{{< plantuml >}}code{{< /plantuml >}}` |
+| **Code files** | `![](file.py)` | — | `{{< codeblock src="file.py" >}}` | — |
 
 ### External code files
 
-Image references to local files that are neither image formats (`png`, `jpg`, `svg`, …) nor the diagram formats above render as highlighted code blocks; the `codeblock` shortcode uses the same partial. Both accept `lang` (or `language`), `from`, `to`, `class`, and `title`. The image syntax passes them in the title's `{...}` block, e.g. `![](file.py "caption {lang=python from=6 to=8}")`; the shortcode uses named parameters. Without `lang`, the file extension maps to a highlight.js language (`.py` → `python`, `.cc` → `cpp`, `.toml` → `ini`, …); unmapped extensions are emitted without a language class so the client-side highlight.js auto-detection applies. `from`/`to` select a 1-based inclusive line range. Files are read at build time from local paths relative to the article; remote URLs, absolute paths, missing files, and invalid ranges fail the build. The block reuses the standard `<pre><code class="language-…">` markup from fenced code blocks, so no extra scripts or styles are loaded.
+A Markdown image pointing to a local source file and the `codeblock` shortcode both call the same code partial. For example, `![](file.py "caption {lang=python from=6 to=8}")` displays lines 6 through 8. The text before the braces sets the title. The shortcode accepts `src`, `lang` (or `language`), `from`, `to`, `class`, and `title` as named parameters.
+
+Line numbers start at 1 and include both endpoints. An explicit language takes priority over the filename mapping (e.g. `.py` → `python`, `.cc` → `cpp`, `.toml` → `ini`). For an unmapped extension, the template leaves language detection to highlight.js. The output uses the same `<pre><code>` markup and highlighter as ordinary code fences.
+
+The `codeblock` shortcode requires a local path relative to the article. A URL or root-relative path in Markdown image syntax skips the external-code branch. Once a reference reaches the code partial, Hugo reads the source during the build and reports missing files or invalid line ranges.
 
 ### D2 build integration
 
@@ -424,9 +427,8 @@ params:
 
 ### Examples
 
-See [examples/diagram-demo.md](examples/diagram-demo.md) for a comprehensive demonstration of all diagram and chart rendering methods.
+The [diagram demo](examples/diagram-demo.md) uses the following browser-rendered diagram and chart files.
 
-Example files included:
 - `examples/2509-test-diagram.drawio` - Draw.io diagram
 - `examples/2509-test-diagram.mermaid` - Mermaid diagram
 - `examples/2509-test-diagram.excalidraw` - Excalidraw diagram
