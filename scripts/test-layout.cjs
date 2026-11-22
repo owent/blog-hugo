@@ -10,6 +10,7 @@ const output = path.resolve(process.env.BLOG_TEST_OUTPUT || '_agent_tmp/layout-r
 fs.mkdirSync(output, {recursive:true});
 const sizes = [[320,640],[360,800],[390,844],[568,320],[576,800],[768,1024],[820,1180],[1024,768],[1199,900],[1200,900],[1440,1000],[1920,1080],[2560,1440],[3440,1440],[3840,2160]];
 const pages = ['/', '/archives/', '/tags/hugo.html', '/2026/2602.html', '/about/'];
+const listOnlyBanners = [2608, 2609, 2610, 2611, 2612, 2613, 2614];
 const mime = {'.html':'text/html','.css':'text/css','.js':'text/javascript','.png':'image/png','.svg':'image/svg+xml','.jpg':'image/jpeg','.woff2':'font/woff2'};
 const luminance=color=>color.match(/[\d.]+/g).slice(0,3).map(v=>Number(v)/255)
  .map(v=>v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4)
@@ -136,10 +137,23 @@ async function checkAdaptiveToc(page, browserName) {
 }
 async function checkArticleMedia(page, browserName) {
  const results=[];
- for(const post of ['2610','2611','2612']) {
+ for(const post of listOnlyBanners) {
+  await page.goto(`https://owent.net/2026/${post}.html`,{waitUntil:'load'});
+  assert.equal(await page.locator(`.reading-panel .post-banner, img[src$="/${post}-banner.png"]`).count(),0,`${browserName} ${post}: list-only banner reached the article`);
+ }
+ for(const [post,wrapper] of [['2610','p'],['2611','figure'],['2612','div']]) {
   await page.goto(`https://owent.net/2026/${post}.html`,{waitUntil:'load'});
   assert.equal(await page.locator('.toc').evaluate(toc=>toc.open),false,`${browserName} ${post}: directory should start collapsed`);
-  await page.locator('.article-entry > p img').first().evaluate(img=>img.decode());
+  await page.locator('.article-entry').evaluate((entry,{post,wrapper})=>{
+   const fixture=document.createElement(wrapper);
+   if(wrapper==='div') fixture.className='post-banner post-banner--single post-banner--before-content';
+   const image=new Image();
+   image.src=`/2026/${post}-banner.png`;
+   image.alt='Banner regression fixture';
+   fixture.append(image);
+   entry.prepend(fixture);
+  },{post,wrapper});
+  await page.locator('.article-entry img').first().evaluate(img=>img.decode());
   for(const [width,height] of sizes) {
    await page.setViewportSize({width,height});
    await page.locator('.toc').evaluate(toc=>toc.open=innerWidth>=1200);
@@ -214,7 +228,7 @@ async function checkArticleMedia(page, browserName) {
  assert.ok(below.top>=below.tocBottom,`${browserName}: full-width media probe is not below the directory`);
  assert.ok(Math.abs(below.width-below.available)<2,`${browserName}: image stays narrow below the directory`);
  fs.writeFileSync(path.join(output,`${browserName}-article-media.json`),JSON.stringify(results,null,2));
- console.log(`${browserName}: ${results.length} real-article banner checks plus linked image, figure, tall directory and font scaling checks passed`);
+ console.log(`${browserName}: ${listOnlyBanners.length} list-only banners and ${results.length} article media layout checks passed`);
 }
 (async()=>{
  const results=[];
@@ -239,8 +253,11 @@ async function checkArticleMedia(page, browserName) {
     const archive=await page.locator('#index-content, #archive-content').count()>0;
     const label=url==='/'?'home':url.includes('archives')?'archives':url.includes('tags')?'tags':url.includes('2602')?'article':'about';
     if(label==='home') {
-     assert.equal(await page.locator('.archive-type-2612 .archive-summary > .archive-summary-banner').count(),1,'home banner was not extracted into the outer summary');
-     assert.equal(await page.locator('.archive-type-2612 .archive-summary-content img').count(),0,'home banner is still inside the text excerpt');
+     for(const post of listOnlyBanners) {
+      const card=page.locator(`.archive-type-${post}`);
+      assert.equal(await card.locator(`.archive-summary > .post-banner--list img[src$="/${post}-banner.png"]`).count(),1,`${post}: missing home card banner`);
+      assert.equal(await card.locator(`.archive-summary-content img[src$="/${post}-banner.png"]`).count(),0,`${post}: banner reached the text excerpt`);
+     }
      assert.equal(await page.locator('.archive-heading').count(),0,'home still has a heading row');
      assert.equal(await page.locator('a[href$="index.xml"]').count(),1,'home has duplicate RSS links');
      assert.equal(await page.locator('#main-nav #nav-rss-link').count(),1,'navigation RSS link missing');
