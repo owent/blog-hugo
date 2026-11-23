@@ -1,0 +1,993 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>libatbus 性能对比表</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --surface: light-dark(#fff, #1a252b);
+      --background: light-dark(#f4f7f8, #111a1f);
+      --ink: light-dark(#182c35, #e6eff2);
+      --muted: light-dark(#48616b, #acc3cd);
+      --line: light-dark(#d7e1e5, #40525a);
+      --accent: light-dark(#116783, #9bdbec);
+      --bar: light-dark(#cdebef, #254c59);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--background);
+      color: var(--ink);
+      font: 1rem/1.55 system-ui, sans-serif;
+    }
+    main { max-width: 72rem; margin: 0 auto; padding: clamp(1rem, 4vw, 3rem); }
+    h1 { margin: .4rem 0; line-height: 1.2; }
+    h2 { margin-top: 0; font-size: 1.2rem; }
+    p { margin: .5rem 0 1rem; }
+    a { color: var(--accent); }
+    .filters { display: flex; flex-wrap: wrap; gap: .75rem 1.25rem; margin: 1.5rem 0 .75rem; }
+    label { display: grid; gap: .25rem; color: var(--muted); min-width: 0; }
+    label[hidden] { display: none; }
+    select, button { font: inherit; color: var(--ink); }
+    select {
+      max-width: 100%;
+      min-height: 2.5rem;
+      padding: .35rem;
+      border: 1px solid var(--line);
+      border-radius: .35rem;
+      background: var(--surface);
+    }
+    .note { color: var(--muted); font-size: .9rem; }
+    .scroll { overflow: auto; border: 1px solid var(--line); border-radius: .45rem; }
+    table {
+      width: 100%;
+      border-spacing: 0;
+      background: var(--surface);
+      font-size: .9rem;
+      font-variant-numeric: tabular-nums;
+    }
+    th, td { border-bottom: 1px solid var(--line); }
+    thead th { padding: .55rem .7rem; background: var(--background); }
+    tbody tr:last-child > * { border-bottom: 0; }
+    tr > :first-child {
+      position: sticky;
+      left: 0;
+      width: 15rem;
+      padding: .45rem .7rem;
+      text-align: left;
+      border-right: 1px solid var(--line);
+    }
+    tbody th { background: var(--surface); overflow-wrap: anywhere; }
+    .measure { min-width: 8rem; padding: 0; text-align: right; }
+    .measure button {
+      display: block;
+      width: 100%;
+      padding: .5rem .65rem;
+      border: 0;
+      text-align: right;
+      white-space: nowrap;
+      background: linear-gradient(to right, var(--bar) var(--fill, 0%), transparent var(--fill, 0%));
+      cursor: pointer;
+    }
+    .measure button:hover { color: var(--accent); text-decoration: underline; }
+    .measure span { display: block; }
+    .measure .compression { color: var(--muted); font-size: .82rem; }
+    .measure .additional { margin-top: .2rem; font-weight: 600; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+    dialog {
+      width: min(34rem, calc(100% - 2rem));
+      max-height: calc(100% - 2rem);
+      padding: 1.2rem;
+      border: 1px solid var(--line);
+      border-radius: .55rem;
+      background: var(--surface);
+      color: var(--ink);
+    }
+    dialog::backdrop { background: #0007; }
+    dl { display: grid; grid-template-columns: minmax(5rem, auto) 1fr; gap: .3rem 1rem; }
+    dt { color: var(--muted); }
+    dd { margin: 0; overflow-wrap: anywhere; }
+    dialog button { padding: .3rem 1rem; }
+    @media (max-width: 38rem) {
+      tr > :first-child { min-width: 8.5rem; width: 8.5rem; max-width: 8.5rem; }
+      .filters { display: grid; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <a href="2615.html">服务端通信库（libatbus）新版本设计的性能测试</a>
+  <h1>libatbus 性能对比表</h1>
+  <p>2026 年 11 月 18 日 · 3 套环境 · TCP / 共享内存 · 660 条主矩阵记录</p>
+  <noscript><p>交互筛选需要 JavaScript。原始数据可从下方的 CSV 链接查阅。</p></noscript>
+  <div class="filters">
+    <label>对比方式
+      <select id="view">
+        <option value="config">同环境下比较算法配置</option>
+        <option value="environment">同配置下比较环境和通道</option>
+      </select>
+    </label>
+    <label id="environment-filter">环境和通道<select id="environment"></select></label>
+    <label id="config-filter" hidden>请求配置<select id="config"></select></label>
+    <label>附加指标
+      <select id="metric">
+        <option value="">QPS、吞吐量和压缩后大小（%）</option>
+        <option value="plainRatio">吞吐量 / 无加密无压缩（%）</option>
+        <option value="cryptoRatio">吞吐量 / 同压缩且无加密（%）</option>
+        <option value="efficiency">每 CPU 秒的吞吐量（MiB）</option>
+        <option value="recv_cpu_percent">接收端 CPU（%）</option>
+        <option value="send_cpu_percent">发送端 CPU（%）</option>
+        <option value="recvRss">接收端峰值 RSS（MiB）</option>
+        <option value="sendRss">发送端峰值 RSS（MiB）</option>
+      </select>
+    </label>
+  </div>
+  <p id="metric-note" class="note" aria-live="polite">每格显示 QPS 和原始 payload 吞吐量。选择单元格可查看详情。</p>
+  <div class="scroll" tabindex="0" role="region" aria-label="性能对比结果" aria-describedby="metric-note flags">
+    <table id="results" aria-label="不同包长的性能对比">
+      <thead><tr id="head"></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+  <p class="note" id="flags">“压缩后大小”以原始大小为 100%。例如，25% 表示字节数减少了 75%。数据来自独立压缩测试文本，计算时排除 8 B 序号。‡ 200 B 低于协议压缩阈值。† 首个带连接对象的收包回调记录的算法与请求不同。主矩阵的吞吐百分比表示样本之比，样本可能来自不同批次。</p>
+  <h2>原始 CSV</h2>
+  <ul>
+    <li>Linux · <a href="2615-benchmark-linux-tcp.csv" download>TCP CSV</a> · <a href="2615-benchmark-linux-shm.csv" download>共享内存 CSV</a></li>
+    <li>WSL2 · <a href="2615-benchmark-wsl-tcp.csv" download>TCP CSV</a> · <a href="2615-benchmark-wsl-shm.csv" download>共享内存 CSV</a></li>
+    <li>Windows · <a href="2615-benchmark-windows-tcp.csv" download>TCP CSV</a> · <a href="2615-benchmark-windows-shm.csv" download>共享内存 CSV</a></li>
+  </ul>
+</main>
+<dialog id="sample" aria-labelledby="sample-title">
+  <h2 id="sample-title"></h2>
+  <p id="sample-note" class="note" hidden></p>
+  <dl id="sample-metrics"></dl>
+  <form method="dialog"><button autofocus>关闭</button></form>
+</dialog>
+<!-- Source: the six local CSV files linked above, with environment prepended. -->
+<script type="text/csv" id="matrix-data">
+environment,crypto,compression,level,payload_size,qps,throughput_Bps,recv_cpu_percent,send_cpu_percent,recv_peak_rss_kb,send_peak_rss_kb,compression_ratio,seq_gaps,errors,negotiated_crypto,negotiated_compression
+linux,aes-128-gcm,lz4,default,200,1534808,306961667,100.0,100.2,15708,25780,0.7656,2,1,aes-128-gcm,lz4
+linux,aes-128-gcm,lz4,fast,200,1529417,305883400,100.0,100.4,15652,25976,0.7656,2,1,aes-128-gcm,lz4
+linux,aes-128-gcm,none,default,200,1525221,305044240,100.0,100.4,15684,26128,,2,1,aes-128-gcm,none
+linux,aes-128-gcm,zstd,default,200,1544504,308900880,100.0,100.4,15604,26140,0.6615,2,1,aes-128-gcm,zstd
+linux,aes-128-gcm,zstd,high-ratio,200,1540694,308138813,100.0,100.4,15436,26088,0.6562,2,1,aes-128-gcm,zstd
+linux,aes-192-gcm,none,default,200,1541234,308246893,100.0,100.5,15368,26160,,2,1,aes-192-gcm,none
+linux,aes-256-gcm,lz4,default,200,1510813,302162680,100.0,100.3,15700,26048,0.7656,2,1,aes-256-gcm,lz4
+linux,aes-256-gcm,lz4,fast,200,1508362,301672453,100.0,100.3,15396,26024,0.7656,2,1,aes-256-gcm,lz4
+linux,aes-256-gcm,none,default,200,1495326,299065120,99.9,100.3,15680,25952,,2,1,aes-256-gcm,none
+linux,aes-256-gcm,zstd,default,200,1454868,290973613,99.9,100.2,15648,25832,0.6615,2,1,aes-256-gcm,zstd
+linux,aes-256-gcm,zstd,high-ratio,200,1520768,304153533,100.0,100.4,15636,26156,0.6562,2,1,aes-256-gcm,zstd
+linux,chacha20-poly1305-ietf,lz4,default,200,857083,171416507,100.0,100.6,15680,25780,0.7656,2,1,chacha20-poly1305-ietf,lz4
+linux,chacha20-poly1305-ietf,lz4,fast,200,850644,170128867,100.0,100.4,15664,25636,0.7656,2,1,chacha20-poly1305-ietf,lz4
+linux,chacha20-poly1305-ietf,none,default,200,865055,173011093,99.9,100.9,15440,25640,,2,1,chacha20-poly1305-ietf,none
+linux,chacha20-poly1305-ietf,zstd,default,200,860296,172059187,100.0,100.9,15612,25844,0.6615,2,1,chacha20-poly1305-ietf,zstd
+linux,chacha20-poly1305-ietf,zstd,high-ratio,200,861841,172368120,100.0,101.2,15664,25832,0.6562,2,1,chacha20-poly1305-ietf,zstd
+linux,chacha20,none,default,200,352064,70412867,100.0,100.9,15572,25848,,2,1,chacha20,none
+linux,none,lz4,default,200,3462667,692533347,100.0,100.0,15344,25820,0.7656,0,0,none,lz4
+linux,none,lz4,fast,200,3431711,686342173,100.0,100.2,15628,25716,0.7656,2,1,none,lz4
+linux,none,none,default,200,3474350,694869987,100.0,100.1,15588,25920,,0,0,none,none
+linux,none,zstd,default,200,3457069,691413827,100.0,100.2,15664,25728,0.6615,2,1,none,zstd
+linux,none,zstd,high-ratio,200,3459775,691954947,100.0,100.2,15184,25868,0.6562,0,0,none,zstd
+linux,aes-128-gcm,lz4,default,1024,559370,572794539,99.9,100.4,15824,24084,0.5551,2,1,aes-128-gcm,lz4
+linux,aes-128-gcm,lz4,fast,1024,567334,580950084,100.0,100.6,15684,23844,0.5551,2,1,aes-128-gcm,lz4
+linux,aes-128-gcm,none,default,1024,934060,956477577,100.0,100.2,15636,25952,,2,1,aes-128-gcm,none
+linux,aes-128-gcm,zstd,default,1024,164858,168814182,99.8,105.0,15700,25944,0.3524,2,1,aes-128-gcm,zstd
+linux,aes-128-gcm,zstd,high-ratio,1024,166125,170111590,100.0,104.9,15648,26144,0.3327,2,1,aes-128-gcm,zstd
+linux,aes-192-gcm,none,default,1024,901501,923137297,100.0,100.2,15628,26032,,2,1,aes-192-gcm,none
+linux,aes-256-gcm,lz4,default,1024,561782,575264427,100.0,100.6,15652,23876,0.5551,2,1,aes-256-gcm,lz4
+linux,aes-256-gcm,lz4,fast,1024,571733,585454455,100.0,100.6,15564,23868,0.5551,2,1,aes-256-gcm,lz4
+linux,aes-256-gcm,none,default,1024,911782,933664700,100.0,100.2,15620,26116,,2,1,aes-256-gcm,none
+linux,aes-256-gcm,zstd,default,1024,166604,170602974,99.9,104.6,15912,26296,0.3524,2,1,aes-256-gcm,zstd
+linux,aes-256-gcm,zstd,high-ratio,1024,166354,170346906,100.0,104.8,15876,26120,0.3327,2,1,aes-256-gcm,zstd
+linux,chacha20-poly1305-ietf,lz4,default,1024,440549,451121971,100.0,100.6,15652,23888,0.5551,2,1,chacha20-poly1305-ietf,lz4
+linux,chacha20-poly1305-ietf,lz4,fast,1024,444908,455585724,100.0,100.7,15604,23796,0.5551,2,1,chacha20-poly1305-ietf,lz4
+linux,chacha20-poly1305-ietf,none,default,1024,609713,624346249,100.0,100.2,15648,25652,,2,1,chacha20-poly1305-ietf,none
+linux,chacha20-poly1305-ietf,zstd,default,1024,148311,151870532,99.9,102.0,15548,26000,0.3524,2,1,chacha20-poly1305-ietf,zstd
+linux,chacha20-poly1305-ietf,zstd,high-ratio,1024,150870,154491221,100.0,100.5,15668,26008,0.3327,2,1,chacha20-poly1305-ietf,zstd
+linux,chacha20,none,default,1024,92856,95084544,100.0,102.5,15608,25624,,2,1,chacha20,none
+linux,none,lz4,default,1024,779425,798130722,100.0,100.6,15360,25792,0.5551,2,1,none,lz4
+linux,none,lz4,fast,1024,781911,800676932,100.0,100.3,15624,25928,0.5551,0,0,none,lz4
+linux,none,none,default,1024,1461897,1496983006,100.0,100.0,15156,25840,,0,0,none,none
+linux,none,zstd,default,1024,174983,179182524,100.0,101.1,15628,25960,0.3524,2,1,none,zstd
+linux,none,zstd,high-ratio,1024,174231,178412954,100.0,101.4,15576,25764,0.3327,2,1,none,zstd
+linux,aes-128-gcm,lz4,default,8192,113867,932801195,100.0,100.4,15420,25992,0.4586,2,1,aes-128-gcm,lz4
+linux,aes-128-gcm,lz4,fast,8192,113429,929214191,100.0,100.6,15424,25924,0.4586,2,1,aes-128-gcm,lz4
+linux,aes-128-gcm,none,default,8192,182746,1497056870,100.0,100.1,15648,25988,,2,1,aes-128-gcm,none
+linux,aes-128-gcm,zstd,default,8192,45125,369661269,100.0,105.5,15744,25904,0.2418,2,1,aes-128-gcm,zstd
+linux,aes-128-gcm,zstd,high-ratio,8192,45128,369684753,100.0,105.4,15684,26304,0.2191,2,1,aes-128-gcm,zstd
+linux,aes-192-gcm,none,default,8192,220384,1805382997,100.0,100.0,15700,26188,,2,1,aes-192-gcm,none
+linux,aes-256-gcm,lz4,default,8192,113996,933857963,100.0,100.4,15348,25876,0.4586,2,1,aes-256-gcm,lz4
+linux,aes-256-gcm,lz4,fast,8192,114286,936229820,100.0,100.6,15656,26040,0.4586,2,1,aes-256-gcm,lz4
+linux,aes-256-gcm,none,default,8192,223606,1831780898,100.0,100.0,15492,26048,,2,1,aes-256-gcm,none
+linux,aes-256-gcm,zstd,default,8192,45104,369491422,100.0,105.5,15836,26300,0.2418,2,1,aes-256-gcm,zstd
+linux,aes-256-gcm,zstd,high-ratio,8192,44945,368191625,100.0,105.7,15828,26268,0.2191,2,1,aes-256-gcm,zstd
+linux,chacha20-poly1305-ietf,lz4,default,8192,103002,843795115,100.0,100.4,15528,25980,0.4586,2,1,chacha20-poly1305-ietf,lz4
+linux,chacha20-poly1305-ietf,lz4,fast,8192,102720,841483332,100.0,100.7,15456,25704,0.4586,2,1,chacha20-poly1305-ietf,lz4
+linux,chacha20-poly1305-ietf,none,default,8192,140113,1147808427,100.0,100.1,15660,25860,,2,1,chacha20-poly1305-ietf,none
+linux,chacha20-poly1305-ietf,zstd,default,8192,43426,355746884,100.0,102.0,15600,26108,0.2418,2,1,chacha20-poly1305-ietf,zstd
+linux,chacha20-poly1305-ietf,zstd,high-ratio,8192,43459,356019951,100.0,102.1,15700,25880,0.2191,2,1,chacha20-poly1305-ietf,zstd
+linux,chacha20,none,default,8192,12168,99682987,100.0,103.4,15656,25704,,2,1,chacha20,none
+linux,none,lz4,default,8192,121238,993184973,100.0,100.7,15396,25932,0.4586,2,1,none,lz4
+linux,none,lz4,fast,8192,121332,993953382,100.0,100.6,15408,25960,0.4586,2,1,none,lz4
+linux,none,none,default,8192,274954,2252423168,100.0,100.0,15352,25692,,0,0,none,none
+linux,none,zstd,default,8192,46095,377609694,100.0,105.5,15600,25688,0.2418,0,0,none,zstd
+linux,none,zstd,high-ratio,8192,46122,377830332,100.0,105.5,15368,26032,0.2191,2,1,none,zstd
+linux,aes-128-gcm,lz4,default,65536,18150,1189456555,100.0,100.5,15864,25972,0.4365,2,1,aes-128-gcm,lz4
+linux,aes-128-gcm,lz4,fast,65536,18248,1195883452,100.0,100.3,15664,25928,0.4365,2,1,aes-128-gcm,lz4
+linux,aes-128-gcm,none,default,65536,35356,2317068971,100.0,100.0,15620,28184,,2,1,aes-128-gcm,none
+linux,aes-128-gcm,zstd,default,65536,7973,522531635,100.0,103.4,15456,24128,0.2383,2,1,aes-128-gcm,zstd
+linux,aes-128-gcm,zstd,high-ratio,65536,7963,521850061,100.0,103.9,16016,24132,0.2099,2,1,aes-128-gcm,zstd
+linux,aes-192-gcm,none,default,65536,35533,2328673212,99.9,100.0,15568,28192,,2,1,aes-192-gcm,none
+linux,aes-256-gcm,lz4,default,65536,18013,1180508706,100.0,100.5,15420,25816,0.4365,2,1,aes-256-gcm,lz4
+linux,aes-256-gcm,lz4,fast,65536,18200,1192759569,100.0,100.5,15660,26180,0.4365,2,1,aes-256-gcm,lz4
+linux,aes-256-gcm,none,default,65536,34880,2285891311,99.9,100.0,15676,28172,,2,1,aes-256-gcm,none
+linux,aes-256-gcm,zstd,default,65536,8021,525664256,100.0,103.9,15880,24296,0.2383,2,1,aes-256-gcm,zstd
+linux,aes-256-gcm,zstd,high-ratio,65536,7832,513291059,100.0,102.5,15876,24080,0.2099,2,1,aes-256-gcm,zstd
+linux,chacha20-poly1305-ietf,lz4,default,65536,16725,1096111445,100.0,100.3,15544,25920,0.4365,2,1,chacha20-poly1305-ietf,lz4
+linux,chacha20-poly1305-ietf,lz4,fast,65536,16778,1099593591,100.0,100.7,15324,25620,0.4365,2,1,chacha20-poly1305-ietf,lz4
+linux,chacha20-poly1305-ietf,none,default,65536,26628,1745110084,100.0,100.1,15620,28012,,2,1,chacha20-poly1305-ietf,none
+linux,chacha20-poly1305-ietf,zstd,default,65536,7737,507034556,100.0,101.5,15356,24096,0.2383,2,1,chacha20-poly1305-ietf,zstd
+linux,chacha20-poly1305-ietf,zstd,high-ratio,65536,7641,500738731,100.0,102.7,15448,23920,0.2099,2,1,chacha20-poly1305-ietf,zstd
+linux,chacha20,none,default,65536,1654,108424631,100.4,101.4,15616,27356,,2,1,chacha20,none
+linux,none,lz4,default,65536,18689,1224780459,100.0,100.6,15464,25980,0.4365,0,0,none,lz4
+linux,none,lz4,fast,65536,18372,1204031761,100.0,100.3,15356,25752,0.4365,2,1,none,lz4
+linux,none,none,default,65536,39839,2610858121,100.0,100.0,15400,27968,,2,1,none,none
+linux,none,zstd,default,65536,8033,526476902,100.0,103.2,15612,23912,0.2383,0,0,none,zstd
+linux,none,zstd,high-ratio,65536,8043,527136631,100.0,103.2,15604,23892,0.2099,2,1,none,zstd
+linux,aes-128-gcm,lz4,default,307200,2906,892579840,100.0,100.6,15600,28048,0.3832,2,1,aes-128-gcm,lz4
+linux,aes-128-gcm,lz4,fast,307200,2798,859648000,100.0,100.8,15644,28224,0.3832,2,1,aes-128-gcm,lz4
+linux,aes-128-gcm,none,default,307200,7850,2411438080,100.0,100.1,15600,26028,,0,0,aes-128-gcm,none
+linux,aes-128-gcm,zstd,default,307200,1547,475172571,100.1,103.7,15944,28340,0.2345,2,1,aes-128-gcm,zstd
+linux,aes-128-gcm,zstd,high-ratio,307200,1549,475874743,100.0,103.5,15892,28292,0.2059,2,1,aes-128-gcm,zstd
+linux,aes-192-gcm,none,default,307200,7805,2397716480,100.0,100.1,15704,25904,,2,1,aes-192-gcm,none
+linux,aes-256-gcm,lz4,default,307200,2882,885227520,100.0,101.1,15364,27912,0.3832,2,1,aes-256-gcm,lz4
+linux,aes-256-gcm,lz4,fast,307200,2888,887234560,100.0,100.6,15688,27932,0.3832,2,1,aes-256-gcm,lz4
+linux,aes-256-gcm,none,default,307200,7768,2386411520,100.0,100.0,15388,26040,,2,1,aes-256-gcm,none
+linux,aes-256-gcm,zstd,default,307200,1547,475172571,100.0,103.8,15708,28260,0.2345,2,1,aes-256-gcm,zstd
+linux,aes-256-gcm,zstd,high-ratio,307200,1539,472649143,100.0,104.0,15896,28148,0.2059,2,1,aes-256-gcm,zstd
+linux,chacha20-poly1305-ietf,lz4,default,307200,2746,843448320,100.0,101.2,15452,25648,0.3832,2,1,chacha20-poly1305-ietf,lz4
+linux,chacha20-poly1305-ietf,lz4,fast,307200,2735,840192000,100.0,101.1,15488,25856,0.3832,2,1,chacha20-poly1305-ietf,lz4
+linux,chacha20-poly1305-ietf,none,default,307200,5996,1841839543,100.0,100.1,15392,25728,,0,0,chacha20-poly1305-ietf,none
+linux,chacha20-poly1305-ietf,zstd,default,307200,1504,462138514,100.1,106.0,15460,28032,0.2345,2,1,chacha20-poly1305-ietf,zstd
+linux,chacha20-poly1305-ietf,zstd,high-ratio,307200,1403,431063040,100.0,101.8,15592,27968,0.2059,2,1,chacha20-poly1305-ietf,zstd
+linux,chacha20,none,default,307200,345,106005943,101.8,102.0,15368,25848,,0,0,chacha20,none
+linux,none,lz4,default,307200,2941,903598080,100.0,101.2,15432,27972,0.3832,2,1,none,lz4
+linux,none,lz4,fast,307200,2950,906158080,100.0,100.9,15656,27832,0.3832,2,1,none,lz4
+linux,none,none,default,307200,9049,2779709440,100.0,100.0,15364,23864,,0,0,none,none
+linux,none,zstd,default,307200,1555,477630171,100.1,103.2,15400,27964,0.2345,0,0,none,zstd
+linux,none,zstd,high-ratio,307200,1448,444825600,100.0,103.6,15380,27880,0.2059,2,1,none,zstd
+linux_shm,aes-128-gcm,lz4,default,200,1516786,303357240,100.0,100.3,15664,32004,0.7656,20,19,aes-128-gcm,lz4
+linux_shm,aes-128-gcm,lz4,fast,200,1517618,303523520,100.0,100.3,15780,31996,0.7656,20,19,aes-128-gcm,lz4
+linux_shm,aes-128-gcm,none,default,200,1502827,300565320,100.0,100.3,15480,32084,,20,19,aes-128-gcm,none
+linux_shm,aes-128-gcm,zstd,default,200,1524376,304875133,100.0,100.5,15580,32300,0.6615,20,19,aes-128-gcm,zstd
+linux_shm,aes-128-gcm,zstd,high-ratio,200,1510981,302196280,100.0,100.5,15412,31992,0.6562,20,19,aes-128-gcm,zstd
+linux_shm,aes-192-gcm,none,default,200,1523703,304740533,100.0,100.3,15652,31952,,20,19,aes-192-gcm,none
+linux_shm,aes-256-gcm,lz4,default,200,1465781,293156213,100.0,100.5,15516,32052,0.7656,20,19,aes-256-gcm,lz4
+linux_shm,aes-256-gcm,lz4,fast,200,1450750,290150040,100.0,100.6,15412,32276,0.7656,20,19,aes-256-gcm,lz4
+linux_shm,aes-256-gcm,none,default,200,1442145,288429053,100.0,100.5,15708,32008,,20,19,aes-256-gcm,none
+linux_shm,aes-256-gcm,zstd,default,200,1470921,294184173,100.0,100.4,15604,31928,0.6615,20,19,aes-256-gcm,zstd
+linux_shm,aes-256-gcm,zstd,high-ratio,200,1464309,292861760,100.0,100.3,15604,32092,0.6562,20,19,aes-256-gcm,zstd
+linux_shm,chacha20-poly1305-ietf,lz4,default,200,848692,169738320,100.0,100.8,15404,32044,0.7656,22,21,chacha20-poly1305-ietf,lz4
+linux_shm,chacha20-poly1305-ietf,lz4,fast,200,850653,170130640,100.0,100.9,15604,32032,0.7656,22,21,chacha20-poly1305-ietf,lz4
+linux_shm,chacha20-poly1305-ietf,none,default,200,851032,170206333,100.0,100.9,15264,31992,,22,21,chacha20-poly1305-ietf,none
+linux_shm,chacha20-poly1305-ietf,zstd,default,200,856058,171211587,100.0,100.4,15436,31816,0.6615,22,21,chacha20-poly1305-ietf,zstd
+linux_shm,chacha20-poly1305-ietf,zstd,high-ratio,200,850262,170052320,100.0,100.8,15704,40088,0.6562,22,21,chacha20-poly1305-ietf,zstd
+linux_shm,chacha20,none,default,200,330506,66101147,100.0,100.4,15376,30020,,20,19,chacha20,none
+linux_shm,none,lz4,default,200,3432192,686438347,100.0,100.1,15316,27712,0.7656,15,14,none,lz4
+linux_shm,none,lz4,fast,200,3439366,687873240,100.0,100.1,15320,27896,0.7656,15,14,none,lz4
+linux_shm,none,none,default,200,3440682,688136373,100.0,100.1,15488,27816,,15,14,none,none
+linux_shm,none,zstd,default,200,3417983,683596520,100.0,100.2,15588,25716,0.6615,0,0,none,zstd
+linux_shm,none,zstd,high-ratio,200,3464435,692886987,100.0,100.1,15404,27764,0.6562,15,14,none,zstd
+linux_shm,aes-128-gcm,lz4,default,1024,567255,580869120,100.0,100.5,15628,30248,0.5551,31,30,aes-128-gcm,lz4
+linux_shm,aes-128-gcm,lz4,fast,1024,568051,581684087,100.0,100.8,15572,30276,0.5551,31,30,aes-128-gcm,lz4
+linux_shm,aes-128-gcm,none,default,1024,891089,912475204,100.0,100.2,15876,30004,,34,33,aes-128-gcm,none
+linux_shm,aes-128-gcm,zstd,default,1024,164052,167989111,100.0,105.2,16004,32308,0.3524,30,29,aes-128-gcm,zstd
+linux_shm,aes-128-gcm,zstd,high-ratio,1024,164269,168211183,100.0,105.3,15952,32388,0.3327,30,29,aes-128-gcm,zstd
+linux_shm,aes-192-gcm,none,default,1024,897239,918772736,100.0,100.2,15616,30280,,45,44,aes-192-gcm,none
+linux_shm,aes-256-gcm,lz4,default,1024,565487,579058825,100.0,100.6,15484,29944,0.5551,31,30,aes-256-gcm,lz4
+linux_shm,aes-256-gcm,lz4,fast,1024,557844,571232324,100.0,100.7,15296,30008,0.5551,31,30,aes-256-gcm,lz4
+linux_shm,aes-256-gcm,none,default,1024,899715,921308433,100.0,100.0,15688,30004,,33,32,aes-256-gcm,none
+linux_shm,aes-256-gcm,zstd,default,1024,163518,167442500,100.0,102.6,15708,32292,0.3524,30,29,aes-256-gcm,zstd
+linux_shm,aes-256-gcm,zstd,high-ratio,1024,163074,166987503,100.0,102.3,15676,32052,0.3327,30,29,aes-256-gcm,zstd
+linux_shm,chacha20-poly1305-ietf,lz4,default,1024,445999,456703249,100.0,100.8,15636,29752,0.5551,34,33,chacha20-poly1305-ietf,lz4
+linux_shm,chacha20-poly1305-ietf,lz4,fast,1024,439579,450129169,100.0,101.0,15700,29728,0.5551,30,29,chacha20-poly1305-ietf,lz4
+linux_shm,chacha20-poly1305-ietf,none,default,1024,626288,641319253,100.0,100.1,15536,29980,,34,33,chacha20-poly1305-ietf,none
+linux_shm,chacha20-poly1305-ietf,zstd,default,1024,148129,151683823,100.0,100.6,15432,32184,0.3524,30,29,chacha20-poly1305-ietf,zstd
+linux_shm,chacha20-poly1305-ietf,zstd,high-ratio,1024,148532,152097246,100.0,101.5,15588,32220,0.3327,30,29,chacha20-poly1305-ietf,zstd
+linux_shm,chacha20,none,default,1024,84579,86608759,100.0,100.2,15428,31868,,37,36,chacha20,none
+linux_shm,none,lz4,default,1024,778709,797397675,100.0,100.3,15588,25916,0.5551,0,0,none,lz4
+linux_shm,none,lz4,fast,1024,783566,802372062,100.0,100.2,15500,23580,0.5551,0,0,none,lz4
+linux_shm,none,none,default,1024,1537952,1574863189,100.0,100.0,15464,25972,,0,0,none,none
+linux_shm,none,zstd,default,1024,173706,177875422,100.0,101.7,15708,25884,0.3524,0,0,none,zstd
+linux_shm,none,zstd,high-ratio,1024,174785,178979908,100.0,101.2,15304,32248,0.3327,27,26,none,zstd
+linux_shm,aes-128-gcm,lz4,default,8192,113399,928961877,100.0,100.7,15876,32300,0.4586,43,42,aes-128-gcm,lz4
+linux_shm,aes-128-gcm,lz4,fast,8192,114131,934964429,99.9,100.6,15736,32300,0.4586,37,36,aes-128-gcm,lz4
+linux_shm,aes-128-gcm,none,default,8192,231092,1893105664,100.0,100.0,15456,32048,,36,35,aes-128-gcm,none
+linux_shm,aes-128-gcm,zstd,default,8192,45246,370654686,100.0,103.3,15824,32088,0.2418,26,25,aes-128-gcm,zstd
+linux_shm,aes-128-gcm,zstd,high-ratio,8192,44867,367547733,100.0,102.0,16008,32312,0.2191,27,26,aes-128-gcm,zstd
+linux_shm,aes-192-gcm,none,default,8192,200698,1644114193,100.0,100.0,15584,32100,,36,35,aes-192-gcm,none
+linux_shm,aes-256-gcm,lz4,default,8192,112347,920347716,100.0,100.4,15680,32276,0.4586,46,45,aes-256-gcm,lz4
+linux_shm,aes-256-gcm,lz4,fast,8192,113191,927260672,100.0,100.6,15892,32108,0.4586,38,37,aes-256-gcm,lz4
+linux_shm,aes-256-gcm,none,default,8192,228517,1872013995,100.0,100.0,15640,40280,,35,34,aes-256-gcm,none
+linux_shm,aes-256-gcm,zstd,default,8192,44994,368591940,100.0,103.1,15732,32384,0.2418,26,25,aes-256-gcm,zstd
+linux_shm,aes-256-gcm,zstd,high-ratio,8192,45308,371159859,100.0,101.0,15632,32404,0.2191,38,37,aes-256-gcm,zstd
+linux_shm,chacha20-poly1305-ietf,lz4,default,8192,103318,846383241,100.0,100.3,15648,32064,0.4586,47,46,chacha20-poly1305-ietf,lz4
+linux_shm,chacha20-poly1305-ietf,lz4,fast,8192,102584,840371405,100.0,100.6,15624,32040,0.4586,47,46,chacha20-poly1305-ietf,lz4
+linux_shm,chacha20-poly1305-ietf,none,default,8192,162699,1332828023,100.0,100.0,15700,35852,,40,39,chacha20-poly1305-ietf,none
+linux_shm,chacha20-poly1305-ietf,zstd,default,8192,43199,353888393,100.0,103.7,15572,32144,0.2418,38,37,chacha20-poly1305-ietf,zstd
+linux_shm,chacha20-poly1305-ietf,zstd,high-ratio,8192,43579,357000806,100.0,103.2,15740,32012,0.2191,29,28,chacha20-poly1305-ietf,zstd
+linux_shm,chacha20,none,default,8192,11504,94236945,100.0,101.3,15644,34084,,43,42,chacha20,none
+linux_shm,none,lz4,default,8192,121613,996256973,100.0,100.3,15648,32028,0.4586,45,44,none,lz4
+linux_shm,none,lz4,fast,8192,122024,999622246,100.0,100.5,15688,25896,0.4586,0,0,none,lz4
+linux_shm,none,none,default,8192,212543,1741151164,100.0,100.0,15644,25884,,0,0,none,none
+linux_shm,none,zstd,default,8192,46047,377217024,100.0,104.5,15704,31988,0.2418,37,36,none,zstd
+linux_shm,none,zstd,high-ratio,8192,46404,380140476,100.0,101.9,15436,31916,0.2191,39,38,none,zstd
+linux_shm,aes-128-gcm,lz4,default,65536,18250,1196010155,100.0,100.6,15668,32056,0.4365,10,9,aes-128-gcm,lz4
+linux_shm,aes-128-gcm,lz4,fast,65536,18207,1193200845,100.0,100.4,15796,29916,0.4365,10,9,aes-128-gcm,lz4
+linux_shm,aes-128-gcm,none,default,65536,35500,2326549845,100.0,100.0,15852,34176,,21,20,aes-128-gcm,none
+linux_shm,aes-128-gcm,zstd,default,65536,7782,509979307,100.0,102.0,15824,30292,0.2383,24,23,aes-128-gcm,zstd
+linux_shm,aes-128-gcm,zstd,high-ratio,65536,7882,516554752,100.0,102.0,15816,30248,0.2099,14,13,aes-128-gcm,zstd
+linux_shm,aes-192-gcm,none,default,65536,35228,2308671625,100.0,100.1,15532,40448,,18,17,aes-192-gcm,none
+linux_shm,aes-256-gcm,lz4,default,65536,18192,1192222174,100.0,100.4,15540,30024,0.4365,14,13,aes-256-gcm,lz4
+linux_shm,aes-256-gcm,lz4,fast,65536,18296,1199020442,100.0,100.7,15608,29928,0.4365,11,10,aes-256-gcm,lz4
+linux_shm,aes-256-gcm,none,default,65536,34994,2293344939,100.0,100.0,15628,40316,,7,6,aes-256-gcm,none
+linux_shm,aes-256-gcm,zstd,default,65536,7913,518586368,100.0,102.9,15892,30228,0.2383,14,13,aes-256-gcm,zstd
+linux_shm,aes-256-gcm,zstd,high-ratio,65536,8049,527473050,100.0,103.6,15664,30180,0.2099,24,23,aes-256-gcm,zstd
+linux_shm,chacha20-poly1305-ietf,lz4,default,65536,16790,1100331964,100.0,100.8,15280,29716,0.4365,12,11,chacha20-poly1305-ietf,lz4
+linux_shm,chacha20-poly1305-ietf,lz4,fast,65536,17043,1116921310,100.0,100.4,15396,30060,0.4365,13,12,chacha20-poly1305-ietf,lz4
+linux_shm,chacha20-poly1305-ietf,none,default,65536,25758,1688058812,100.0,100.1,15512,40200,,7,6,chacha20-poly1305-ietf,none
+linux_shm,chacha20-poly1305-ietf,zstd,default,65536,7796,510931763,100.0,100.6,15452,30020,0.2383,25,24,chacha20-poly1305-ietf,zstd
+linux_shm,chacha20-poly1305-ietf,zstd,high-ratio,65536,7828,512985225,100.0,100.5,15488,30212,0.2099,24,23,chacha20-poly1305-ietf,zstd
+linux_shm,chacha20,none,default,65536,1544,101187584,100.3,100.5,15700,35772,,8,7,chacha20,none
+linux_shm,none,lz4,default,65536,18584,1217907917,100.0,100.5,15588,29788,0.4365,11,10,none,lz4
+linux_shm,none,lz4,fast,65536,18630,1220966263,100.0,100.7,15376,32044,0.4365,13,12,none,lz4
+linux_shm,none,none,default,65536,39759,2605645824,100.0,100.0,15160,34040,,7,6,none,none
+linux_shm,none,zstd,default,65536,8008,524825395,100.0,102.9,15688,23856,0.2383,0,0,none,zstd
+linux_shm,none,zstd,high-ratio,65536,7757,508354014,100.0,102.4,15556,30056,0.2099,15,14,none,zstd
+linux_shm,aes-128-gcm,lz4,default,307200,2892,888545280,100.0,101.1,15704,40464,0.3832,4,3,aes-128-gcm,lz4
+linux_shm,aes-128-gcm,lz4,fast,307200,2865,880250880,100.0,101.1,15336,36220,0.3832,4,3,aes-128-gcm,lz4
+linux_shm,aes-128-gcm,none,default,307200,7879,2420367360,100.0,100.0,15640,28172,,2,1,aes-128-gcm,none
+linux_shm,aes-128-gcm,zstd,default,307200,1539,472649143,100.0,104.1,15592,36432,0.2345,6,5,aes-128-gcm,zstd
+linux_shm,aes-128-gcm,zstd,high-ratio,307200,1437,441466880,100.0,104.4,15616,36380,0.2059,7,6,aes-128-gcm,zstd
+linux_shm,aes-192-gcm,none,default,307200,7896,2425507840,100.0,100.1,15880,26088,,2,1,aes-192-gcm,none
+linux_shm,aes-256-gcm,lz4,default,307200,2878,884060160,100.0,100.8,15564,36024,0.3832,4,3,aes-256-gcm,lz4
+linux_shm,aes-256-gcm,lz4,fast,307200,2903,891678720,100.0,101.2,15692,40364,0.3832,5,4,aes-256-gcm,lz4
+linux_shm,aes-256-gcm,none,default,307200,7744,2378977280,100.0,100.1,15616,28016,,2,1,aes-256-gcm,none
+linux_shm,aes-256-gcm,zstd,default,307200,1537,472298057,99.9,104.2,15652,34392,0.2345,7,6,aes-256-gcm,zstd
+linux_shm,aes-256-gcm,zstd,high-ratio,307200,1540,473000229,100.0,104.3,15740,36156,0.2059,6,5,aes-256-gcm,zstd
+linux_shm,chacha20-poly1305-ietf,lz4,default,307200,2639,810557440,99.8,100.8,15468,31992,0.3832,5,4,chacha20-poly1305-ietf,lz4
+linux_shm,chacha20-poly1305-ietf,lz4,fast,307200,2939,902729143,100.0,101.2,15576,31796,0.3832,5,4,chacha20-poly1305-ietf,lz4
+linux_shm,chacha20-poly1305-ietf,none,default,307200,5564,1709219840,100.0,100.1,15696,30128,,3,2,chacha20-poly1305-ietf,none
+linux_shm,chacha20-poly1305-ietf,zstd,default,307200,1400,430018560,99.9,101.8,15812,36240,0.2345,6,5,chacha20-poly1305-ietf,zstd
+linux_shm,chacha20-poly1305-ietf,zstd,high-ratio,307200,1390,426987520,100.0,101.4,15608,34228,0.2059,6,5,chacha20-poly1305-ietf,zstd
+linux_shm,chacha20,none,default,307200,335,103021714,101.0,101.7,15428,29812,,3,2,chacha20,none
+linux_shm,none,lz4,default,307200,2868,881008640,100.0,100.7,15428,27944,0.3832,0,0,none,lz4
+linux_shm,none,lz4,fast,307200,2913,894996480,100.0,100.9,15564,35956,0.3832,4,3,none,lz4
+linux_shm,none,none,default,307200,9042,2777722880,100.0,100.1,15376,27652,,2,1,none,none
+linux_shm,none,zstd,default,307200,1451,445890560,100.0,103.4,15512,34060,0.2345,7,6,none,zstd
+linux_shm,none,zstd,high-ratio,307200,1579,485200457,100.1,102.0,15368,27896,0.2059,0,0,none,zstd
+windows,aes-128-gcm,lz4,default,200,338376,67675213,99.9,99.4,11648,30396,0.7656,39,38,aes-128-gcm,lz4
+windows,aes-128-gcm,lz4,fast,200,358244,71648786,99.7,99.8,11664,29984,0.7656,32,31,aes-128-gcm,lz4
+windows,aes-128-gcm,none,default,200,331868,66373571,99.0,99.3,11680,30028,,39,38,aes-128-gcm,none
+windows,aes-128-gcm,zstd,default,200,356961,71392286,99.0,99.4,11660,30188,0.6615,36,35,aes-128-gcm,zstd
+windows,aes-128-gcm,zstd,high-ratio,200,336784,67356757,99.5,99.6,11636,29976,0.6562,35,34,aes-128-gcm,zstd
+windows,aes-192-gcm,none,default,200,290253,58050686,97.2,97.6,11668,30320,,28,27,aes-192-gcm,none
+windows,aes-256-gcm,lz4,default,200,298597,59719357,97.9,97.2,11672,30048,0.7656,40,39,aes-256-gcm,lz4
+windows,aes-256-gcm,lz4,fast,200,316515,63303029,99.7,99.0,11656,30396,0.7656,31,30,aes-256-gcm,lz4
+windows,aes-256-gcm,none,default,200,244207,48841467,96.8,98.1,11632,30300,,34,33,aes-256-gcm,none
+windows,aes-256-gcm,zstd,default,200,305469,61093786,99.8,99.4,11660,30012,0.6615,33,32,aes-256-gcm,zstd
+windows,aes-256-gcm,zstd,high-ratio,200,315336,63067243,99.6,99.4,11660,30660,0.6562,39,38,aes-256-gcm,zstd
+windows,chacha20-poly1305-ietf,lz4,default,200,448974,89794707,99.9,99.8,11636,30636,0.7656,35,34,chacha20-poly1305-ietf,lz4
+windows,chacha20-poly1305-ietf,lz4,fast,200,459657,91931373,99.5,99.6,11640,30288,0.7656,34,33,chacha20-poly1305-ietf,lz4
+windows,chacha20-poly1305-ietf,none,default,200,394098,78819600,97.6,97.5,11608,30300,,34,33,chacha20-poly1305-ietf,none
+windows,chacha20-poly1305-ietf,zstd,default,200,458104,91620714,99.7,99.6,11664,29972,0.6615,33,32,chacha20-poly1305-ietf,zstd
+windows,chacha20-poly1305-ietf,zstd,high-ratio,200,464768,92953693,98.8,99.4,11632,29964,0.6562,33,32,chacha20-poly1305-ietf,zstd
+windows,chacha20,none,default,200,451754,90350880,98.5,98.9,11604,29832,,7,6,chacha20,none
+windows,none,lz4,default,200,780824,156164773,98.9,99.0,11480,29404,0.7656,25,24,none,lz4
+windows,none,lz4,fast,200,806898,161379640,99.6,98.7,11500,28832,0.7656,27,26,none,lz4
+windows,none,none,default,200,774502,154900453,96.5,97.7,11464,30360,,30,29,none,none
+windows,none,zstd,default,200,877939,175587760,98.9,98.7,11508,29416,0.6615,25,24,none,zstd
+windows,none,zstd,high-ratio,200,861722,172344400,99.1,99.8,11512,29120,0.6562,34,33,none,zstd
+windows,aes-128-gcm,lz4,default,1024,151309,154940416,99.0,99.2,11676,29580,0.5551,50,49,aes-128-gcm,lz4
+windows,aes-128-gcm,lz4,fast,1024,169162,173222327,99.6,99.9,11692,29536,0.5551,50,49,aes-128-gcm,lz4
+windows,aes-128-gcm,none,default,1024,136289,139559570,99.3,99.9,11736,29500,,52,51,aes-128-gcm,none
+windows,aes-128-gcm,zstd,default,1024,91311,93502171,99.8,100.0,11792,30216,0.3524,39,38,aes-128-gcm,zstd
+windows,aes-128-gcm,zstd,high-ratio,1024,93982,96237275,100.2,100.2,11796,30192,0.3327,11,10,aes-128-gcm,zstd
+windows,aes-192-gcm,none,default,1024,113524,116248137,99.6,99.5,11700,29172,,46,45,aes-192-gcm,none
+windows,aes-256-gcm,lz4,default,1024,126311,129342171,96.9,96.3,11680,29508,0.5551,51,50,aes-256-gcm,lz4
+windows,aes-256-gcm,lz4,fast,1024,141670,145069934,99.3,99.0,11676,29468,0.5551,44,43,aes-256-gcm,lz4
+windows,aes-256-gcm,none,default,1024,100629,103043584,99.2,98.9,11684,28984,,55,54,aes-256-gcm,none
+windows,aes-256-gcm,zstd,default,1024,90487,92658176,100.1,100.2,11800,30184,0.3524,13,12,aes-256-gcm,zstd
+windows,aes-256-gcm,zstd,high-ratio,1024,87695,89799534,99.5,99.9,11780,30104,0.3327,42,41,aes-256-gcm,zstd
+windows,chacha20-poly1305-ietf,lz4,default,1024,158185,161981713,99.8,99.8,11624,29136,0.5551,43,42,chacha20-poly1305-ietf,lz4
+windows,chacha20-poly1305-ietf,lz4,fast,1024,165501,169472956,99.4,99.2,11692,29200,0.5551,49,48,chacha20-poly1305-ietf,lz4
+windows,chacha20-poly1305-ietf,none,default,1024,148558,152123870,98.6,98.3,11680,29264,,52,51,chacha20-poly1305-ietf,none
+windows,chacha20-poly1305-ietf,zstd,default,1024,105143,107666432,99.8,99.4,11768,30324,0.3524,11,10,chacha20-poly1305-ietf,zstd
+windows,chacha20-poly1305-ietf,zstd,high-ratio,1024,109291,111913984,99.8,100.0,11776,30148,0.3327,37,36,chacha20-poly1305-ietf,zstd
+windows,chacha20,none,default,1024,218819,224070315,98.9,98.9,11636,29192,,47,46,chacha20,none
+windows,none,lz4,default,1024,277775,284441122,99.0,99.1,11516,28800,0.5551,42,41,none,lz4
+windows,none,lz4,fast,1024,290373,297342157,98.8,98.4,11516,28816,0.5551,51,50,none,lz4
+windows,none,none,default,1024,258036,264228796,99.2,99.2,11524,28436,,46,45,none,none
+windows,none,zstd,default,1024,121209,124118221,99.5,100.0,11636,30124,0.3524,11,10,none,zstd
+windows,none,zstd,high-ratio,1024,122230,125163520,99.3,99.6,11664,29888,0.3327,40,39,none,zstd
+windows,aes-128-gcm,lz4,default,8192,30209,247470490,100.0,100.2,11888,29524,0.4586,40,39,aes-128-gcm,lz4
+windows,aes-128-gcm,lz4,fast,8192,30833,252581751,99.7,99.6,11912,29432,0.4586,56,55,aes-128-gcm,lz4
+windows,aes-128-gcm,none,default,8192,15948,130644261,99.4,99.8,11824,28420,,50,49,aes-128-gcm,none
+windows,aes-128-gcm,zstd,default,8192,29024,237766949,100.2,100.2,11920,30376,0.2418,47,46,aes-128-gcm,zstd
+windows,aes-128-gcm,zstd,high-ratio,8192,27783,227597244,100.0,99.9,11956,30260,0.2191,50,49,aes-128-gcm,zstd
+windows,aes-192-gcm,none,default,8192,15057,123349129,99.1,99.5,11808,28716,,52,51,aes-192-gcm,none
+windows,aes-256-gcm,lz4,default,8192,27074,221791963,100.1,99.6,11840,29452,0.4586,49,48,aes-256-gcm,lz4
+windows,aes-256-gcm,lz4,fast,8192,26359,215930587,100.2,100.0,11888,29492,0.4586,56,55,aes-256-gcm,lz4
+windows,aes-256-gcm,none,default,8192,16192,132644279,99.3,98.6,11828,28420,,50,49,aes-256-gcm,none
+windows,aes-256-gcm,zstd,default,8192,25096,205587524,99.8,100.4,11936,30240,0.2418,31,30,aes-256-gcm,zstd
+windows,aes-256-gcm,zstd,high-ratio,8192,27241,223154761,100.3,100.0,11940,29992,0.2191,26,25,aes-256-gcm,zstd
+windows,chacha20-poly1305-ietf,lz4,default,8192,28731,235368175,99.7,99.2,11828,29436,0.4586,49,48,chacha20-poly1305-ietf,lz4
+windows,chacha20-poly1305-ietf,lz4,fast,8192,26523,217275324,99.7,99.4,11836,29416,0.4586,52,51,chacha20-poly1305-ietf,lz4
+windows,chacha20-poly1305-ietf,none,default,8192,17695,144957986,99.3,99.5,11800,27444,,45,44,chacha20-poly1305-ietf,none
+windows,chacha20-poly1305-ietf,zstd,default,8192,34586,283327342,99.3,99.9,11888,30048,0.2418,13,12,chacha20-poly1305-ietf,zstd
+windows,chacha20-poly1305-ietf,zstd,high-ratio,8192,34734,284540928,99.9,99.9,11880,29932,0.2191,15,14,chacha20-poly1305-ietf,zstd
+windows,chacha20,none,default,8192,25103,205644322,98.9,97.8,11820,26892,,39,38,chacha20,none
+windows,none,lz4,default,8192,31110,254855305,99.8,99.6,11620,28708,0.4586,35,34,none,lz4
+windows,none,lz4,fast,8192,34664,283969126,98.9,99.4,11644,28848,0.4586,29,28,none,lz4
+windows,none,none,default,8192,63315,518675388,99.6,99.6,11632,21048,,0,0,none,none
+windows,none,zstd,default,8192,38301,313760700,98.6,99.4,11792,29388,0.2418,21,20,none,zstd
+windows,none,zstd,high-ratio,8192,37808,309722590,98.3,100.0,11776,29492,0.2191,15,14,none,zstd
+windows,aes-128-gcm,lz4,default,65536,4372,286536499,99.6,99.5,11848,29304,0.4365,11,10,aes-128-gcm,lz4
+windows,aes-128-gcm,lz4,fast,65536,4717,309152037,99.4,99.8,11848,29056,0.4365,11,10,aes-128-gcm,lz4
+windows,aes-128-gcm,none,default,65536,2153,141125222,99.6,99.8,11844,28104,,2,1,aes-128-gcm,none
+windows,aes-128-gcm,zstd,default,65536,3971,260252818,99.6,99.9,12208,29564,0.2383,24,23,aes-128-gcm,zstd
+windows,aes-128-gcm,zstd,high-ratio,65536,3972,260280905,99.3,99.5,12104,29556,0.2099,24,23,aes-128-gcm,zstd
+windows,aes-192-gcm,none,default,65536,2157,141342427,99.8,99.5,11848,28184,,2,1,aes-192-gcm,none
+windows,aes-256-gcm,lz4,default,65536,3475,227751643,100.2,99.5,11836,28608,0.4365,11,10,aes-256-gcm,lz4
+windows,aes-256-gcm,lz4,fast,65536,3701,242525330,99.5,99.5,11860,29352,0.4365,20,19,aes-256-gcm,lz4
+windows,aes-256-gcm,none,default,65536,1756,115081216,100.1,99.3,11860,28052,,2,1,aes-256-gcm,none
+windows,aes-256-gcm,zstd,default,65536,3597,235761079,99.9,100.0,12228,29552,0.2383,24,23,aes-256-gcm,zstd
+windows,aes-256-gcm,zstd,high-ratio,65536,3807,249472146,99.6,100.0,12116,29540,0.2099,24,23,aes-256-gcm,zstd
+windows,chacha20-poly1305-ietf,lz4,default,65536,6850,448939076,99.3,99.4,11836,28400,0.4365,2,1,chacha20-poly1305-ietf,lz4
+windows,chacha20-poly1305-ietf,lz4,fast,65536,6913,453050368,100.0,99.4,11812,29200,0.4365,11,10,chacha20-poly1305-ietf,lz4
+windows,chacha20-poly1305-ietf,none,default,65536,2924,191653478,99.3,99.2,11828,27944,,2,1,chacha20-poly1305-ietf,none
+windows,chacha20-poly1305-ietf,zstd,default,65536,4789,313830059,99.4,99.5,12160,29536,0.2383,24,23,chacha20-poly1305-ietf,zstd
+windows,chacha20-poly1305-ietf,zstd,high-ratio,65536,4465,292622609,99.3,99.9,12200,29532,0.2099,24,23,chacha20-poly1305-ietf,zstd
+windows,chacha20,none,default,65536,3283,215124105,99.1,98.3,11804,27576,,9,8,chacha20,none
+windows,none,lz4,default,65536,6662,436574618,99.5,99.2,11664,28404,0.4365,20,19,none,lz4
+windows,none,lz4,fast,65536,7000,458734524,99.3,99.4,11656,28232,0.4365,10,9,none,lz4
+windows,none,none,default,65536,5876,385076429,99.5,99.7,11704,26656,,8,7,none,none
+windows,none,zstd,default,65536,6350,416181687,99.7,99.3,11880,29352,0.2383,24,23,none,zstd
+windows,none,zstd,high-ratio,65536,5492,359932450,99.2,99.6,11960,29384,0.2099,24,23,none,zstd
+windows,aes-128-gcm,lz4,default,307200,882,271082057,99.9,99.8,12492,28488,0.3832,2,1,aes-128-gcm,lz4
+windows,aes-128-gcm,lz4,fast,307200,865,265640229,100.1,99.5,12480,28516,0.3832,8,7,aes-128-gcm,lz4
+windows,aes-128-gcm,none,default,307200,266,81781029,100.0,98.8,12548,27848,,2,1,aes-128-gcm,none
+windows,aes-128-gcm,zstd,default,307200,681,209203200,100.1,100.0,12524,29840,0.2345,8,7,aes-128-gcm,zstd
+windows,aes-128-gcm,zstd,high-ratio,307200,665,204331886,99.8,99.8,12552,29832,0.2059,2,1,aes-128-gcm,zstd
+windows,aes-192-gcm,none,default,307200,270,82812343,100.0,99.0,12768,27856,,5,4,aes-192-gcm,none
+windows,aes-256-gcm,lz4,default,307200,713,219077486,100.3,99.3,12576,28500,0.3832,4,3,aes-256-gcm,lz4
+windows,aes-256-gcm,lz4,fast,307200,662,203427840,99.3,100.1,12492,28520,0.3832,2,1,aes-256-gcm,lz4
+windows,aes-256-gcm,none,default,307200,251,77019429,99.8,98.4,12724,27844,,4,3,aes-256-gcm,none
+windows,aes-256-gcm,zstd,default,307200,665,204244114,99.9,100.0,12592,29808,0.2345,2,1,aes-256-gcm,zstd
+windows,aes-256-gcm,zstd,high-ratio,307200,622,191122286,100.2,100.1,12532,29828,0.2059,2,1,aes-256-gcm,zstd
+windows,chacha20-poly1305-ietf,lz4,default,307200,1344,413020160,99.6,99.8,12524,28596,0.3832,3,2,chacha20-poly1305-ietf,lz4
+windows,chacha20-poly1305-ietf,lz4,fast,307200,1385,425390080,99.2,99.5,12488,28508,0.3832,7,6,chacha20-poly1305-ietf,lz4
+windows,chacha20-poly1305-ietf,none,default,307200,415,127631360,99.1,98.2,12716,27852,,3,2,chacha20-poly1305-ietf,none
+windows,chacha20-poly1305-ietf,zstd,default,307200,839,257884160,99.5,99.5,12532,29828,0.2345,3,2,chacha20-poly1305-ietf,zstd
+windows,chacha20-poly1305-ietf,zstd,high-ratio,307200,824,253214720,99.5,100.1,12520,29832,0.2059,13,12,chacha20-poly1305-ietf,zstd
+windows,chacha20,none,default,307200,553,169922560,99.0,97.5,12724,27812,,2,1,chacha20,none
+windows,none,lz4,default,307200,1458,447938560,99.5,99.6,12204,28024,0.3832,7,6,none,lz4
+windows,none,lz4,fast,307200,1461,448860160,99.3,99.5,12208,28212,0.3832,7,6,none,lz4
+windows,none,none,default,307200,1883,578600960,99.0,98.0,12364,26172,,3,2,none,none
+windows,none,zstd,default,307200,837,257146880,99.8,99.5,12316,29668,0.2345,15,14,none,zstd
+windows,none,zstd,high-ratio,307200,851,261570560,99.1,99.9,12336,29776,0.2059,14,13,none,zstd
+windows_shm,aes-128-gcm,lz4,default,200,1225801,245160253,99.7,99.4,273776,273908,0.7656,0,0,none,none
+windows_shm,aes-128-gcm,lz4,fast,200,1168766,233753160,99.7,99.8,273804,273916,0.7656,0,0,none,none
+windows_shm,aes-128-gcm,none,default,200,1127038,225407560,99.8,99.7,273824,273868,,0,0,none,none
+windows_shm,aes-128-gcm,zstd,default,200,1141374,228274720,98.1,99.1,273796,273852,0.6615,0,0,none,none
+windows_shm,aes-128-gcm,zstd,high-ratio,200,1209538,241907613,99.4,99.5,273808,273852,0.6562,0,0,none,none
+windows_shm,aes-192-gcm,none,default,200,1195009,239001707,99.3,99.4,273796,273856,,0,0,none,none
+windows_shm,aes-256-gcm,lz4,default,200,1125026,225005267,99.5,99.8,273836,273856,0.7656,0,0,none,none
+windows_shm,aes-256-gcm,lz4,fast,200,1131782,226356467,99.5,99.2,273796,273868,0.7656,0,0,none,none
+windows_shm,aes-256-gcm,none,default,200,1193755,238750987,99.8,99.4,273820,273872,,0,0,none,none
+windows_shm,aes-256-gcm,zstd,default,200,1172991,234598253,99.5,99.4,273788,273844,0.6615,0,0,none,none
+windows_shm,aes-256-gcm,zstd,high-ratio,200,1081653,216330627,99.1,99.5,273832,273860,0.6562,0,0,none,none
+windows_shm,chacha20-poly1305-ietf,lz4,default,200,1116661,223332253,99.6,100.0,273820,273816,0.7656,0,0,none,none
+windows_shm,chacha20-poly1305-ietf,lz4,fast,200,1179602,235920467,99.7,99.5,273768,273836,0.7656,0,0,none,none
+windows_shm,chacha20-poly1305-ietf,none,default,200,1198524,239704853,98.9,98.9,273788,273864,,0,0,none,none
+windows_shm,chacha20-poly1305-ietf,zstd,default,200,1152055,230410973,99.4,99.8,273800,273852,0.6615,0,0,none,none
+windows_shm,chacha20-poly1305-ietf,zstd,high-ratio,200,1103793,220758600,99.2,99.3,273788,273848,0.6562,0,0,none,none
+windows_shm,chacha20,none,default,200,1205019,241003733,99.6,99.8,273808,273872,,0,0,none,none
+windows_shm,none,lz4,default,200,1150107,230021413,99.7,99.6,273632,273704,0.7656,0,0,none,none
+windows_shm,none,lz4,fast,200,1224540,244907933,99.2,99.3,273644,273676,0.7656,0,0,none,none
+windows_shm,none,none,default,200,1088211,217642187,99.6,99.1,273660,273676,,0,0,none,none
+windows_shm,none,zstd,default,200,1079934,215986760,99.3,99.2,273656,273716,0.6615,0,0,none,none
+windows_shm,none,zstd,high-ratio,200,1105228,221045560,99.3,99.8,273628,273708,0.6562,0,0,none,none
+windows_shm,aes-128-gcm,lz4,default,1024,850791,871210121,97.8,98.0,273820,273884,0.5551,0,0,none,none
+windows_shm,aes-128-gcm,lz4,fast,1024,911451,933326234,99.5,99.2,273816,273904,0.5551,0,0,none,none
+windows_shm,aes-128-gcm,none,default,1024,906802,928565111,99.5,99.7,273812,273956,,0,0,none,none
+windows_shm,aes-128-gcm,zstd,default,1024,861186,881854396,99.3,99.6,273824,273896,0.3524,0,0,none,none
+windows_shm,aes-128-gcm,zstd,high-ratio,1024,847080,867410261,99.5,99.8,273820,273892,0.3327,0,0,none,none
+windows_shm,aes-192-gcm,none,default,1024,920278,942364877,99.8,99.2,273804,273868,,0,0,none,none
+windows_shm,aes-256-gcm,lz4,default,1024,872541,893482052,98.9,99.5,273792,273872,0.5551,0,0,none,none
+windows_shm,aes-256-gcm,lz4,fast,1024,919491,941558784,99.7,99.4,273816,273900,0.5551,0,0,none,none
+windows_shm,aes-256-gcm,none,default,1024,922913,945063185,99.8,99.6,273812,273884,,0,0,none,none
+windows_shm,aes-256-gcm,zstd,default,1024,851762,872204629,98.7,99.2,273844,273960,0.3524,0,0,none,none
+windows_shm,aes-256-gcm,zstd,high-ratio,1024,845158,865442270,99.6,99.2,273828,273872,0.3327,0,0,none,none
+windows_shm,chacha20-poly1305-ietf,lz4,default,1024,913068,934981359,99.3,99.0,273776,273852,0.5551,0,0,none,none
+windows_shm,chacha20-poly1305-ietf,lz4,fast,1024,953804,976695228,98.6,99.0,273828,273868,0.5551,0,0,none,none
+windows_shm,chacha20-poly1305-ietf,none,default,1024,900298,921905015,99.2,99.4,273796,273856,,0,0,none,none
+windows_shm,chacha20-poly1305-ietf,zstd,default,1024,850147,870550801,99.0,99.7,273764,273872,0.3524,0,0,none,none
+windows_shm,chacha20-poly1305-ietf,zstd,high-ratio,1024,866378,887170731,99.8,99.6,273792,273864,0.3327,0,0,none,none
+windows_shm,chacha20,none,default,1024,883178,904374135,99.6,99.3,273764,273852,,0,0,none,none
+windows_shm,none,lz4,default,1024,895486,916977869,99.4,99.8,273648,273740,0.5551,0,0,none,none
+windows_shm,none,lz4,fast,1024,885640,906895019,99.2,99.1,273656,273720,0.5551,0,0,none,none
+windows_shm,none,none,default,1024,866320,887111885,99.5,99.8,273684,273716,,0,0,none,none
+windows_shm,none,zstd,default,1024,953147,976023006,99.3,99.3,273676,273712,0.3524,0,0,none,none
+windows_shm,none,zstd,high-ratio,1024,910744,932601515,99.5,99.2,273652,273764,0.3327,0,0,none,none
+windows_shm,aes-128-gcm,lz4,default,8192,298527,2445535915,99.3,99.7,273908,274068,0.4586,0,0,none,none
+windows_shm,aes-128-gcm,lz4,fast,8192,295497,2420710332,99.5,99.9,273924,274036,0.4586,0,0,none,none
+windows_shm,aes-128-gcm,none,default,8192,306142,2507913626,99.6,99.3,273928,274056,,0,0,none,none
+windows_shm,aes-128-gcm,zstd,default,8192,292659,2397461982,99.4,99.3,273956,274040,0.2418,0,0,none,none
+windows_shm,aes-128-gcm,zstd,high-ratio,8192,298510,2445396651,99.8,99.8,273944,274068,0.2191,0,0,none,none
+windows_shm,aes-192-gcm,none,default,8192,293463,2404051627,99.6,99.6,273920,274032,,0,0,none,none
+windows_shm,aes-256-gcm,lz4,default,8192,294277,2410719369,99.5,99.7,273920,274044,0.4586,0,0,none,none
+windows_shm,aes-256-gcm,lz4,fast,8192,289907,2374918144,99.3,99.2,273888,274036,0.4586,0,0,none,none
+windows_shm,aes-256-gcm,none,default,8192,292115,2393002257,99.4,99.2,273900,274016,,0,0,none,none
+windows_shm,aes-256-gcm,zstd,default,8192,296480,2428760337,99.4,99.9,273900,274032,0.2418,0,0,none,none
+windows_shm,aes-256-gcm,zstd,high-ratio,8192,298687,2446843358,98.9,99.6,273888,274016,0.2191,0,0,none,none
+windows_shm,chacha20-poly1305-ietf,lz4,default,8192,299465,2453221103,99.0,98.9,273880,274020,0.4586,0,0,none,none
+windows_shm,chacha20-poly1305-ietf,lz4,fast,8192,276078,2261631522,96.5,98.0,273860,274000,0.4586,0,0,none,none
+windows_shm,chacha20-poly1305-ietf,none,default,8192,292945,2399807078,99.4,99.8,273904,274004,,0,0,none,none
+windows_shm,chacha20-poly1305-ietf,zstd,default,8192,297496,2437085594,99.3,99.3,273892,274008,0.2418,0,0,none,none
+windows_shm,chacha20-poly1305-ietf,zstd,high-ratio,8192,290901,2383060446,98.5,99.4,273880,274024,0.2191,0,0,none,none
+windows_shm,chacha20,none,default,8192,294134,2409542451,99.8,99.2,273892,273992,,0,0,none,none
+windows_shm,none,lz4,default,8192,295326,2419306769,99.4,99.1,273740,273904,0.4586,0,0,none,none
+windows_shm,none,lz4,fast,8192,295762,2422882850,99.8,100.0,273732,273884,0.4586,0,0,none,none
+windows_shm,none,none,default,8192,282623,2315248708,99.4,99.4,273768,273872,,0,0,none,none
+windows_shm,none,zstd,default,8192,293267,2402439987,99.7,99.8,273764,273888,0.2418,0,0,none,none
+windows_shm,none,zstd,high-ratio,8192,305070,2499136171,99.4,99.8,273760,273856,0.2191,0,0,none,none
+windows_shm,aes-128-gcm,lz4,default,65536,32634,2138719300,99.7,0.0,273920,274044,0.4365,0,0,none,none
+windows_shm,aes-128-gcm,lz4,fast,65536,32207,2110696107,98.4,0.0,273928,274016,0.4365,0,0,none,none
+windows_shm,aes-128-gcm,none,default,65536,32818,2150760448,99.2,0.0,273900,274044,,0,0,none,none
+windows_shm,aes-128-gcm,zstd,default,65536,32607,2136932352,99.3,0.0,273976,273996,0.2383,0,0,none,none
+windows_shm,aes-128-gcm,zstd,high-ratio,65536,32411,2124117879,99.7,0.0,273932,274044,0.2099,0,0,none,none
+windows_shm,aes-192-gcm,none,default,65536,40763,2671426492,99.8,129.0,273960,274116,,0,0,none,none
+windows_shm,aes-256-gcm,lz4,default,65536,32842,2152320205,99.5,0.0,273992,274048,0.4365,0,0,none,none
+windows_shm,aes-256-gcm,lz4,fast,65536,30517,1999940267,98.7,0.0,273948,273960,0.4365,0,0,none,none
+windows_shm,aes-256-gcm,none,default,65536,30879,2023673037,94.1,0.0,273952,274052,,0,0,none,none
+windows_shm,aes-256-gcm,zstd,default,65536,32427,2125109658,98.5,0.0,273948,274000,0.2383,1,0,none,none
+windows_shm,aes-256-gcm,zstd,high-ratio,65536,41198,2699934652,99.8,0.0,273932,274028,0.2099,0,0,none,none
+windows_shm,chacha20-poly1305-ietf,lz4,default,65536,31627,2072733286,98.8,0.0,273888,274004,0.4365,0,0,none,none
+windows_shm,chacha20-poly1305-ietf,lz4,fast,65536,31611,2071641020,99.6,0.0,273900,274036,0.4365,0,0,none,none
+windows_shm,chacha20-poly1305-ietf,none,default,65536,42946,2814491580,99.7,137.3,273968,274016,,0,0,none,none
+windows_shm,chacha20-poly1305-ietf,zstd,default,65536,41873,2744197666,98.7,136.4,273956,274024,0.2383,0,0,none,none
+windows_shm,chacha20-poly1305-ietf,zstd,high-ratio,65536,32907,2156593152,97.8,99.9,274000,274012,0.2099,0,0,none,none
+windows_shm,chacha20,none,default,65536,32559,2133790993,98.5,0.0,273904,274032,,0,0,none,none
+windows_shm,none,lz4,default,65536,32226,2111936922,99.3,0.0,273764,273912,0.4365,0,0,none,none
+windows_shm,none,lz4,fast,65536,37711,2471406251,99.5,0.0,273840,273864,0.4365,0,0,none,none
+windows_shm,none,none,default,65536,34189,2240636518,99.0,647.6,273796,273888,,0,0,none,none
+windows_shm,none,zstd,default,65536,32723,2144503945,99.5,0.0,273772,273944,0.2383,0,0,none,none
+windows_shm,none,zstd,high-ratio,65536,31557,2068145766,99.1,0.0,273784,273892,0.2099,0,0,none,none
+windows_shm,aes-128-gcm,lz4,default,307200,7692,2362839040,98.8,0.0,274404,274748,0.3832,1,0,none,none
+windows_shm,aes-128-gcm,lz4,fast,307200,7683,2360074240,98.9,0.0,274464,274768,0.3832,0,0,none,none
+windows_shm,aes-128-gcm,none,default,307200,7784,2391121920,98.6,0.0,274444,274764,,0,0,none,none
+windows_shm,aes-128-gcm,zstd,default,307200,7736,2376478720,99.6,0.0,274416,274772,0.2345,0,0,none,none
+windows_shm,aes-128-gcm,zstd,high-ratio,307200,8180,2512855040,99.4,0.0,274488,274672,0.2059,0,0,none,none
+windows_shm,aes-192-gcm,none,default,307200,7705,2366955520,99.5,0.0,274472,274712,,0,0,none,none
+windows_shm,aes-256-gcm,lz4,default,307200,7856,2413301760,98.3,0.0,274448,274748,0.3832,0,0,none,none
+windows_shm,aes-256-gcm,lz4,fast,307200,7841,2408878080,99.0,0.0,274392,274744,0.3832,0,0,none,none
+windows_shm,aes-256-gcm,none,default,307200,7791,2393251840,99.5,0.0,274416,274672,,0,0,none,none
+windows_shm,aes-256-gcm,zstd,default,307200,7690,2362286080,99.8,98.5,274440,274748,0.2345,0,0,none,none
+windows_shm,aes-256-gcm,zstd,high-ratio,307200,8111,2491842560,99.1,0.0,274460,274740,0.2059,0,0,none,none
+windows_shm,chacha20-poly1305-ietf,lz4,default,307200,7215,2216304640,97.4,0.0,274428,274772,0.3832,0,0,none,none
+windows_shm,chacha20-poly1305-ietf,lz4,fast,307200,7757,2382807040,99.7,0.0,274420,274680,0.3832,0,0,none,none
+windows_shm,chacha20-poly1305-ietf,none,default,307200,7489,2300682240,98.7,0.0,274364,274656,,0,0,none,none
+windows_shm,chacha20-poly1305-ietf,zstd,default,307200,7763,2384814080,99.6,0.0,274444,274636,0.2345,0,0,none,none
+windows_shm,chacha20-poly1305-ietf,zstd,high-ratio,307200,8008,2460180480,99.5,0.0,274440,274652,0.2059,0,0,none,none
+windows_shm,chacha20,none,default,307200,7807,2398289920,98.9,0.0,274480,274672,,0,0,none,none
+windows_shm,none,lz4,default,307200,7741,2378158080,98.2,0.0,274248,274632,0.3832,0,0,none,none
+windows_shm,none,lz4,fast,307200,7254,2228428800,97.1,0.0,274272,274576,0.3832,2,0,none,none
+windows_shm,none,none,default,307200,7893,2424688640,99.2,0.0,274320,274568,,0,0,none,none
+windows_shm,none,zstd,default,307200,7452,2289213440,99.0,0.0,274308,274580,0.2345,0,0,none,none
+windows_shm,none,zstd,high-ratio,307200,7627,2343014400,99.4,0.0,274296,274576,0.2059,0,0,none,none
+wsl,aes-128-gcm,lz4,default,200,1482161,296432227,100.0,100.2,12772,25948,0.7656,21,20,aes-128-gcm,lz4
+wsl,aes-128-gcm,lz4,fast,200,1484746,296949267,100.0,100.3,12852,25940,0.7656,25,24,aes-128-gcm,lz4
+wsl,aes-128-gcm,none,default,200,1379549,275909787,100.0,100.3,12372,26128,,22,21,aes-128-gcm,none
+wsl,aes-128-gcm,zstd,default,200,1516371,303274187,100.0,100.3,12652,25848,0.6615,25,24,aes-128-gcm,zstd
+wsl,aes-128-gcm,zstd,high-ratio,200,1539439,307887747,100.0,100.3,12628,25708,0.6562,34,33,aes-128-gcm,zstd
+wsl,aes-192-gcm,none,default,200,1556029,311205707,100.0,100.2,12816,25876,,21,20,aes-192-gcm,none
+wsl,aes-256-gcm,lz4,default,200,1566137,313227387,100.0,100.4,12808,25684,0.7656,31,30,aes-256-gcm,lz4
+wsl,aes-256-gcm,lz4,fast,200,1544295,308859080,100.0,100.1,12768,26068,0.7656,23,22,aes-256-gcm,lz4
+wsl,aes-256-gcm,none,default,200,1536376,307275240,100.0,100.2,12648,26324,,22,21,aes-256-gcm,none
+wsl,aes-256-gcm,zstd,default,200,1557224,311444880,100.0,100.2,12796,25812,0.6615,20,19,aes-256-gcm,zstd
+wsl,aes-256-gcm,zstd,high-ratio,200,1556504,311300760,100.0,100.3,12912,26004,0.6562,22,21,aes-256-gcm,zstd
+wsl,chacha20-poly1305-ietf,lz4,default,200,916351,183270187,100.0,100.4,12556,26260,0.7656,34,33,chacha20-poly1305-ietf,lz4
+wsl,chacha20-poly1305-ietf,lz4,fast,200,931054,186210733,100.0,100.4,12656,25876,0.7656,22,21,chacha20-poly1305-ietf,lz4
+wsl,chacha20-poly1305-ietf,none,default,200,913893,182778613,100.0,100.5,12588,26196,,26,25,chacha20-poly1305-ietf,none
+wsl,chacha20-poly1305-ietf,zstd,default,200,913983,182796627,100.0,100.7,12592,25876,0.6615,22,21,chacha20-poly1305-ietf,zstd
+wsl,chacha20-poly1305-ietf,zstd,high-ratio,200,938278,187655667,100.0,100.4,12516,25812,0.6562,21,20,chacha20-poly1305-ietf,zstd
+wsl,chacha20,none,default,200,392109,78421893,100.0,101.8,12404,26512,,27,26,chacha20,none
+wsl,none,lz4,default,200,3138445,627688920,100.0,100.0,12292,21780,0.7656,0,0,none,lz4
+wsl,none,lz4,fast,200,3135017,627003427,100.0,100.1,12196,21716,0.7656,0,0,none,lz4
+wsl,none,none,default,200,3223375,644675053,100.0,100.1,12044,21844,,2,1,none,none
+wsl,none,zstd,default,200,3237960,647592053,100.0,100.1,12048,24336,0.6615,19,18,none,zstd
+wsl,none,zstd,high-ratio,200,3102265,620452907,100.0,100.1,12352,23632,0.6562,12,11,none,zstd
+wsl,aes-128-gcm,lz4,default,1024,559310,572733850,100.0,100.3,12880,25236,0.5551,24,23,aes-128-gcm,lz4
+wsl,aes-128-gcm,lz4,fast,1024,551145,564372002,100.0,100.3,12976,26196,0.5551,30,29,aes-128-gcm,lz4
+wsl,aes-128-gcm,none,default,1024,820303,839989999,100.0,100.1,12868,24468,,23,22,aes-128-gcm,none
+wsl,aes-128-gcm,zstd,default,1024,149683,153275119,100.0,101.6,13008,27412,0.3524,54,53,aes-128-gcm,zstd
+wsl,aes-128-gcm,zstd,high-ratio,1024,150270,153876207,100.0,101.7,13140,27180,0.3327,30,29,aes-128-gcm,zstd
+wsl,aes-192-gcm,none,default,1024,801613,820851917,100.0,100.2,12772,25492,,29,28,aes-192-gcm,none
+wsl,aes-256-gcm,lz4,default,1024,556934,570300757,100.0,100.4,12752,26380,0.5551,52,51,aes-256-gcm,lz4
+wsl,aes-256-gcm,lz4,fast,1024,525539,538152346,100.0,100.2,12828,26128,0.5551,35,34,aes-256-gcm,lz4
+wsl,aes-256-gcm,none,default,1024,800094,819295983,100.0,100.0,12776,25556,,30,29,aes-256-gcm,none
+wsl,aes-256-gcm,zstd,default,1024,149596,153186372,100.0,101.2,13168,27476,0.3524,54,53,aes-256-gcm,zstd
+wsl,aes-256-gcm,zstd,high-ratio,1024,134347,137570850,100.0,103.7,13340,27280,0.3327,53,52,aes-256-gcm,zstd
+wsl,chacha20-poly1305-ietf,lz4,default,1024,445438,456128375,100.0,100.4,12648,26196,0.5551,58,57,chacha20-poly1305-ietf,lz4
+wsl,chacha20-poly1305-ietf,lz4,fast,1024,447349,458084966,100.0,100.3,12436,26196,0.5551,56,55,chacha20-poly1305-ietf,lz4
+wsl,chacha20-poly1305-ietf,none,default,1024,597981,612332271,100.0,100.2,12676,25556,,30,29,chacha20-poly1305-ietf,none
+wsl,chacha20-poly1305-ietf,zstd,default,1024,141151,144538351,100.0,101.9,12756,26964,0.3524,54,53,chacha20-poly1305-ietf,zstd
+wsl,chacha20-poly1305-ietf,zstd,high-ratio,1024,138144,141459524,100.0,101.9,12628,27220,0.3327,34,33,chacha20-poly1305-ietf,zstd
+wsl,chacha20,none,default,1024,103330,105809852,100.0,100.6,12568,26704,,49,48,chacha20,none
+wsl,none,lz4,default,1024,726018,743442227,100.0,100.4,12180,25044,0.5551,29,28,none,lz4
+wsl,none,lz4,fast,1024,687209,703701675,100.0,100.3,12420,25364,0.5551,32,31,none,lz4
+wsl,none,none,default,1024,1297151,1328282897,100.0,100.0,12260,20884,,0,0,none,none
+wsl,none,zstd,default,1024,158446,162248567,100.0,101.8,12500,21716,0.3524,0,0,none,zstd
+wsl,none,zstd,high-ratio,1024,154724,158437649,100.0,101.4,12412,21972,0.3327,0,0,none,zstd
+wsl,aes-128-gcm,lz4,default,8192,111636,914525935,100.0,100.4,12900,25812,0.4586,38,37,aes-128-gcm,lz4
+wsl,aes-128-gcm,lz4,fast,8192,107207,878240290,100.0,100.4,12756,26068,0.4586,42,41,aes-128-gcm,lz4
+wsl,aes-128-gcm,none,default,8192,110915,908611857,100.0,100.0,12852,20868,,2,1,aes-128-gcm,none
+wsl,aes-128-gcm,zstd,default,8192,43084,352945766,100.0,101.6,13132,27284,0.2418,55,54,aes-128-gcm,zstd
+wsl,aes-128-gcm,zstd,high-ratio,8192,46834,383666859,100.0,101.6,13276,27412,0.2191,45,44,aes-128-gcm,zstd
+wsl,aes-192-gcm,none,default,8192,78532,643337967,100.0,100.0,12784,21016,,0,0,aes-192-gcm,none
+wsl,aes-256-gcm,lz4,default,8192,115989,950178611,100.0,100.4,12812,26000,0.4586,46,45,aes-256-gcm,lz4
+wsl,aes-256-gcm,lz4,fast,8192,115070,942651255,100.0,100.3,12860,25940,0.4586,38,37,aes-256-gcm,lz4
+wsl,aes-256-gcm,none,default,8192,94332,772771567,100.0,100.0,12720,20940,,2,1,aes-256-gcm,none
+wsl,aes-256-gcm,zstd,default,8192,45656,374012860,100.0,101.9,13064,27152,0.2418,41,40,aes-256-gcm,zstd
+wsl,aes-256-gcm,zstd,high-ratio,8192,45827,375412053,100.0,101.2,13348,27348,0.2191,45,44,aes-256-gcm,zstd
+wsl,chacha20-poly1305-ietf,lz4,default,8192,104461,855747789,100.0,100.4,12576,25748,0.4586,44,43,chacha20-poly1305-ietf,lz4
+wsl,chacha20-poly1305-ietf,lz4,fast,8192,104376,855047100,100.0,100.4,12648,25876,0.4586,39,38,chacha20-poly1305-ietf,lz4
+wsl,chacha20-poly1305-ietf,none,default,8192,113131,926766421,99.9,100.1,12620,21096,,2,1,chacha20-poly1305-ietf,none
+wsl,chacha20-poly1305-ietf,zstd,default,8192,44097,361240439,100.0,101.9,12860,27092,0.2418,48,47,chacha20-poly1305-ietf,zstd
+wsl,chacha20-poly1305-ietf,zstd,high-ratio,8192,44625,365571823,100.0,101.3,13188,27140,0.2191,50,49,chacha20-poly1305-ietf,zstd
+wsl,chacha20,none,default,8192,12567,102950619,100.0,101.7,12580,25976,,44,43,chacha20,none
+wsl,none,lz4,default,8192,126509,1036357905,100.0,100.3,12336,20752,0.4586,0,0,none,lz4
+wsl,none,lz4,fast,8192,124252,1017869653,100.0,100.2,12340,25492,0.4586,45,44,none,lz4
+wsl,none,none,default,8192,128911,1056035635,100.0,100.0,12296,20428,,0,0,none,none
+wsl,none,zstd,default,8192,46668,382300979,100.0,101.7,12484,21196,0.2418,0,0,none,zstd
+wsl,none,zstd,high-ratio,8192,47449,388703846,100.0,101.9,12372,26576,0.2191,48,47,none,zstd
+wsl,aes-128-gcm,lz4,default,65536,16831,1103036416,99.9,100.3,13300,26448,0.4365,19,18,aes-128-gcm,lz4
+wsl,aes-128-gcm,lz4,fast,65536,17395,1139968137,100.0,100.2,13108,26452,0.4365,23,22,aes-128-gcm,lz4
+wsl,aes-128-gcm,none,default,65536,15223,997672004,99.9,100.0,13172,25712,,7,6,aes-128-gcm,none
+wsl,aes-128-gcm,zstd,default,65536,8039,526861380,99.9,102.2,13344,25732,0.2383,19,18,aes-128-gcm,zstd
+wsl,aes-128-gcm,zstd,high-ratio,65536,8134,533052348,100.0,101.3,13320,27464,0.2099,37,36,aes-128-gcm,zstd
+wsl,aes-192-gcm,none,default,65536,19838,1300129382,99.9,100.0,13260,26152,,10,9,aes-192-gcm,none
+wsl,aes-256-gcm,lz4,default,65536,17912,1173889570,100.0,100.2,12972,26516,0.4365,18,17,aes-256-gcm,lz4
+wsl,aes-256-gcm,lz4,fast,65536,17483,1145778995,100.0,100.2,13208,26388,0.4365,20,19,aes-256-gcm,lz4
+wsl,aes-256-gcm,none,default,65536,18965,1242907716,100.0,100.0,13360,26004,,44,43,aes-256-gcm,none
+wsl,aes-256-gcm,zstd,default,65536,8010,524930253,100.0,101.5,13316,27456,0.2383,33,32,aes-256-gcm,zstd
+wsl,aes-256-gcm,zstd,high-ratio,65536,8032,526406997,99.6,101.3,13392,27528,0.2099,24,23,aes-256-gcm,zstd
+wsl,chacha20-poly1305-ietf,lz4,default,65536,16727,1096194458,100.0,100.2,13080,26196,0.4365,21,20,chacha20-poly1305-ietf,lz4
+wsl,chacha20-poly1305-ietf,lz4,fast,65536,15226,997881719,100.0,100.3,12956,25812,0.4365,14,13,chacha20-poly1305-ietf,lz4
+wsl,chacha20-poly1305-ietf,none,default,65536,13104,858770637,99.9,100.0,12912,25940,,41,40,chacha20-poly1305-ietf,none
+wsl,chacha20-poly1305-ietf,zstd,default,65536,7877,516257655,100.0,101.1,13200,27280,0.2383,40,39,chacha20-poly1305-ietf,zstd
+wsl,chacha20-poly1305-ietf,zstd,high-ratio,65536,7694,504264567,99.9,101.6,13148,27268,0.2099,40,39,chacha20-poly1305-ietf,zstd
+wsl,chacha20,none,default,65536,1795,117604352,100.5,100.8,12892,26452,,57,56,chacha20,none
+wsl,none,lz4,default,65536,18942,1241352329,99.9,100.2,12332,23440,0.4365,10,9,none,lz4
+wsl,none,lz4,fast,65536,18801,1232146705,99.9,100.2,12476,25620,0.4365,19,18,none,lz4
+wsl,none,none,default,65536,21503,1409207501,100.0,100.1,12116,20580,,0,0,none,none
+wsl,none,zstd,default,65536,7695,504316996,100.0,101.5,12800,26756,0.2383,25,24,none,zstd
+wsl,none,zstd,high-ratio,65536,7890,517070302,100.0,102.0,12436,21624,0.2099,0,0,none,zstd
+wsl,aes-128-gcm,lz4,default,307200,2837,871614171,100.1,100.5,13756,25416,0.3832,4,3,aes-128-gcm,lz4
+wsl,aes-128-gcm,lz4,fast,307200,2766,849802971,100.1,100.7,13864,26964,0.3832,4,3,aes-128-gcm,lz4
+wsl,aes-128-gcm,none,default,307200,3559,1093434514,100.1,99.9,13868,24280,,0,0,aes-128-gcm,none
+wsl,aes-128-gcm,zstd,default,307200,1380,423957943,100.1,102.6,14036,28928,0.2345,7,6,aes-128-gcm,zstd
+wsl,aes-128-gcm,zstd,high-ratio,307200,1539,472693029,100.1,102.5,13756,29056,0.2059,9,8,aes-128-gcm,zstd
+wsl,aes-192-gcm,none,default,307200,3703,1137539657,100.1,100.0,14052,26276,,2,1,aes-192-gcm,none
+wsl,aes-256-gcm,lz4,default,307200,2707,831458743,100.0,100.5,13692,27088,0.3832,4,3,aes-256-gcm,lz4
+wsl,aes-256-gcm,lz4,fast,307200,2749,844383086,100.0,100.5,13832,27076,0.3832,4,3,aes-256-gcm,lz4
+wsl,aes-256-gcm,none,default,307200,3429,1053257143,100.0,100.0,14152,26596,,2,1,aes-256-gcm,none
+wsl,aes-256-gcm,zstd,default,307200,1535,471398400,100.2,101.7,13996,28924,0.2345,7,6,aes-256-gcm,zstd
+wsl,aes-256-gcm,zstd,high-ratio,307200,1544,474448457,100.2,102.5,13592,28732,0.2059,36,35,aes-256-gcm,zstd
+wsl,chacha20-poly1305-ietf,lz4,default,307200,2489,764730514,100.2,100.9,13476,26780,0.3832,4,3,chacha20-poly1305-ietf,lz4
+wsl,chacha20-poly1305-ietf,lz4,fast,307200,2688,825731657,100.0,100.5,13744,26936,0.3832,4,3,chacha20-poly1305-ietf,lz4
+wsl,chacha20-poly1305-ietf,none,default,307200,2734,839950629,100.1,100.0,13720,25352,,2,1,chacha20-poly1305-ietf,none
+wsl,chacha20-poly1305-ietf,zstd,default,307200,1474,452746971,100.2,102.5,13568,28668,0.2345,7,6,chacha20-poly1305-ietf,zstd
+wsl,chacha20-poly1305-ietf,zstd,high-ratio,307200,1525,468370286,100.1,102.1,13816,28604,0.2059,7,6,chacha20-poly1305-ietf,zstd
+wsl,chacha20,none,default,307200,367,112786286,102.0,101.6,13900,27392,,3,2,chacha20,none
+wsl,none,lz4,default,307200,2433,747527314,100.1,100.8,13104,27256,0.3832,26,25,none,lz4
+wsl,none,lz4,fast,307200,1692,519694629,100.1,102.2,12888,26676,0.3832,4,3,none,lz4
+wsl,none,none,default,307200,3786,1163125029,99.9,99.9,12912,22116,,0,0,none,none
+wsl,none,zstd,default,307200,1557,478398171,100.1,102.7,13200,23308,0.2345,0,0,none,zstd
+wsl,none,zstd,high-ratio,307200,1607,493780114,100.1,101.6,13340,23288,0.2059,0,0,none,zstd
+wsl_shm,aes-128-gcm,lz4,default,200,2067005,413401040,100.0,100.0,274792,274860,0.7656,0,0,none,none
+wsl_shm,aes-128-gcm,lz4,fast,200,2051932,410386333,100.0,100.0,274764,274772,0.7656,0,0,none,none
+wsl_shm,aes-128-gcm,none,default,200,2103109,420621853,100.0,100.0,274696,274724,,0,0,none,none
+wsl_shm,aes-128-gcm,zstd,default,200,2157921,431584147,100.0,100.0,274636,274656,0.6615,0,0,none,none
+wsl_shm,aes-128-gcm,zstd,high-ratio,200,2037835,407566920,100.0,100.0,274812,274540,0.6562,0,0,none,none
+wsl_shm,aes-192-gcm,none,default,200,2094554,418910733,100.0,100.0,274452,274664,,0,0,none,none
+wsl_shm,aes-256-gcm,lz4,default,200,2053604,410720840,100.0,100.0,274528,274676,0.7656,0,0,none,none
+wsl_shm,aes-256-gcm,lz4,fast,200,2068692,413738493,100.0,100.0,274592,274580,0.7656,0,0,none,none
+wsl_shm,aes-256-gcm,none,default,200,2096544,419308787,100.0,100.0,274544,274716,,0,0,none,none
+wsl_shm,aes-256-gcm,zstd,default,200,2032321,406464253,100.0,100.0,274628,274776,0.6615,0,0,none,none
+wsl_shm,aes-256-gcm,zstd,high-ratio,200,2056939,411387760,100.0,100.0,274660,274660,0.6562,0,0,none,none
+wsl_shm,chacha20-poly1305-ietf,lz4,default,200,2074511,414902173,100.0,100.0,274520,274528,0.7656,0,0,none,none
+wsl_shm,chacha20-poly1305-ietf,lz4,fast,200,2053229,410645747,100.0,100.0,274604,274568,0.7656,0,0,none,none
+wsl_shm,chacha20-poly1305-ietf,none,default,200,2107450,421489907,100.0,100.0,274604,274740,,0,0,none,none
+wsl_shm,chacha20-poly1305-ietf,zstd,default,200,2098441,419688267,100.0,100.0,274644,274700,0.6615,0,0,none,none
+wsl_shm,chacha20-poly1305-ietf,zstd,high-ratio,200,2127520,425504000,100.0,100.0,274668,274524,0.6562,0,0,none,none
+wsl_shm,chacha20,none,default,200,2121939,424387827,100.0,100.0,274620,274520,,0,0,none,none
+wsl_shm,none,lz4,default,200,2051846,410369267,100.0,100.0,274348,274340,0.7656,0,0,none,none
+wsl_shm,none,lz4,fast,200,2067309,413461747,100.0,100.0,274412,274412,0.7656,0,0,none,none
+wsl_shm,none,none,default,200,2100918,420183507,100.0,100.0,274100,274400,,0,0,none,none
+wsl_shm,none,zstd,default,200,2095520,419103960,100.0,100.0,274400,274272,0.6615,0,0,none,none
+wsl_shm,none,zstd,high-ratio,200,2085874,417174893,100.0,99.9,274064,274276,0.6562,0,0,none,none
+wsl_shm,aes-128-gcm,lz4,default,1024,1413836,1447767654,100.0,100.0,274736,274656,0.5551,0,0,none,none
+wsl_shm,aes-128-gcm,lz4,fast,1024,1425128,1459330799,100.0,100.0,274724,274776,0.5551,0,0,none,none
+wsl_shm,aes-128-gcm,none,default,1024,1390867,1424247945,100.0,100.0,274388,274804,,0,0,none,none
+wsl_shm,aes-128-gcm,zstd,default,1024,1425004,1459203755,100.0,100.0,274672,274712,0.3524,0,0,none,none
+wsl_shm,aes-128-gcm,zstd,high-ratio,1024,1418086,1452119586,100.0,100.0,274564,274540,0.3327,0,0,none,none
+wsl_shm,aes-192-gcm,none,default,1024,1426639,1460878473,100.0,100.0,274664,274848,,0,0,none,none
+wsl_shm,aes-256-gcm,lz4,default,1024,1386602,1419880038,100.0,100.0,274660,274804,0.5551,0,0,none,none
+wsl_shm,aes-256-gcm,lz4,fast,1024,1426926,1461172497,100.0,100.0,274672,274672,0.5551,0,0,none,none
+wsl_shm,aes-256-gcm,none,default,1024,1406873,1440637679,100.0,100.0,274640,274704,,0,0,none,none
+wsl_shm,aes-256-gcm,zstd,default,1024,1399507,1433095100,100.0,100.0,274636,274512,0.3524,0,0,none,none
+wsl_shm,aes-256-gcm,zstd,high-ratio,1024,1419969,1454048051,100.0,100.0,274644,274828,0.3327,0,0,none,none
+wsl_shm,chacha20-poly1305-ietf,lz4,default,1024,1423396,1457557094,100.0,100.0,274476,274692,0.5551,0,0,none,none
+wsl_shm,chacha20-poly1305-ietf,lz4,fast,1024,1416426,1450420497,100.0,100.0,274636,274656,0.5551,0,0,none,none
+wsl_shm,chacha20-poly1305-ietf,none,default,1024,1401480,1435115179,100.0,100.0,274404,274680,,0,0,none,none
+wsl_shm,chacha20-poly1305-ietf,zstd,default,1024,1430839,1465178863,100.0,100.0,274636,274648,0.3524,0,0,none,none
+wsl_shm,chacha20-poly1305-ietf,zstd,high-ratio,1024,1394056,1427513003,100.0,100.0,274704,274580,0.3327,0,0,none,none
+wsl_shm,chacha20,none,default,1024,1384686,1417918805,100.0,100.0,274728,274600,,0,0,none,none
+wsl_shm,none,lz4,default,1024,1400451,1434061346,100.0,100.0,274276,274352,0.5551,0,0,none,none
+wsl_shm,none,lz4,fast,1024,1392707,1426132378,100.0,99.9,274372,274212,0.5551,0,0,none,none
+wsl_shm,none,none,default,1024,1436962,1471449020,100.0,100.0,274376,274396,,0,0,none,none
+wsl_shm,none,zstd,default,1024,1399581,1433170671,100.0,100.0,274404,274448,0.3524,0,0,none,none
+wsl_shm,none,zstd,high-ratio,1024,1418606,1452652817,100.0,100.0,274068,274460,0.3327,0,0,none,none
+wsl_shm,aes-128-gcm,lz4,default,8192,365058,2990553498,100.0,100.0,274588,274644,0.4586,0,0,none,none
+wsl_shm,aes-128-gcm,lz4,fast,8192,365312,2992636450,100.0,100.0,274420,274864,0.4586,0,0,none,none
+wsl_shm,aes-128-gcm,none,default,8192,360685,2954727697,100.0,100.1,274388,274796,,0,0,none,none
+wsl_shm,aes-128-gcm,zstd,default,8192,363873,2980850893,100.0,100.1,274468,275024,0.2418,0,0,none,none
+wsl_shm,aes-128-gcm,zstd,high-ratio,8192,366768,3004562910,100.0,100.0,274700,274668,0.2191,0,0,none,none
+wsl_shm,aes-192-gcm,none,default,8192,363432,2977235490,100.0,100.0,274712,274864,,0,0,none,none
+wsl_shm,aes-256-gcm,lz4,default,8192,364120,2982869948,100.0,100.0,274712,274844,0.4586,0,0,none,none
+wsl_shm,aes-256-gcm,lz4,fast,8192,358956,2940566460,100.0,100.0,274740,274804,0.4586,0,0,none,none
+wsl_shm,aes-256-gcm,none,default,8192,354752,2906127838,100.0,100.0,274448,274996,,0,0,none,none
+wsl_shm,aes-256-gcm,zstd,default,8192,365130,2991141137,100.0,100.0,274672,274748,0.2418,0,0,none,none
+wsl_shm,aes-256-gcm,zstd,high-ratio,8192,363967,2981619849,100.0,100.0,274692,274752,0.2191,0,0,none,none
+wsl_shm,chacha20-poly1305-ietf,lz4,default,8192,361087,2958023612,100.0,99.9,274420,274836,0.4586,0,0,none,none
+wsl_shm,chacha20-poly1305-ietf,lz4,fast,8192,363420,2977138825,100.0,100.0,274464,274660,0.4586,0,0,none,none
+wsl_shm,chacha20-poly1305-ietf,none,default,8192,365698,2995801839,100.0,100.0,274656,274844,,0,0,none,none
+wsl_shm,chacha20-poly1305-ietf,zstd,default,8192,368869,3021774302,100.0,100.0,274736,274752,0.2418,0,0,none,none
+wsl_shm,chacha20-poly1305-ietf,zstd,high-ratio,8192,361348,2960161178,100.0,100.0,274672,274836,0.2191,0,0,none,none
+wsl_shm,chacha20,none,default,8192,362237,2967443319,100.0,100.0,274284,274456,,0,0,none,none
+wsl_shm,none,lz4,default,8192,364475,2985775377,100.0,100.0,274140,274184,0.4586,0,0,none,none
+wsl_shm,none,lz4,fast,8192,358844,2939650594,100.0,100.0,274412,274420,0.4586,0,0,none,none
+wsl_shm,none,none,default,8192,360791,2955603149,100.0,100.0,274392,274328,,0,0,none,none
+wsl_shm,none,zstd,default,8192,361251,2959368738,100.0,100.0,273964,274304,0.2418,0,0,none,none
+wsl_shm,none,zstd,high-ratio,8192,361731,2963304175,100.0,100.0,274316,274144,0.2191,0,0,none,none
+wsl_shm,aes-128-gcm,lz4,default,65536,34940,2289854054,100.0,0.0,274912,274772,0.4365,0,0,none,none
+wsl_shm,aes-128-gcm,lz4,fast,65536,34305,2248208111,100.0,0.0,274904,274960,0.4365,0,0,none,none
+wsl_shm,aes-128-gcm,none,default,65536,34616,2268576700,100.0,0.0,274924,274972,,0,0,none,none
+wsl_shm,aes-128-gcm,zstd,default,65536,31334,2053483179,100.0,0.0,274612,275144,0.2383,0,0,none,none
+wsl_shm,aes-128-gcm,zstd,high-ratio,65536,31019,2032830601,100.0,0.0,274580,274952,0.2099,0,0,none,none
+wsl_shm,aes-192-gcm,none,default,65536,34610,2268200960,100.0,0.0,274788,274980,,0,0,none,none
+wsl_shm,aes-256-gcm,lz4,default,65536,31023,2033145173,100.0,0.0,274908,274900,0.4365,0,0,none,none
+wsl_shm,aes-256-gcm,lz4,fast,65536,34085,2233807667,100.0,0.0,274844,275004,0.4365,0,0,none,none
+wsl_shm,aes-256-gcm,none,default,65536,34273,2246089114,100.0,0.0,274764,274796,,0,0,none,none
+wsl_shm,aes-256-gcm,zstd,default,65536,31344,2054138539,100.0,0.0,274736,275012,0.2383,0,0,none,none
+wsl_shm,aes-256-gcm,zstd,high-ratio,65536,31563,2068525875,100.0,0.0,274828,275088,0.2099,0,0,none,none
+wsl_shm,chacha20-poly1305-ietf,lz4,default,65536,34389,2253717504,100.0,0.0,274864,274804,0.4365,0,0,none,none
+wsl_shm,chacha20-poly1305-ietf,lz4,fast,65536,34509,2261568717,100.0,0.0,274760,275016,0.4365,0,0,none,none
+wsl_shm,chacha20-poly1305-ietf,none,default,65536,34337,2250331477,100.0,0.0,274680,275012,,0,0,none,none
+wsl_shm,chacha20-poly1305-ietf,zstd,default,65536,31356,2054973030,100.0,0.0,274792,274676,0.2383,0,0,none,none
+wsl_shm,chacha20-poly1305-ietf,zstd,high-ratio,65536,31306,2051661278,100.0,0.0,274788,274912,0.2099,0,0,none,none
+wsl_shm,chacha20,none,default,65536,34670,2272146227,100.0,0.0,274788,274860,,0,0,none,none
+wsl_shm,none,lz4,default,65536,31685,2076503791,100.0,0.0,274656,274636,0.4365,0,0,none,none
+wsl_shm,none,lz4,fast,65536,34519,2262224077,100.0,0.0,274584,274464,0.4365,0,0,none,none
+wsl_shm,none,none,default,65536,30675,2010329907,100.0,0.0,274444,274468,,0,0,none,none
+wsl_shm,none,zstd,default,65536,34083,2233689702,100.0,0.0,274184,274572,0.2383,0,0,none,none
+wsl_shm,none,zstd,high-ratio,65536,34337,2250287787,100.0,0.0,274156,274260,0.2099,0,0,none,none
+wsl_shm,aes-128-gcm,lz4,default,307200,3921,1204613120,100.0,0.0,275312,275716,0.3832,0,0,none,none
+wsl_shm,aes-128-gcm,lz4,fast,307200,3901,1198510080,100.0,0.0,275220,275752,0.3832,0,0,none,none
+wsl_shm,aes-128-gcm,none,default,307200,3988,1225072640,100.0,0.0,275136,275536,,0,0,none,none
+wsl_shm,aes-128-gcm,zstd,default,307200,3956,1215385600,100.0,0.0,275352,275472,0.2345,0,0,none,none
+wsl_shm,aes-128-gcm,zstd,high-ratio,307200,3876,1190666240,100.0,0.0,275372,275908,0.2059,0,0,none,none
+wsl_shm,aes-192-gcm,none,default,307200,3925,1205882880,100.0,0.0,275308,275768,,0,0,none,none
+wsl_shm,aes-256-gcm,lz4,default,307200,3912,1201704960,100.0,0.0,275228,275540,0.3832,0,0,none,none
+wsl_shm,aes-256-gcm,lz4,fast,307200,3863,1186795520,100.0,0.0,275428,275796,0.3832,0,0,none,none
+wsl_shm,aes-256-gcm,none,default,307200,3920,1204285440,100.0,0.0,275296,275796,,0,0,none,none
+wsl_shm,aes-256-gcm,zstd,default,307200,3974,1220812800,100.0,0.0,275288,275800,0.2345,0,0,none,none
+wsl_shm,aes-256-gcm,zstd,high-ratio,307200,3953,1214320640,100.0,0.0,275284,275780,0.2059,0,0,none,none
+wsl_shm,chacha20-poly1305-ietf,lz4,default,307200,3911,1201438720,100.0,0.0,275384,275516,0.3832,0,0,none,none
+wsl_shm,chacha20-poly1305-ietf,lz4,fast,307200,3969,1219133440,100.0,0.0,275388,275384,0.3832,0,0,none,none
+wsl_shm,chacha20-poly1305-ietf,none,default,307200,3901,1198284800,100.0,0.0,275048,275556,,0,0,none,none
+wsl_shm,chacha20-poly1305-ietf,zstd,default,307200,3958,1216040960,100.0,0.0,275296,275492,0.2345,0,0,none,none
+wsl_shm,chacha20-poly1305-ietf,zstd,high-ratio,307200,3907,1200107520,100.0,0.0,275284,275676,0.2059,1,0,none,none
+wsl_shm,chacha20,none,default,307200,3942,1210880000,100.0,0.0,275120,275548,,0,0,none,none
+wsl_shm,none,lz4,default,307200,3957,1215488000,100.0,0.0,274896,275244,0.3832,0,0,none,none
+wsl_shm,none,lz4,fast,307200,3756,1153966080,100.0,0.0,274896,275108,0.3832,0,0,none,none
+wsl_shm,none,none,default,307200,3903,1198899200,100.0,0.0,274948,275116,,0,0,none,none
+wsl_shm,none,zstd,default,307200,3933,1208320000,100.0,0.0,275040,275324,0.2345,0,0,none,none
+wsl_shm,none,zstd,high-ratio,307200,3959,1216245760,100.0,0.0,274652,275256,0.2059,0,0,none,none
+</script>
+<script>
+  const environments = {
+    linux: 'Linux · TCP',
+    linux_shm: 'Linux · 共享内存',
+    wsl: 'WSL2 · TCP',
+    wsl_shm: 'WSL2 · 共享内存',
+    windows: 'Windows · TCP',
+    windows_shm: 'Windows · 共享内存',
+  };
+  const sizes = [200, 1024, 8192, 65536, 307200];
+  const sizeLabel = (size) => size < 1024 ? size + ' B' : size / 1024 + ' KiB';
+  const cryptoNames = {
+    none: '无加密',
+    'aes-128-gcm': 'AES-128-GCM',
+    'aes-192-gcm': 'AES-192-GCM',
+    'aes-256-gcm': 'AES-256-GCM',
+    chacha20: 'ChaCha20',
+    'chacha20-poly1305-ietf': 'ChaCha20-Poly1305',
+  };
+  const compressionNames = {
+    'none/default': '无压缩',
+    'lz4/fast': 'LZ4 fast',
+    'lz4/default': 'LZ4 default',
+    'zstd/default': 'zstd level 3',
+    'zstd/high-ratio': 'zstd level 6',
+  };
+  const id = (name) => document.getElementById(name);
+  const [header, ...lines] = id('matrix-data').textContent.trim().split(/\r?\n/);
+  const fields = header.split(',');
+  const matrix = new Map();
+  for (const line of lines) {
+    const values = line.split(',');
+    const row = Object.fromEntries(fields.map((field, index) => [field, values[index]]));
+    const configKey = [row.crypto, row.compression, row.level].join('/');
+    matrix.set([row.environment, configKey, row.payload_size].join(':'), row);
+  }
+
+  const configs = [];
+  for (const [compression, compressionName] of Object.entries(compressionNames)) {
+    for (const [crypto, cryptoName] of Object.entries(cryptoNames)) {
+      const key = crypto + '/' + compression;
+      if (matrix.has('linux:' + key + ':200')) {
+        const label = compression === 'none/default' ? cryptoName :
+          crypto === 'none' ? compressionName : compressionName + ' + ' + cryptoName;
+        configs.push([key, key === 'none/none/default' ? '无加密、无压缩' : label]);
+      }
+    }
+  }
+  const configNames = Object.fromEntries(configs);
+  for (const [key, label] of configs) id('config').add(new Option(label, key));
+  for (const [key, label] of Object.entries(environments)) id('environment').add(new Option(label, key));
+
+  const decimal = new Intl.NumberFormat('zh-CN', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const percent = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 2, style: 'percent' });
+  const integer = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 });
+  const throughput = (row) => Number(row.throughput_Bps) / 1048576;
+  const mismatch = (row) => row.crypto !== row.negotiated_crypto || row.compression !== row.negotiated_compression;
+  const referenceRatio = (row, compression, level) => {
+    if (mismatch(row)) return null;
+    const base = matrix.get([row.environment, 'none/' + compression + '/' + level, row.payload_size].join(':'));
+    return base && !mismatch(base) ? 100 * throughput(row) / throughput(base) : null;
+  };
+  const metrics = {
+    throughput,
+    qps: (row) => Number(row.qps),
+    plainRatio: (row) => referenceRatio(row, 'none', 'default'),
+    cryptoRatio: (row) => referenceRatio(row, row.compression, row.level),
+    efficiency: (row) => 100 * throughput(row) / (Number(row.recv_cpu_percent) + Number(row.send_cpu_percent)),
+    recv_cpu_percent: (row) => Number(row.recv_cpu_percent),
+    send_cpu_percent: (row) => Number(row.send_cpu_percent),
+    recvRss: (row) => Number(row.recv_peak_rss_kb) / 1024,
+    sendRss: (row) => Number(row.send_peak_rss_kb) / 1024,
+  };
+  const notes = {
+    plainRatio: '分母为同环境、同通道、同包长的无加密无压缩样本。色条在 100% 时填满。协商记录与请求不一致时留空。',
+    cryptoRatio: '分母为同环境、同通道、同包长、同压缩配置下的无加密样本。色条在 100% 时填满。协商记录与请求不一致时留空。',
+    efficiency: '接收吞吐量除以两端进程使用的 CPU 秒数之和，包含忙轮询等开销。',
+  };
+  const extraUnits = {
+    plainRatio: '%', cryptoRatio: '%',
+    efficiency: ' MiB/CPU 秒', recv_cpu_percent: '%', send_cpu_percent: '%',
+    recvRss: ' MiB', sendRss: ' MiB',
+  };
+  const compressionLabel = (row) => percent.format(Number(row.compression_ratio));
+
+  function formatMetric(key, row) {
+    const value = metrics[key](row);
+    if (value === null) return '—';
+    return (key === 'qps' ? integer : decimal).format(value);
+  }
+
+  function cell(tag, value) {
+    const node = document.createElement(tag);
+    node.textContent = value;
+    return node;
+  }
+
+  function showSample(row, configKey) {
+    id('sample-title').textContent = environments[row.environment] + ' · ' + sizeLabel(Number(row.payload_size));
+    const warnings = [];
+    if (mismatch(row)) warnings.push('协商记录与请求不同，打开转换后的吞吐开销待确认。');
+    if (row.payload_size === '200' && row.compression !== 'none') warnings.push('200 B 低于协议压缩阈值。');
+    id('sample-note').textContent = warnings.join('');
+    id('sample-note').hidden = warnings.length === 0;
+    const entries = [
+      ['请求配置', configNames[configKey]],
+      ['协商记录', row.negotiated_crypto + ' / ' + row.negotiated_compression],
+      ['QPS（条/s）', formatMetric('qps', row)],
+      ['吞吐量（MiB/s）', formatMetric('throughput', row)],
+      ['CPU（接收 / 发送）', row.recv_cpu_percent + '% / ' + row.send_cpu_percent + '%'],
+      ['峰值 RSS（接收 / 发送）', formatMetric('recvRss', row) + ' / ' + formatMetric('sendRss', row) + ' MiB'],
+      ['每 CPU 秒的吞吐量', formatMetric('efficiency', row) + ' MiB'],
+      ['压缩后大小（原始大小为 100%）', row.compression_ratio === '' ? '—' : compressionLabel(row)],
+      ['全程 errors / seq_gaps', row.errors + ' / ' + row.seq_gaps],
+    ];
+    id('sample-metrics').replaceChildren(...entries.flatMap(([name, value]) => [cell('dt', name), cell('dd', value)]));
+    id('sample').showModal();
+  }
+
+  function render() {
+    const byConfig = id('view').value === 'config';
+    id('environment-filter').hidden = !byConfig;
+    id('config-filter').hidden = byConfig;
+    const metric = id('metric').value;
+    id('metric-note').textContent = (notes[metric] ? notes[metric] + ' ' : '') +
+      '每格显示 QPS 和原始 payload 吞吐量。选择单元格可查看详情。';
+    const showRatio = metric === 'plainRatio' || metric === 'cryptoRatio';
+    const headings = [byConfig ? '请求配置' : '环境和通道', ...sizes.map(sizeLabel)];
+    id('head').replaceChildren(...headings.map((heading) => {
+      const th = cell('th', heading);
+      th.scope = 'col';
+      return th;
+    }));
+    const items = byConfig ? configs : Object.entries(environments);
+    id('rows').replaceChildren(...items.map(([key, label]) => {
+      const tr = document.createElement('tr');
+      const th = cell('th', label);
+      th.scope = 'row';
+      tr.append(th);
+      const environment = byConfig ? id('environment').value : key;
+      const config = byConfig ? key : id('config').value;
+      for (const size of sizes) {
+        const row = matrix.get([environment, config, size].join(':'));
+        const flagged = mismatch(row);
+        const qps = formatMetric('qps', row) + ' 条/s';
+        const rate = formatMetric('throughput', row) + ' MiB/s';
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.append(cell('span', qps + (flagged ? ' †' : '')), cell('span', rate));
+        if (row.compression_ratio !== '') {
+          const compressed = cell('span', '压缩后大小 ' + compressionLabel(row) + (size === 200 ? ' ‡' : ''));
+          compressed.className = 'compression';
+          button.append(compressed);
+        }
+        if (metric) {
+          const value = formatMetric(metric, row);
+          const extra = cell('span', value === '—' ? value : value + extraUnits[metric]);
+          extra.className = 'additional';
+          button.append(extra);
+        }
+        button.setAttribute('aria-label', label + '，' + sizeLabel(size) + '，' +
+          Array.from(button.children, (element) => element.textContent).join('，') +
+          (flagged ? '，协商记录与请求不同' : '') + '。查看详情');
+        if (showRatio) {
+          const ratio = metrics[metric](row);
+          if (ratio !== null) button.style.setProperty('--fill', Math.min(100, ratio) + '%');
+        }
+        button.onclick = () => showSample(row, config);
+        const td = document.createElement('td');
+        td.className = 'measure';
+        td.append(button);
+        tr.append(td);
+      }
+      return tr;
+    }));
+  }
+
+  for (const name of ['view', 'config', 'environment', 'metric']) id(name).addEventListener('change', render);
+  render();
+</script>
+</body>
+</html>

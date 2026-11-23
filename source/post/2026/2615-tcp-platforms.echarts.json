@@ -3,48 +3,86 @@
     "aria": {
       "enabled": true,
       "label": {
-        "description": "三套环境的无加密无压缩 TCP 回环吞吐量。Linux 测试机从 663 增至 2,651 MiB/s，WSL2 和 Windows 原生曲线保留各自主矩阵的分配器。"
+        "description": "Linux、WSL2 和 Windows 原生的无加密无压缩 TCP 回环收包速率与 payload 吞吐量。"
       }
     },
     "animation": false,
     "legend": {
-      "bottom": 2,
-      "itemWidth": 15,
-      "itemGap": 12
+      "bottom": 4,
+      "itemWidth": 13,
+      "itemGap": 10
     },
     "tooltip": {
       "trigger": "axis",
-      "confine": true,
-      "axisPointer": {
-        "type": "line"
+      "confine": true
+    },
+    "axisPointer": {
+      "link": [
+        {
+          "xAxisIndex": "all"
+        }
+      ]
+    },
+    "grid": [
+      {
+        "left": 68,
+        "right": 18,
+        "top": 28,
+        "bottom": "57%"
+      },
+      {
+        "left": 68,
+        "right": 18,
+        "top": "54%",
+        "bottom": 52
       }
-    },
-    "grid": {
-      "left": 12,
-      "right": 18,
-      "top": 34,
-      "bottom": 30,
-      "containLabel": true
-    },
-    "xAxis": {
-      "type": "category",
-      "data": ["200 B", "1 KiB", "8 KiB", "64 KiB", "300 KiB"],
-      "axisLabel": {
-        "interval": 0
+    ],
+    "xAxis": [
+      {
+        "gridIndex": 0,
+        "type": "category",
+        "boundaryGap": false,
+        "data": ["200 B", "1 KiB", "8 KiB", "64 KiB", "300 KiB"],
+        "axisLabel": {
+          "interval": 0,
+          "show": false
+        }
+      },
+      {
+        "gridIndex": 1,
+        "type": "category",
+        "boundaryGap": false,
+        "data": ["200 B", "1 KiB", "8 KiB", "64 KiB", "300 KiB"],
+        "axisLabel": {
+          "interval": 0,
+          "show": true
+        }
       }
-    },
-    "yAxis": {
-      "type": "value",
-      "name": "MiB/s",
-      "min": 0
-    },
+    ],
+    "yAxis": [
+      {
+        "gridIndex": 0,
+        "name": "QPS（条/s，对数）",
+        "type": "log",
+        "min": 1000,
+        "max": 10000000
+      },
+      {
+        "gridIndex": 1,
+        "name": "吞吐量（MiB/s）",
+        "type": "value",
+        "min": 0
+      }
+    ],
     "series": [
       {
         "name": "Linux",
         "type": "line",
-        "data": [662.7, 1427.6, 2148.1, 2489.9, 2650.9],
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "data": [3474350, 1461897, 274954, 39839, 9049],
         "symbol": "circle",
-        "symbolSize": 6,
+        "symbolSize": 7,
         "lineStyle": {
           "width": 2,
           "type": "solid",
@@ -60,9 +98,11 @@
       {
         "name": "WSL2",
         "type": "line",
-        "data": [614.8, 1266.7, 1007.1, 1343.9, 1109.2],
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "data": [3223375, 1297151, 128911, 21503, 3786],
         "symbol": "rect",
-        "symbolSize": 8,
+        "symbolSize": 7,
         "lineStyle": {
           "width": 2,
           "type": "dashed",
@@ -78,16 +118,78 @@
       {
         "name": "Windows",
         "type": "line",
-        "data": [147.7, 252.0, 494.6, 367.2, 551.8],
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "data": [774502, 258036, 63315, 5876, 1883],
         "symbol": "triangle",
-        "symbolSize": 6,
+        "symbolSize": 7,
         "lineStyle": {
           "width": 2,
           "type": "dotted",
-          "color": "#b2772d"
+          "color": "#92601d"
         },
         "itemStyle": {
-          "color": "#b2772d"
+          "color": "#92601d"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "Linux",
+        "type": "line",
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "data": [662.7, 1427.6, 2148.1, 2489.9, 2650.9],
+        "symbol": "circle",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "solid",
+          "color": "#267a93"
+        },
+        "itemStyle": {
+          "color": "#267a93"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "WSL2",
+        "type": "line",
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "data": [614.8, 1266.7, 1007.1, 1343.9, 1109.2],
+        "symbol": "rect",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dashed",
+          "color": "#399886"
+        },
+        "itemStyle": {
+          "color": "#399886"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "Windows",
+        "type": "line",
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "data": [147.7, 252.0, 494.6, 367.2, 551.8],
+        "symbol": "triangle",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dotted",
+          "color": "#92601d"
+        },
+        "itemStyle": {
+          "color": "#92601d"
         },
         "emphasis": {
           "focus": "series"
@@ -98,25 +200,53 @@
   "media": [
     {
       "query": {
-        "maxWidth": 310
+        "maxWidth": 400
       },
       "option": {
-        "xAxis": {
-          "axisLabel": {
-            "rotate": 28,
-            "fontSize": 11
+        "xAxis": [
+          {
+            "axisLabel": {
+              "rotate": 28,
+              "fontSize": 10
+            }
+          },
+          {
+            "axisLabel": {
+              "rotate": 28,
+              "fontSize": 10
+            }
           }
-        }
+        ],
+        "grid": [
+          {},
+          {
+            "bottom": 62
+          }
+        ]
       }
     },
     {
       "option": {
-        "xAxis": {
-          "axisLabel": {
-            "rotate": 0,
-            "fontSize": 12
+        "xAxis": [
+          {
+            "axisLabel": {
+              "rotate": 0,
+              "fontSize": 12
+            }
+          },
+          {
+            "axisLabel": {
+              "rotate": 0,
+              "fontSize": 12
+            }
           }
-        }
+        ],
+        "grid": [
+          {},
+          {
+            "bottom": 52
+          }
+        ]
       }
     }
   ]

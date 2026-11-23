@@ -3,48 +3,113 @@
     "aria": {
       "enabled": true,
       "label": {
-        "description": "Linux TCP 在四档包长下的压缩对比。可压缩的测试载荷上，不压缩的吞吐最高，LZ4 其次，zstd 两个等级的曲线相近。"
+        "description": "Linux TCP 在 200 B、1 KiB、8 KiB、64 KiB 和 300 KiB 下的 QPS、payload 吞吐量与独立压缩后的大小。原始大小为 100%。200 B 低于协议压缩阈值。"
       }
     },
     "animation": false,
     "legend": {
-      "bottom": 2,
-      "itemWidth": 15,
-      "itemGap": 12
+      "bottom": 4,
+      "itemWidth": 13,
+      "itemGap": 10
     },
     "tooltip": {
       "trigger": "axis",
-      "confine": true,
-      "axisPointer": {
-        "type": "line"
+      "confine": true
+    },
+    "axisPointer": {
+      "link": [
+        {
+          "xAxisIndex": "all"
+        }
+      ]
+    },
+    "grid": [
+      {
+        "left": 68,
+        "right": 18,
+        "top": 28,
+        "bottom": "69%"
+      },
+      {
+        "left": 68,
+        "right": 18,
+        "top": "38%",
+        "bottom": "42%"
+      },
+      {
+        "left": 68,
+        "right": 18,
+        "top": "65%",
+        "bottom": 52
       }
-    },
-    "grid": {
-      "left": 12,
-      "right": 18,
-      "top": 34,
-      "bottom": 30,
-      "containLabel": true
-    },
-    "xAxis": {
-      "type": "category",
-      "data": ["1 KiB", "8 KiB", "64 KiB", "300 KiB"],
-      "axisLabel": {
-        "interval": 0
+    ],
+    "xAxis": [
+      {
+        "gridIndex": 0,
+        "type": "category",
+        "boundaryGap": false,
+        "data": ["200 B*", "1 KiB", "8 KiB", "64 KiB", "300 KiB"],
+        "axisLabel": {
+          "interval": 0,
+          "show": false
+        }
+      },
+      {
+        "gridIndex": 1,
+        "type": "category",
+        "boundaryGap": false,
+        "data": ["200 B*", "1 KiB", "8 KiB", "64 KiB", "300 KiB"],
+        "axisLabel": {
+          "interval": 0,
+          "show": false
+        }
+      },
+      {
+        "gridIndex": 2,
+        "type": "category",
+        "boundaryGap": false,
+        "data": ["200 B*", "1 KiB", "8 KiB", "64 KiB", "300 KiB"],
+        "axisLabel": {
+          "interval": 0,
+          "show": true
+        }
       }
-    },
-    "yAxis": {
-      "type": "value",
-      "name": "MiB/s",
-      "min": 0
-    },
+    ],
+    "yAxis": [
+      {
+        "gridIndex": 0,
+        "name": "QPS（条/s，对数）",
+        "type": "log",
+        "min": 1000,
+        "max": 10000000
+      },
+      {
+        "gridIndex": 1,
+        "name": "吞吐量（MiB/s）",
+        "type": "value",
+        "min": 0
+      },
+      {
+        "gridIndex": 2,
+        "name": "压缩后大小（%）",
+        "type": "value",
+        "min": 0,
+        "max": 100,
+        "interval": 25,
+        "axisLabel": {
+          "formatter": "{value}%"
+        }
+      }
+    ],
     "series": [
       {
         "name": "无压缩",
         "type": "line",
-        "data": [1427.6, 2148.1, 2489.9, 2650.9],
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "data": [3474350, 1461897, 274954, 39839, 9049],
         "symbol": "circle",
-        "symbolSize": 6,
+        "symbolSize": 7,
         "lineStyle": {
           "width": 2,
           "type": "solid",
@@ -52,6 +117,26 @@
         },
         "itemStyle": {
           "color": "#267a93"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "LZ4 fast",
+        "type": "line",
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "data": [3431711, 781911, 121332, 18372, 2950],
+        "symbol": "rect",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dashed",
+          "color": "#399886"
+        },
+        "itemStyle": {
+          "color": "#399886"
         },
         "emphasis": {
           "focus": "series"
@@ -60,16 +145,18 @@
       {
         "name": "LZ4 default",
         "type": "line",
-        "data": [761.2, 947.2, 1168.0, 861.7],
-        "symbol": "rect",
-        "symbolSize": 6,
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "data": [3462667, 779425, 121238, 18689, 2941],
+        "symbol": "triangle",
+        "symbolSize": 7,
         "lineStyle": {
           "width": 2,
-          "type": "solid",
-          "color": "#399886"
+          "type": "dotted",
+          "color": "#92601d"
         },
         "itemStyle": {
-          "color": "#399886"
+          "color": "#92601d"
         },
         "emphasis": {
           "focus": "series"
@@ -78,9 +165,11 @@
       {
         "name": "zstd level 3",
         "type": "line",
-        "data": [170.9, 360.1, 502.1, 455.5],
-        "symbol": "circle",
-        "symbolSize": 6,
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "data": [3457069, 174983, 46095, 8033, 1555],
+        "symbol": "diamond",
+        "symbolSize": 7,
         "lineStyle": {
           "width": 2,
           "type": "solid",
@@ -96,16 +185,218 @@
       {
         "name": "zstd level 6",
         "type": "line",
-        "data": [170.1, 360.3, 502.7, 424.2],
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "data": [3459775, 174231, 46122, 8043, 1448],
         "symbol": "emptyDiamond",
-        "symbolSize": 8,
+        "symbolSize": 7,
         "lineStyle": {
           "width": 2,
           "type": "dashed",
-          "color": "#b2772d"
+          "color": "#aa5843"
         },
         "itemStyle": {
-          "color": "#b2772d"
+          "color": "#aa5843"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "无压缩",
+        "type": "line",
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "data": [662.7, 1427.6, 2148.1, 2489.9, 2650.9],
+        "symbol": "circle",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "solid",
+          "color": "#267a93"
+        },
+        "itemStyle": {
+          "color": "#267a93"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "LZ4 fast",
+        "type": "line",
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "data": [654.5, 763.6, 947.9, 1148.3, 864.2],
+        "symbol": "rect",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dashed",
+          "color": "#399886"
+        },
+        "itemStyle": {
+          "color": "#399886"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "LZ4 default",
+        "type": "line",
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "data": [660.5, 761.2, 947.2, 1168.0, 861.7],
+        "symbol": "triangle",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dotted",
+          "color": "#92601d"
+        },
+        "itemStyle": {
+          "color": "#92601d"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "zstd level 3",
+        "type": "line",
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "data": [659.4, 170.9, 360.1, 502.1, 455.5],
+        "symbol": "diamond",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "solid",
+          "color": "#6c79b8"
+        },
+        "itemStyle": {
+          "color": "#6c79b8"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "zstd level 6",
+        "type": "line",
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "data": [659.9, 170.1, 360.3, 502.7, 424.2],
+        "symbol": "emptyDiamond",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dashed",
+          "color": "#aa5843"
+        },
+        "itemStyle": {
+          "color": "#aa5843"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "无压缩",
+        "type": "line",
+        "xAxisIndex": 2,
+        "yAxisIndex": 2,
+        "data": [100, 100, 100, 100, 100],
+        "symbol": "circle",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "solid",
+          "color": "#267a93"
+        },
+        "itemStyle": {
+          "color": "#267a93"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "LZ4 fast",
+        "type": "line",
+        "xAxisIndex": 2,
+        "yAxisIndex": 2,
+        "data": [76.56, 55.51, 45.86, 43.65, 38.32],
+        "symbol": "rect",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dashed",
+          "color": "#399886"
+        },
+        "itemStyle": {
+          "color": "#399886"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "LZ4 default",
+        "type": "line",
+        "xAxisIndex": 2,
+        "yAxisIndex": 2,
+        "data": [76.56, 55.51, 45.86, 43.65, 38.32],
+        "symbol": "triangle",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dotted",
+          "color": "#92601d"
+        },
+        "itemStyle": {
+          "color": "#92601d"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "zstd level 3",
+        "type": "line",
+        "xAxisIndex": 2,
+        "yAxisIndex": 2,
+        "data": [66.15, 35.24, 24.18, 23.83, 23.45],
+        "symbol": "diamond",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "solid",
+          "color": "#6c79b8"
+        },
+        "itemStyle": {
+          "color": "#6c79b8"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "zstd level 6",
+        "type": "line",
+        "xAxisIndex": 2,
+        "yAxisIndex": 2,
+        "data": [65.62, 33.27, 21.91, 20.99, 20.59],
+        "symbol": "emptyDiamond",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dashed",
+          "color": "#aa5843"
+        },
+        "itemStyle": {
+          "color": "#aa5843"
         },
         "emphasis": {
           "focus": "series"
@@ -116,19 +407,67 @@
   "media": [
     {
       "query": {
-        "maxWidth": 380
+        "maxWidth": 400
       },
       "option": {
-        "grid": {
-          "bottom": 54
-        }
+        "xAxis": [
+          {
+            "axisLabel": {
+              "rotate": 28,
+              "fontSize": 10
+            }
+          },
+          {
+            "axisLabel": {
+              "rotate": 28,
+              "fontSize": 10
+            }
+          },
+          {
+            "axisLabel": {
+              "rotate": 28,
+              "fontSize": 10
+            }
+          }
+        ],
+        "grid": [
+          {},
+          {},
+          {
+            "bottom": 84
+          }
+        ]
       }
     },
     {
       "option": {
-        "grid": {
-          "bottom": 30
-        }
+        "xAxis": [
+          {
+            "axisLabel": {
+              "rotate": 0,
+              "fontSize": 12
+            }
+          },
+          {
+            "axisLabel": {
+              "rotate": 0,
+              "fontSize": 12
+            }
+          },
+          {
+            "axisLabel": {
+              "rotate": 0,
+              "fontSize": 12
+            }
+          }
+        ],
+        "grid": [
+          {},
+          {},
+          {
+            "bottom": 52
+          }
+        ]
       }
     }
   ]

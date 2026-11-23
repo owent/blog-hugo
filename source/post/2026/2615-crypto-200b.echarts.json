@@ -2,7 +2,7 @@
   "aria": {
     "enabled": true,
     "label": {
-      "description": "Linux TCP 的 200 B 消息收包速率。无加密约 347 万条每秒，三种 AES-GCM 约 150 至 154 万条每秒。"
+      "description": "Linux TCP 的 200 B 消息在六种加密设置下的 QPS 和 payload 吞吐量。"
     }
   },
   "animation": false,
@@ -13,39 +13,99 @@
     },
     "confine": true
   },
-  "grid": {
-    "left": 4,
-    "right": 21,
-    "top": 8,
-    "bottom": 28,
-    "containLabel": true
+  "axisPointer": {
+    "link": [
+      {
+        "yAxisIndex": "all"
+      }
+    ]
   },
-  "xAxis": {
-    "type": "value",
-    "min": 0,
-    "max": 4,
-    "interval": 1,
-    "name": "百万条消息/s",
-    "nameLocation": "middle",
-    "nameGap": 24
-  },
-  "yAxis": {
-    "type": "category",
-    "inverse": true,
-    "data": ["无加密", "AES-128-GCM", "AES-192-GCM", "AES-256-GCM", "ChaCha20-Poly1305", "ChaCha20"],
-    "axisTick": {
-      "show": false
+  "title": [
+    {
+      "text": "QPS（万条/s）",
+      "left": 3,
+      "top": 1,
+      "textStyle": {
+        "fontSize": 13
+      }
     },
-    "axisLabel": {
-      "interval": 0,
-      "fontSize": 11
+    {
+      "text": "吞吐量（MiB/s）",
+      "left": 3,
+      "top": "47%",
+      "textStyle": {
+        "fontSize": 13
+      }
     }
-  },
+  ],
+  "grid": [
+    {
+      "containLabel": true,
+      "left": 4,
+      "right": 18,
+      "top": 25,
+      "bottom": "57%"
+    },
+    {
+      "containLabel": true,
+      "left": 4,
+      "right": 18,
+      "top": "53%",
+      "bottom": 8
+    }
+  ],
+  "xAxis": [
+    {
+      "gridIndex": 0,
+      "type": "value",
+      "min": 0,
+      "max": 400,
+      "interval": 100
+    },
+    {
+      "gridIndex": 1,
+      "type": "value",
+      "min": 0,
+      "max": 800,
+      "interval": 200
+    }
+  ],
+  "yAxis": [
+    {
+      "gridIndex": 0,
+      "type": "category",
+      "inverse": true,
+      "data": ["无加密", "AES-128-GCM", "AES-192-GCM", "AES-256-GCM", "ChaCha20-Poly1305", "ChaCha20"],
+      "axisTick": {
+        "show": false
+      },
+      "axisLabel": {
+        "interval": 0,
+        "fontSize": 11
+      }
+    },
+    {
+      "gridIndex": 1,
+      "type": "category",
+      "inverse": true,
+      "data": ["无加密", "AES-128-GCM", "AES-192-GCM", "AES-256-GCM", "ChaCha20-Poly1305", "ChaCha20"],
+      "axisTick": {
+        "show": false
+      },
+      "axisLabel": {
+        "interval": 0,
+        "fontSize": 11
+      }
+    }
+  ],
   "series": [
     {
-      "name": "QPS（百万条消息/s）",
+      "name": "QPS（万条/s）",
       "type": "bar",
-      "barMaxWidth": 22,
+      "xAxisIndex": 0,
+      "yAxisIndex": 0,
+      "data": [347.4, 152.5, 154.1, 149.5, 86.5, 35.2],
+      "barMaxWidth": 16,
       "label": {
         "show": true,
         "position": "right",
@@ -60,8 +120,30 @@
           3,
           0
         ]
+      }
+    },
+    {
+      "name": "吞吐量（MiB/s）",
+      "type": "bar",
+      "xAxisIndex": 1,
+      "yAxisIndex": 1,
+      "data": [662.7, 290.9, 294.0, 285.2, 165.0, 67.2],
+      "barMaxWidth": 16,
+      "label": {
+        "show": true,
+        "position": "right",
+        "distance": 4,
+        "fontSize": 11
       },
-      "data": [3.47, 1.53, 1.54, 1.5, 0.87, 0.35]
+      "itemStyle": {
+        "color": "#399886",
+        "borderRadius": [
+          0,
+          3,
+          3,
+          0
+        ]
+      }
     }
   ]
 }
