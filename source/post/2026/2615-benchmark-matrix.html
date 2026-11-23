@@ -131,10 +131,10 @@
       <tbody id="rows"></tbody>
     </table>
   </div>
-  <p class="note" id="flags">“压缩后大小”以原始大小为 100%。例如，25% 表示字节数减少了 75%。数据来自独立压缩测试文本，计算时排除 8 B 序号。‡ 200 B 低于协议压缩阈值。† 首个带连接对象的收包回调记录的算法与请求不同。主矩阵的吞吐百分比表示样本之比，样本可能来自不同批次。</p>
+  <p class="note" id="flags">“压缩后大小”以原始大小为 100%（例如 25% 表示字节数减少了 75%），来自发送端按请求档位独立压缩测试文本（排除 8 B 序号）；实际协议栈发送路径写死了 kBalanced（LZ4 accel=6、zstd level 3），因此不同档位的实测速率属于同档重复采样。‡ 200 B 低于协议压缩阈值。† 协商记录为 none/none（shm:// 为单工通道，不执行握手与加密/压缩协商）。Linux 共享内存主矩阵批次经核查实际运行在 TCP 通道上，真实 Linux 共享内存速率见正文交错 A/B 复测；WSL2 与 Windows 共享内存大包（64 KiB / 300 KiB）存在发送端 CPU 采样缺漏或跨秒累计，对应“每 CPU 秒的吞吐量”留空。</p>
   <h2>原始 CSV</h2>
   <ul>
-    <li>Linux · <a href="2615-benchmark-linux-tcp.csv" download>TCP CSV</a> · <a href="2615-benchmark-linux-shm.csv" download>共享内存 CSV</a></li>
+    <li>Linux · <a href="2615-benchmark-linux-tcp.csv" download>TCP CSV</a> · <a href="2615-benchmark-linux-shm.csv" download>共享内存批次 CSV（实为 TCP）</a></li>
     <li>WSL2 · <a href="2615-benchmark-wsl-tcp.csv" download>TCP CSV</a> · <a href="2615-benchmark-wsl-shm.csv" download>共享内存 CSV</a></li>
     <li>Windows · <a href="2615-benchmark-windows-tcp.csv" download>TCP CSV</a> · <a href="2615-benchmark-windows-shm.csv" download>共享内存 CSV</a></li>
   </ul>
@@ -812,7 +812,7 @@ wsl_shm,none,zstd,high-ratio,307200,3959,1216245760,100.0,0.0,274652,275256,0.20
 <script>
   const environments = {
     linux: 'Linux · TCP',
-    linux_shm: 'Linux · 共享内存',
+    linux_shm: 'Linux · 共享内存（实为 TCP）',
     wsl: 'WSL2 · TCP',
     wsl_shm: 'WSL2 · 共享内存',
     windows: 'Windows · TCP',
@@ -832,8 +832,8 @@ wsl_shm,none,zstd,high-ratio,307200,3959,1216245760,100.0,0.0,274652,275256,0.20
     'none/default': '无压缩',
     'lz4/fast': 'LZ4 fast',
     'lz4/default': 'LZ4 default',
-    'zstd/default': 'zstd level 3',
-    'zstd/high-ratio': 'zstd level 6',
+    'zstd/default': 'zstd default',
+    'zstd/high-ratio': 'zstd high-ratio',
   };
   const id = (name) => document.getElementById(name);
   const [header, ...lines] = id('matrix-data').textContent.trim().split(/\r?\n/);
@@ -866,6 +866,7 @@ wsl_shm,none,zstd,high-ratio,307200,3959,1216245760,100.0,0.0,274652,275256,0.20
   const integer = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 });
   const throughput = (row) => Number(row.throughput_Bps) / 1048576;
   const mismatch = (row) => row.crypto !== row.negotiated_crypto || row.compression !== row.negotiated_compression;
+  const cpuInvalid = (row) => Number(row.recv_cpu_percent) <= 0 || Number(row.send_cpu_percent) <= 0 || Number(row.send_cpu_percent) > 200;
   const referenceRatio = (row, compression, level) => {
     if (mismatch(row)) return null;
     const base = matrix.get([row.environment, 'none/' + compression + '/' + level, row.payload_size].join(':'));
@@ -876,7 +877,7 @@ wsl_shm,none,zstd,high-ratio,307200,3959,1216245760,100.0,0.0,274652,275256,0.20
     qps: (row) => Number(row.qps),
     plainRatio: (row) => referenceRatio(row, 'none', 'default'),
     cryptoRatio: (row) => referenceRatio(row, row.compression, row.level),
-    efficiency: (row) => 100 * throughput(row) / (Number(row.recv_cpu_percent) + Number(row.send_cpu_percent)),
+    efficiency: (row) => cpuInvalid(row) ? null : 100 * throughput(row) / (Number(row.recv_cpu_percent) + Number(row.send_cpu_percent)),
     recv_cpu_percent: (row) => Number(row.recv_cpu_percent),
     send_cpu_percent: (row) => Number(row.send_cpu_percent),
     recvRss: (row) => Number(row.recv_peak_rss_kb) / 1024,
@@ -885,7 +886,7 @@ wsl_shm,none,zstd,high-ratio,307200,3959,1216245760,100.0,0.0,274652,275256,0.20
   const notes = {
     plainRatio: '分母为同环境、同通道、同包长的无加密无压缩样本。色条在 100% 时填满。协商记录与请求不一致时留空。',
     cryptoRatio: '分母为同环境、同通道、同包长、同压缩配置下的无加密样本。色条在 100% 时填满。协商记录与请求不一致时留空。',
-    efficiency: '接收吞吐量除以两端进程使用的 CPU 秒数之和，包含忙轮询等开销。',
+    efficiency: '接收吞吐量除以两端进程使用的 CPU 秒数之和，包含忙轮询等开销。发送端 CPU 采样为 0% 或异常超 200% 时留空。',
   };
   const extraUnits = {
     plainRatio: '%', cryptoRatio: '%',
@@ -909,10 +910,23 @@ wsl_shm,none,zstd,high-ratio,307200,3959,1216245760,100.0,0.0,274652,275256,0.20
   function showSample(row, configKey) {
     id('sample-title').textContent = environments[row.environment] + ' · ' + sizeLabel(Number(row.payload_size));
     const warnings = [];
-    if (mismatch(row)) warnings.push('协商记录与请求不同，打开转换后的吞吐开销待确认。');
-    if (row.payload_size === '200' && row.compression !== 'none') warnings.push('200 B 低于协议压缩阈值。');
-    id('sample-note').textContent = warnings.join('');
+    if (row.environment === 'linux_shm') {
+      warnings.push('该批次经核查实际运行在 TCP 通道上（协商列非 none、无 256 MiB 共享内存页），真实 Linux 共享内存速率见正文交错 A/B 复测。');
+    }
+    if (mismatch(row)) {
+      warnings.push('shm:// 为单工通道，不执行握手与加密/压缩协商，本行实测的是明文共享内存速率。');
+    }
+    if (row.payload_size === '200' && row.compression !== 'none') {
+      warnings.push('200 B 低于协议压缩阈值（body >= 1,024 B），未触发协议压缩。');
+    } else if (row.compression !== 'none' && row.negotiated_compression !== 'none') {
+      warnings.push('发送打包路径写死了 kBalanced（LZ4 accel=6、zstd level 3），与独立压缩后大小（%）所用的请求档位口径不同。');
+    }
+    if (cpuInvalid(row)) {
+      warnings.push('256 MiB 共享内存大包未触发背压，发送端 1 秒统计定时器缺采或跨多秒累计，每 CPU 秒吞吐量已留空。');
+    }
+    id('sample-note').textContent = warnings.join(' ');
     id('sample-note').hidden = warnings.length === 0;
+    const effText = formatMetric('efficiency', row);
     const entries = [
       ['请求配置', configNames[configKey]],
       ['协商记录', row.negotiated_crypto + ' / ' + row.negotiated_compression],
@@ -920,7 +934,7 @@ wsl_shm,none,zstd,high-ratio,307200,3959,1216245760,100.0,0.0,274652,275256,0.20
       ['吞吐量（MiB/s）', formatMetric('throughput', row)],
       ['CPU（接收 / 发送）', row.recv_cpu_percent + '% / ' + row.send_cpu_percent + '%'],
       ['峰值 RSS（接收 / 发送）', formatMetric('recvRss', row) + ' / ' + formatMetric('sendRss', row) + ' MiB'],
-      ['每 CPU 秒的吞吐量', formatMetric('efficiency', row) + ' MiB'],
+      ['每 CPU 秒的吞吐量', effText === '—' ? '—' : effText + ' MiB'],
       ['压缩后大小（原始大小为 100%）', row.compression_ratio === '' ? '—' : compressionLabel(row)],
       ['全程 errors / seq_gaps', row.errors + ' / ' + row.seq_gaps],
     ];

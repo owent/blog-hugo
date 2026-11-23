@@ -3,7 +3,7 @@
     "aria": {
       "enabled": true,
       "label": {
-        "description": "主矩阵中 Linux、WSL2 和 Windows 原生在 TCP 与共享内存通道上的 QPS 和 payload 吞吐量。覆盖 200 B、1 KiB、8 KiB、64 KiB 和 300 KiB。无加密、无压缩。"
+        "description": "主矩阵中 Linux、WSL2 和 Windows 原生在 TCP 与共享内存批次上的 QPS 和 payload 吞吐量。覆盖 200 B、1 KiB、8 KiB、64 KiB 和 300 KiB，无加密、无压缩。Linux 共享内存主矩阵批次经核查实际运行在 TCP 上，真实 Linux 共享内存表现见交错 A/B 图表。"
       }
     },
     "animation": false,
@@ -96,7 +96,7 @@
         }
       },
       {
-        "name": "Linux 共享内存",
+        "name": "Linux shm*（实为 TCP）",
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
@@ -216,7 +216,7 @@
         }
       },
       {
-        "name": "Linux 共享内存",
+        "name": "Linux shm*（实为 TCP）",
         "type": "line",
         "xAxisIndex": 1,
         "yAxisIndex": 1,

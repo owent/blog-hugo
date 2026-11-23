@@ -3,7 +3,7 @@
     "aria": {
       "enabled": true,
       "label": {
-        "description": "Linux TCP 的压缩加密对比。两组速率坐标都显示四种压缩配置与三种加密算法的十二种组合，以及每种压缩配置的无加密基线。第三组坐标显示独立压缩后的大小，原始大小为 100%。包含 200 B 至 300 KiB 的五档实测包长。200 B 未触发协议压缩。"
+        "description": "Linux TCP 的压缩加密对比。两组速率坐标显示四种请求压缩预设与三种加密算法的十二种组合及无加密基线（协议栈实际固定以 kBalanced 压缩，即 LZ4 accel=6 与 zstd level 3）；第三组坐标显示发送端按请求档位独立压缩后的大小（原始大小为 100%）。200 B 未触发协议压缩。"
       }
     },
     "animation": false,
@@ -18,7 +18,7 @@
         "textStyle": {
           "fontSize": 11
         },
-        "data": ["LZ4 fast + 无加密", "LZ4 fast + AES-128-GCM", "LZ4 fast + AES-256-GCM", "LZ4 fast + ChaCha20-Poly1305", "LZ4 default + 无加密", "LZ4 default + AES-128-GCM", "LZ4 default + AES-256-GCM", "LZ4 default + ChaCha20-Poly1305", "zstd level 3 + 无加密", "zstd level 3 + AES-128-GCM", "zstd level 3 + AES-256-GCM", "zstd level 3 + ChaCha20-Poly1305", "zstd level 6 + 无加密", "zstd level 6 + AES-128-GCM", "zstd level 6 + AES-256-GCM", "zstd level 6 + ChaCha20-Poly1305"]
+        "data": ["LZ4 fast + 无加密", "LZ4 fast + AES-128-GCM", "LZ4 fast + AES-256-GCM", "LZ4 fast + ChaCha20-Poly1305", "LZ4 default + 无加密", "LZ4 default + AES-128-GCM", "LZ4 default + AES-256-GCM", "LZ4 default + ChaCha20-Poly1305", "zstd default + 无加密", "zstd default + AES-128-GCM", "zstd default + AES-256-GCM", "zstd default + ChaCha20-Poly1305", "zstd high-ratio + 无加密", "zstd high-ratio + AES-128-GCM", "zstd high-ratio + AES-256-GCM", "zstd high-ratio + ChaCha20-Poly1305"]
       },
       {
         "bottom": 4,
@@ -27,7 +27,7 @@
         "textStyle": {
           "fontSize": 11
         },
-        "data": ["LZ4 fast", "LZ4 default", "zstd level 3", "zstd level 6"]
+        "data": ["LZ4 fast", "LZ4 default", "zstd default", "zstd high-ratio"]
       }
     ],
     "tooltip": {
@@ -292,8 +292,8 @@
         "data": [857083, 440549, 103002, 16725, 2746]
       },
       {
-        "id": "zstd level 3 / qps-none",
-        "name": "zstd level 3 + 无加密",
+        "id": "zstd default / qps-none",
+        "name": "zstd default + 无加密",
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
@@ -313,8 +313,8 @@
         "data": [3457069, 174983, 46095, 8033, 1555]
       },
       {
-        "id": "zstd level 3 / qps-aes-128-gcm",
-        "name": "zstd level 3 + AES-128-GCM",
+        "id": "zstd default / qps-aes-128-gcm",
+        "name": "zstd default + AES-128-GCM",
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
@@ -334,8 +334,8 @@
         "data": [1544504, 164858, 45125, 7973, 1547]
       },
       {
-        "id": "zstd level 3 / qps-aes-256-gcm",
-        "name": "zstd level 3 + AES-256-GCM",
+        "id": "zstd default / qps-aes-256-gcm",
+        "name": "zstd default + AES-256-GCM",
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
@@ -355,8 +355,8 @@
         "data": [1454868, 166604, 45104, 8021, 1547]
       },
       {
-        "id": "zstd level 3 / qps-chacha20-poly1305-ietf",
-        "name": "zstd level 3 + ChaCha20-Poly1305",
+        "id": "zstd default / qps-chacha20-poly1305-ietf",
+        "name": "zstd default + ChaCha20-Poly1305",
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
@@ -376,8 +376,8 @@
         "data": [860296, 148311, 43426, 7737, 1504]
       },
       {
-        "id": "zstd level 6 / qps-none",
-        "name": "zstd level 6 + 无加密",
+        "id": "zstd high-ratio / qps-none",
+        "name": "zstd high-ratio + 无加密",
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
@@ -397,8 +397,8 @@
         "data": [3459775, 174231, 46122, 8043, 1448]
       },
       {
-        "id": "zstd level 6 / qps-aes-128-gcm",
-        "name": "zstd level 6 + AES-128-GCM",
+        "id": "zstd high-ratio / qps-aes-128-gcm",
+        "name": "zstd high-ratio + AES-128-GCM",
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
@@ -418,8 +418,8 @@
         "data": [1540694, 166125, 45128, 7963, 1549]
       },
       {
-        "id": "zstd level 6 / qps-aes-256-gcm",
-        "name": "zstd level 6 + AES-256-GCM",
+        "id": "zstd high-ratio / qps-aes-256-gcm",
+        "name": "zstd high-ratio + AES-256-GCM",
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
@@ -439,8 +439,8 @@
         "data": [1520768, 166354, 44945, 7832, 1539]
       },
       {
-        "id": "zstd level 6 / qps-chacha20-poly1305-ietf",
-        "name": "zstd level 6 + ChaCha20-Poly1305",
+        "id": "zstd high-ratio / qps-chacha20-poly1305-ietf",
+        "name": "zstd high-ratio + ChaCha20-Poly1305",
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
@@ -628,8 +628,8 @@
         "data": [163.5, 430.2, 804.7, 1045.3, 804.4]
       },
       {
-        "id": "zstd level 3 / throughput-none",
-        "name": "zstd level 3 + 无加密",
+        "id": "zstd default / throughput-none",
+        "name": "zstd default + 无加密",
         "type": "line",
         "xAxisIndex": 1,
         "yAxisIndex": 1,
@@ -649,8 +649,8 @@
         "data": [659.4, 170.9, 360.1, 502.1, 455.5]
       },
       {
-        "id": "zstd level 3 / throughput-aes-128-gcm",
-        "name": "zstd level 3 + AES-128-GCM",
+        "id": "zstd default / throughput-aes-128-gcm",
+        "name": "zstd default + AES-128-GCM",
         "type": "line",
         "xAxisIndex": 1,
         "yAxisIndex": 1,
@@ -670,8 +670,8 @@
         "data": [294.6, 161.0, 352.5, 498.3, 453.2]
       },
       {
-        "id": "zstd level 3 / throughput-aes-256-gcm",
-        "name": "zstd level 3 + AES-256-GCM",
+        "id": "zstd default / throughput-aes-256-gcm",
+        "name": "zstd default + AES-256-GCM",
         "type": "line",
         "xAxisIndex": 1,
         "yAxisIndex": 1,
@@ -691,8 +691,8 @@
         "data": [277.5, 162.7, 352.4, 501.3, 453.2]
       },
       {
-        "id": "zstd level 3 / throughput-chacha20-poly1305-ietf",
-        "name": "zstd level 3 + ChaCha20-Poly1305",
+        "id": "zstd default / throughput-chacha20-poly1305-ietf",
+        "name": "zstd default + ChaCha20-Poly1305",
         "type": "line",
         "xAxisIndex": 1,
         "yAxisIndex": 1,
@@ -712,8 +712,8 @@
         "data": [164.1, 144.8, 339.3, 483.5, 440.7]
       },
       {
-        "id": "zstd level 6 / throughput-none",
-        "name": "zstd level 6 + 无加密",
+        "id": "zstd high-ratio / throughput-none",
+        "name": "zstd high-ratio + 无加密",
         "type": "line",
         "xAxisIndex": 1,
         "yAxisIndex": 1,
@@ -733,8 +733,8 @@
         "data": [659.9, 170.1, 360.3, 502.7, 424.2]
       },
       {
-        "id": "zstd level 6 / throughput-aes-128-gcm",
-        "name": "zstd level 6 + AES-128-GCM",
+        "id": "zstd high-ratio / throughput-aes-128-gcm",
+        "name": "zstd high-ratio + AES-128-GCM",
         "type": "line",
         "xAxisIndex": 1,
         "yAxisIndex": 1,
@@ -754,8 +754,8 @@
         "data": [293.9, 162.2, 352.6, 497.7, 453.8]
       },
       {
-        "id": "zstd level 6 / throughput-aes-256-gcm",
-        "name": "zstd level 6 + AES-256-GCM",
+        "id": "zstd high-ratio / throughput-aes-256-gcm",
+        "name": "zstd high-ratio + AES-256-GCM",
         "type": "line",
         "xAxisIndex": 1,
         "yAxisIndex": 1,
@@ -775,8 +775,8 @@
         "data": [290.1, 162.5, 351.1, 489.5, 450.8]
       },
       {
-        "id": "zstd level 6 / throughput-chacha20-poly1305-ietf",
-        "name": "zstd level 6 + ChaCha20-Poly1305",
+        "id": "zstd high-ratio / throughput-chacha20-poly1305-ietf",
+        "name": "zstd high-ratio + ChaCha20-Poly1305",
         "type": "line",
         "xAxisIndex": 1,
         "yAxisIndex": 1,
@@ -830,8 +830,8 @@
         "data": [76.56, 55.51, 45.86, 43.65, 38.32]
       },
       {
-        "id": "zstd level 3 / compression-ratio",
-        "name": "zstd level 3",
+        "id": "zstd default / compression-ratio",
+        "name": "zstd default",
         "type": "line",
         "xAxisIndex": 2,
         "yAxisIndex": 2,
@@ -847,8 +847,8 @@
         "data": [66.15, 35.24, 24.18, 23.83, 23.45]
       },
       {
-        "id": "zstd level 6 / compression-ratio",
-        "name": "zstd level 6",
+        "id": "zstd high-ratio / compression-ratio",
+        "name": "zstd high-ratio",
         "type": "line",
         "xAxisIndex": 2,
         "yAxisIndex": 2,

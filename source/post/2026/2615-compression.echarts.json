@@ -3,7 +3,7 @@
     "aria": {
       "enabled": true,
       "label": {
-        "description": "Linux TCP 在 200 B、1 KiB、8 KiB、64 KiB 和 300 KiB 下的 QPS、payload 吞吐量与独立压缩后的大小。原始大小为 100%。200 B 低于协议压缩阈值。"
+        "description": "Linux TCP 在 200 B、1 KiB、8 KiB、64 KiB 和 300 KiB 下的 QPS、payload 吞吐量与独立压缩后的大小。200 B 低于协议压缩阈值；协议栈发送路径写死为 kBalanced（LZ4 accel=6、zstd level 3），底图压缩后大小（%）来自发送端按请求档位独立压缩的结果（原始大小为 100%）。"
       }
     },
     "animation": false,
@@ -163,7 +163,7 @@
         }
       },
       {
-        "name": "zstd level 3",
+        "name": "zstd default",
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
@@ -183,7 +183,7 @@
         }
       },
       {
-        "name": "zstd level 6",
+        "name": "zstd high-ratio",
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
@@ -263,7 +263,7 @@
         }
       },
       {
-        "name": "zstd level 3",
+        "name": "zstd default",
         "type": "line",
         "xAxisIndex": 1,
         "yAxisIndex": 1,
@@ -283,7 +283,7 @@
         }
       },
       {
-        "name": "zstd level 6",
+        "name": "zstd high-ratio",
         "type": "line",
         "xAxisIndex": 1,
         "yAxisIndex": 1,
@@ -363,7 +363,7 @@
         }
       },
       {
-        "name": "zstd level 3",
+        "name": "zstd default",
         "type": "line",
         "xAxisIndex": 2,
         "yAxisIndex": 2,
@@ -383,7 +383,7 @@
         }
       },
       {
-        "name": "zstd level 6",
+        "name": "zstd high-ratio",
         "type": "line",
         "xAxisIndex": 2,
         "yAxisIndex": 2,
