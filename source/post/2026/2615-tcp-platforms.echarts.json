@@ -3,14 +3,17 @@
     "aria": {
       "enabled": true,
       "label": {
-        "description": "Linux、WSL2 和 Windows 原生的无加密无压缩 TCP 回环收包速率与 payload 吞吐量。"
+        "description": "Linux、WSL2（mimalloc 与 glibc）和 Windows 原生在无加密无压缩 TCP 回环下的 QPS 与吞吐量。"
       }
     },
     "animation": false,
     "legend": {
-      "bottom": 4,
-      "itemWidth": 13,
-      "itemGap": 10
+      "bottom": 6,
+      "itemWidth": 18,
+      "itemGap": 12,
+      "textStyle": {
+        "fontSize": 11
+      }
     },
     "tooltip": {
       "trigger": "axis",
@@ -25,16 +28,16 @@
     },
     "grid": [
       {
-        "left": 68,
-        "right": 18,
-        "top": 28,
-        "bottom": "57%"
+        "left": 74,
+        "right": 28,
+        "top": 30,
+        "bottom": "58%"
       },
       {
-        "left": 68,
-        "right": 18,
-        "top": "54%",
-        "bottom": 52
+        "left": 74,
+        "right": 28,
+        "top": "52%",
+        "bottom": 54
       }
     ],
     "xAxis": [
@@ -42,7 +45,13 @@
         "gridIndex": 0,
         "type": "category",
         "boundaryGap": false,
-        "data": ["200 B", "1 KiB", "8 KiB", "64 KiB", "300 KiB"],
+        "data": [
+          "200 B",
+          "1 KB",
+          "8 KB",
+          "64 KB",
+          "300 KB"
+        ],
         "axisLabel": {
           "interval": 0,
           "show": false
@@ -52,7 +61,13 @@
         "gridIndex": 1,
         "type": "category",
         "boundaryGap": false,
-        "data": ["200 B", "1 KiB", "8 KiB", "64 KiB", "300 KiB"],
+        "data": [
+          "200 B",
+          "1 KB",
+          "8 KB",
+          "64 KB",
+          "300 KB"
+        ],
         "axisLabel": {
           "interval": 0,
           "show": true
@@ -69,18 +84,24 @@
       },
       {
         "gridIndex": 1,
-        "name": "吞吐量（MiB/s）",
+        "name": "吞吐量（MB/s）",
         "type": "value",
         "min": 0
       }
     ],
     "series": [
       {
-        "name": "Linux",
+        "name": "Linux (mimalloc)",
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
-        "data": [3474350, 1461897, 274954, 39839, 9049],
+        "data": [
+          3656722,
+          1651608,
+          301960,
+          42680,
+          9645
+        ],
         "symbol": "circle",
         "symbolSize": 7,
         "lineStyle": {
@@ -96,51 +117,95 @@
         }
       },
       {
-        "name": "WSL2",
+        "name": "WSL2 (mimalloc)",
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
-        "data": [3223375, 1297151, 128911, 21503, 3786],
+        "data": [
+          3200345,
+          1321738,
+          138823,
+          38141,
+          9143
+        ],
+        "symbol": "diamond",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "solid",
+          "color": "#399886"
+        },
+        "itemStyle": {
+          "color": "#399886"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "WSL2 (glibc)",
+        "type": "line",
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "data": [
+          3509059,
+          1396329,
+          138681,
+          19122,
+          3802
+        ],
         "symbol": "rect",
         "symbolSize": 7,
         "lineStyle": {
           "width": 2,
           "type": "dashed",
-          "color": "#399886"
+          "color": "#6c79b8"
         },
         "itemStyle": {
-          "color": "#399886"
+          "color": "#6c79b8"
         },
         "emphasis": {
           "focus": "series"
         }
       },
       {
-        "name": "Windows",
+        "name": "Windows (MSVC)",
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
-        "data": [774502, 258036, 63315, 5876, 1883],
+        "data": [
+          917767,
+          294780,
+          52943,
+          6127,
+          1536
+        ],
         "symbol": "triangle",
         "symbolSize": 7,
         "lineStyle": {
           "width": 2,
           "type": "dotted",
-          "color": "#92601d"
+          "color": "#cd9344"
         },
         "itemStyle": {
-          "color": "#92601d"
+          "color": "#cd9344"
         },
         "emphasis": {
           "focus": "series"
         }
       },
       {
-        "name": "Linux",
+        "name": "Linux (mimalloc)",
         "type": "line",
         "xAxisIndex": 1,
         "yAxisIndex": 1,
-        "data": [662.7, 1427.6, 2148.1, 2489.9, 2650.9],
+        "data": [
+          697.5,
+          1612.9,
+          2359.1,
+          2667.5,
+          2825.8
+        ],
         "symbol": "circle",
         "symbolSize": 7,
         "lineStyle": {
@@ -156,16 +221,22 @@
         }
       },
       {
-        "name": "WSL2",
+        "name": "WSL2 (mimalloc)",
         "type": "line",
         "xAxisIndex": 1,
         "yAxisIndex": 1,
-        "data": [614.8, 1266.7, 1007.1, 1343.9, 1109.2],
-        "symbol": "rect",
+        "data": [
+          610.4,
+          1290.8,
+          1084.6,
+          2383.8,
+          2678.6
+        ],
+        "symbol": "diamond",
         "symbolSize": 7,
         "lineStyle": {
           "width": 2,
-          "type": "dashed",
+          "type": "solid",
           "color": "#399886"
         },
         "itemStyle": {
@@ -176,20 +247,52 @@
         }
       },
       {
-        "name": "Windows",
+        "name": "WSL2 (glibc)",
         "type": "line",
         "xAxisIndex": 1,
         "yAxisIndex": 1,
-        "data": [147.7, 252.0, 494.6, 367.2, 551.8],
+        "data": [
+          669.3,
+          1363.6,
+          1083.4,
+          1195.1,
+          1113.7
+        ],
+        "symbol": "rect",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dashed",
+          "color": "#6c79b8"
+        },
+        "itemStyle": {
+          "color": "#6c79b8"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "Windows (MSVC)",
+        "type": "line",
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "data": [
+          175.1,
+          287.9,
+          413.6,
+          382.9,
+          450.0
+        ],
         "symbol": "triangle",
         "symbolSize": 7,
         "lineStyle": {
           "width": 2,
           "type": "dotted",
-          "color": "#92601d"
+          "color": "#cd9344"
         },
         "itemStyle": {
-          "color": "#92601d"
+          "color": "#cd9344"
         },
         "emphasis": {
           "focus": "series"
@@ -200,33 +303,55 @@
   "media": [
     {
       "query": {
-        "maxWidth": 400
+        "maxWidth": 460
       },
       "option": {
+        "grid": [
+          {
+            "left": 60,
+            "right": 18,
+            "top": 30,
+            "bottom": "59%"
+          },
+          {
+            "left": 60,
+            "right": 18,
+            "top": "52%",
+            "bottom": 72
+          }
+        ],
         "xAxis": [
           {
             "axisLabel": {
-              "rotate": 28,
+              "rotate": 25,
               "fontSize": 10
             }
           },
           {
             "axisLabel": {
-              "rotate": 28,
+              "rotate": 25,
               "fontSize": 10
             }
-          }
-        ],
-        "grid": [
-          {},
-          {
-            "bottom": 62
           }
         ]
       }
     },
     {
       "option": {
+        "grid": [
+          {
+            "left": 74,
+            "right": 28,
+            "top": 30,
+            "bottom": "58%"
+          },
+          {
+            "left": 74,
+            "right": 28,
+            "top": "52%",
+            "bottom": 54
+          }
+        ],
         "xAxis": [
           {
             "axisLabel": {
@@ -239,12 +364,6 @@
               "rotate": 0,
               "fontSize": 12
             }
-          }
-        ],
-        "grid": [
-          {},
-          {
-            "bottom": 52
           }
         ]
       }

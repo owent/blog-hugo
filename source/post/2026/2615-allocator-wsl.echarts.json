@@ -1,0 +1,583 @@
+{
+  "baseOption": {
+    "aria": {
+      "enabled": true,
+      "label": {
+        "description": "WSL2 同环境下 mimalloc 与 glibc 在明文、AES-128-GCM、LZ4 和 zstd 四种负载下的 QPS 与吞吐量对比。"
+      }
+    },
+    "animation": false,
+    "legend": {
+      "bottom": 6,
+      "itemWidth": 18,
+      "itemGap": 12,
+      "textStyle": {
+        "fontSize": 11
+      },
+      "type": "scroll",
+      "left": 10,
+      "right": 10
+    },
+    "tooltip": {
+      "trigger": "axis",
+      "confine": true
+    },
+    "axisPointer": {
+      "link": [
+        {
+          "xAxisIndex": "all"
+        }
+      ]
+    },
+    "grid": [
+      {
+        "left": 74,
+        "right": 28,
+        "top": 30,
+        "bottom": "58%"
+      },
+      {
+        "left": 74,
+        "right": 28,
+        "top": "52%",
+        "bottom": 56
+      }
+    ],
+    "xAxis": [
+      {
+        "gridIndex": 0,
+        "type": "category",
+        "boundaryGap": false,
+        "data": [
+          "200 B",
+          "1 KB",
+          "8 KB",
+          "64 KB",
+          "300 KB"
+        ],
+        "axisLabel": {
+          "interval": 0,
+          "show": false
+        }
+      },
+      {
+        "gridIndex": 1,
+        "type": "category",
+        "boundaryGap": false,
+        "data": [
+          "200 B",
+          "1 KB",
+          "8 KB",
+          "64 KB",
+          "300 KB"
+        ],
+        "axisLabel": {
+          "interval": 0,
+          "show": true
+        }
+      }
+    ],
+    "yAxis": [
+      {
+        "gridIndex": 0,
+        "name": "QPS（条/s，对数）",
+        "type": "log",
+        "min": 1000,
+        "max": 10000000
+      },
+      {
+        "gridIndex": 1,
+        "name": "吞吐量（MB/s）",
+        "type": "value",
+        "min": 0
+      }
+    ],
+    "series": [
+      {
+        "name": "明文 · mimalloc",
+        "type": "line",
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "data": [
+          3200345,
+          1321738,
+          138823,
+          38141,
+          9143
+        ],
+        "symbol": "circle",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "solid",
+          "color": "#267a93"
+        },
+        "itemStyle": {
+          "color": "#267a93"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "明文 · glibc",
+        "type": "line",
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "data": [
+          3509059,
+          1396329,
+          138681,
+          19122,
+          3802
+        ],
+        "symbol": "emptyCircle",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dashed",
+          "color": "#267a93"
+        },
+        "itemStyle": {
+          "color": "#267a93"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "AES-128-GCM · mimalloc",
+        "type": "line",
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "data": [
+          1652967,
+          900065,
+          127284,
+          37201,
+          8295
+        ],
+        "symbol": "diamond",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "solid",
+          "color": "#399886"
+        },
+        "itemStyle": {
+          "color": "#399886"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "AES-128-GCM · glibc",
+        "type": "line",
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "data": [
+          1531406,
+          898859,
+          118928,
+          16544,
+          3560
+        ],
+        "symbol": "emptyDiamond",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dashed",
+          "color": "#399886"
+        },
+        "itemStyle": {
+          "color": "#399886"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "LZ4 · mimalloc",
+        "type": "line",
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "data": [
+          3272461,
+          816989,
+          145120,
+          20641,
+          3128
+        ],
+        "symbol": "triangle",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "solid",
+          "color": "#cd9344"
+        },
+        "itemStyle": {
+          "color": "#cd9344"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "LZ4 · glibc",
+        "type": "line",
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "data": [
+          3391689,
+          782557,
+          135004,
+          20247,
+          2503
+        ],
+        "symbol": "emptyTriangle",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dashed",
+          "color": "#cd9344"
+        },
+        "itemStyle": {
+          "color": "#cd9344"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "zstd · mimalloc",
+        "type": "line",
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "data": [
+          3192697,
+          167926,
+          52565,
+          8883,
+          1698
+        ],
+        "symbol": "rect",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "solid",
+          "color": "#be697e"
+        },
+        "itemStyle": {
+          "color": "#be697e"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "zstd · glibc",
+        "type": "line",
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "data": [
+          3514109,
+          168289,
+          50362,
+          8282,
+          1570
+        ],
+        "symbol": "emptyRect",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dashed",
+          "color": "#be697e"
+        },
+        "itemStyle": {
+          "color": "#be697e"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "明文 · mimalloc",
+        "type": "line",
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "data": [
+          610.4,
+          1290.8,
+          1084.6,
+          2383.8,
+          2678.6
+        ],
+        "symbol": "circle",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "solid",
+          "color": "#267a93"
+        },
+        "itemStyle": {
+          "color": "#267a93"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "明文 · glibc",
+        "type": "line",
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "data": [
+          669.3,
+          1363.6,
+          1083.4,
+          1195.1,
+          1113.7
+        ],
+        "symbol": "emptyCircle",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dashed",
+          "color": "#267a93"
+        },
+        "itemStyle": {
+          "color": "#267a93"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "AES-128-GCM · mimalloc",
+        "type": "line",
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "data": [
+          315.3,
+          879.0,
+          994.4,
+          2325.0,
+          2430.0
+        ],
+        "symbol": "diamond",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "solid",
+          "color": "#399886"
+        },
+        "itemStyle": {
+          "color": "#399886"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "AES-128-GCM · glibc",
+        "type": "line",
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "data": [
+          292.1,
+          877.8,
+          929.1,
+          1034.0,
+          1043.0
+        ],
+        "symbol": "emptyDiamond",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dashed",
+          "color": "#399886"
+        },
+        "itemStyle": {
+          "color": "#399886"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "LZ4 · mimalloc",
+        "type": "line",
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "data": [
+          624.2,
+          797.8,
+          1133.8,
+          1290.0,
+          916.4
+        ],
+        "symbol": "triangle",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "solid",
+          "color": "#cd9344"
+        },
+        "itemStyle": {
+          "color": "#cd9344"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "LZ4 · glibc",
+        "type": "line",
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "data": [
+          646.9,
+          764.2,
+          1054.7,
+          1265.4,
+          733.3
+        ],
+        "symbol": "emptyTriangle",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dashed",
+          "color": "#cd9344"
+        },
+        "itemStyle": {
+          "color": "#cd9344"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "zstd · mimalloc",
+        "type": "line",
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "data": [
+          609.0,
+          164.0,
+          410.7,
+          555.2,
+          497.3
+        ],
+        "symbol": "rect",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "solid",
+          "color": "#be697e"
+        },
+        "itemStyle": {
+          "color": "#be697e"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "zstd · glibc",
+        "type": "line",
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "data": [
+          670.3,
+          164.3,
+          393.4,
+          517.6,
+          460.0
+        ],
+        "symbol": "emptyRect",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dashed",
+          "color": "#be697e"
+        },
+        "itemStyle": {
+          "color": "#be697e"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      }
+    ]
+  },
+  "media": [
+    {
+      "query": {
+        "maxWidth": 460
+      },
+      "option": {
+        "grid": [
+          {
+            "left": 60,
+            "right": 18,
+            "top": 30,
+            "bottom": "59%"
+          },
+          {
+            "left": 60,
+            "right": 18,
+            "top": "52%",
+            "bottom": 68
+          }
+        ],
+        "xAxis": [
+          {
+            "axisLabel": {
+              "rotate": 25,
+              "fontSize": 10
+            }
+          },
+          {
+            "axisLabel": {
+              "rotate": 25,
+              "fontSize": 10
+            }
+          }
+        ]
+      }
+    },
+    {
+      "option": {
+        "grid": [
+          {
+            "left": 74,
+            "right": 28,
+            "top": 30,
+            "bottom": "58%"
+          },
+          {
+            "left": 74,
+            "right": 28,
+            "top": "52%",
+            "bottom": 56
+          }
+        ],
+        "xAxis": [
+          {
+            "axisLabel": {
+              "rotate": 0,
+              "fontSize": 12
+            }
+          },
+          {
+            "axisLabel": {
+              "rotate": 0,
+              "fontSize": 12
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

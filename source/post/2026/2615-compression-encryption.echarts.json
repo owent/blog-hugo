@@ -3,63 +3,44 @@
     "aria": {
       "enabled": true,
       "label": {
-        "description": "Linux TCP 的压缩加密对比。两组速率坐标显示四种请求压缩预设与三种加密算法的十二种组合及无加密基线（协议栈实际固定以 kBalanced 压缩，即 LZ4 accel=6 与 zstd level 3）；第三组坐标显示发送端按请求档位独立压缩后的大小（原始大小为 100%）。200 B 未触发协议压缩。"
+        "description": "Linux TCP 下无压缩、LZ4 与 zstd 单独使用及叠加加密后的 QPS 与吞吐量。200 B 低于 1 KB 压缩阈值。"
       }
     },
     "animation": false,
-    "legend": [
-      {
-        "type": "scroll",
-        "top": 4,
-        "left": 6,
-        "right": 6,
-        "itemWidth": 13,
-        "itemGap": 10,
-        "textStyle": {
-          "fontSize": 11
-        },
-        "data": ["LZ4 fast + 无加密", "LZ4 fast + AES-128-GCM", "LZ4 fast + AES-256-GCM", "LZ4 fast + ChaCha20-Poly1305", "LZ4 default + 无加密", "LZ4 default + AES-128-GCM", "LZ4 default + AES-256-GCM", "LZ4 default + ChaCha20-Poly1305", "zstd default + 无加密", "zstd default + AES-128-GCM", "zstd default + AES-256-GCM", "zstd default + ChaCha20-Poly1305", "zstd high-ratio + 无加密", "zstd high-ratio + AES-128-GCM", "zstd high-ratio + AES-256-GCM", "zstd high-ratio + ChaCha20-Poly1305"]
-      },
-      {
-        "bottom": 4,
-        "itemWidth": 13,
-        "itemGap": 10,
-        "textStyle": {
-          "fontSize": 11
-        },
-        "data": ["LZ4 fast", "LZ4 default", "zstd default", "zstd high-ratio"]
-      }
-    ],
-    "tooltip": {
-      "trigger": "axis",
-      "confine": true,
-      "renderMode": "richText",
+    "legend": {
+      "bottom": 6,
+      "itemWidth": 18,
+      "itemGap": 12,
       "textStyle": {
         "fontSize": 11
       },
-      "padding": [
-        6,
-        5
+      "type": "scroll",
+      "left": 10,
+      "right": 10
+    },
+    "tooltip": {
+      "trigger": "axis",
+      "confine": true
+    },
+    "axisPointer": {
+      "link": [
+        {
+          "xAxisIndex": "all"
+        }
       ]
     },
     "grid": [
       {
-        "left": 68,
-        "right": 18,
-        "top": 52,
-        "bottom": "69%"
+        "left": 74,
+        "right": 28,
+        "top": 30,
+        "bottom": "58%"
       },
       {
-        "left": 68,
-        "right": 18,
-        "top": "38%",
-        "bottom": "42%"
-      },
-      {
-        "left": 68,
-        "right": 18,
-        "top": "65%",
-        "bottom": 50
+        "left": 74,
+        "right": 28,
+        "top": "52%",
+        "bottom": 56
       }
     ],
     "xAxis": [
@@ -67,7 +48,13 @@
         "gridIndex": 0,
         "type": "category",
         "boundaryGap": false,
-        "data": ["200 B*", "1 KiB", "8 KiB", "64 KiB", "300 KiB"],
+        "data": [
+          "200 B*",
+          "1 KB",
+          "8 KB",
+          "64 KB",
+          "300 KB"
+        ],
         "axisLabel": {
           "interval": 0,
           "show": false
@@ -77,17 +64,13 @@
         "gridIndex": 1,
         "type": "category",
         "boundaryGap": false,
-        "data": ["200 B*", "1 KiB", "8 KiB", "64 KiB", "300 KiB"],
-        "axisLabel": {
-          "interval": 0,
-          "show": false
-        }
-      },
-      {
-        "gridIndex": 2,
-        "type": "category",
-        "boundaryGap": false,
-        "data": ["200 B*", "1 KiB", "8 KiB", "64 KiB", "300 KiB"],
+        "data": [
+          "200 B*",
+          "1 KB",
+          "8 KB",
+          "64 KB",
+          "300 KB"
+        ],
         "axisLabel": {
           "interval": 0,
           "show": true
@@ -104,828 +87,534 @@
       },
       {
         "gridIndex": 1,
-        "name": "吞吐量（MiB/s）",
+        "name": "吞吐量（MB/s）",
         "type": "value",
-        "min": 0,
-        "max": 1250,
-        "interval": 250
-      },
-      {
-        "gridIndex": 2,
-        "name": "压缩后大小（%）",
-        "type": "value",
-        "min": 0,
-        "max": 100,
-        "interval": 25,
-        "axisLabel": {
-          "formatter": "{value}%"
-        }
+        "min": 0
       }
     ],
     "series": [
       {
-        "id": "LZ4 fast / qps-none",
-        "name": "LZ4 fast + 无加密",
+        "name": "无压缩",
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
-        "symbol": "emptyCircle",
-        "symbolSize": 7,
-        "lineStyle": {
-          "color": "#276d91",
-          "type": "dashed",
-          "width": 1.5
-        },
-        "itemStyle": {
-          "color": "#276d91"
-        },
-        "emphasis": {
-          "focus": "series"
-        },
-        "data": [3431711, 781911, 121332, 18372, 2950]
-      },
-      {
-        "id": "LZ4 fast / qps-aes-128-gcm",
-        "name": "LZ4 fast + AES-128-GCM",
-        "type": "line",
-        "xAxisIndex": 0,
-        "yAxisIndex": 0,
+        "data": [
+          3656722,
+          1651608,
+          301960,
+          42680,
+          9645
+        ],
         "symbol": "circle",
         "symbolSize": 7,
         "lineStyle": {
-          "color": "#276d91",
+          "width": 2,
           "type": "solid",
-          "width": 2
+          "color": "#267a93"
         },
         "itemStyle": {
-          "color": "#276d91"
+          "color": "#267a93"
         },
         "emphasis": {
           "focus": "series"
-        },
-        "data": [1529417, 567334, 113429, 18248, 2798]
+        }
       },
       {
-        "id": "LZ4 fast / qps-aes-256-gcm",
-        "name": "LZ4 fast + AES-256-GCM",
+        "name": "无压缩 + AES-128-GCM",
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
+        "data": [
+          1622400,
+          971824,
+          193984,
+          37576,
+          8626
+        ],
         "symbol": "triangle",
         "symbolSize": 7,
         "lineStyle": {
-          "color": "#276d91",
-          "type": "dotted",
-          "width": 2
-        },
-        "itemStyle": {
-          "color": "#276d91"
-        },
-        "emphasis": {
-          "focus": "series"
-        },
-        "data": [1508362, 571733, 114286, 18200, 2888]
-      },
-      {
-        "id": "LZ4 fast / qps-chacha20-poly1305-ietf",
-        "name": "LZ4 fast + ChaCha20-Poly1305",
-        "type": "line",
-        "xAxisIndex": 0,
-        "yAxisIndex": 0,
-        "symbol": "emptyDiamond",
-        "symbolSize": 7,
-        "lineStyle": {
-          "color": "#276d91",
-          "type": "solid",
-          "width": 2
-        },
-        "itemStyle": {
-          "color": "#276d91"
-        },
-        "emphasis": {
-          "focus": "series"
-        },
-        "data": [850644, 444908, 102720, 16778, 2735]
-      },
-      {
-        "id": "LZ4 default / qps-none",
-        "name": "LZ4 default + 无加密",
-        "type": "line",
-        "xAxisIndex": 0,
-        "yAxisIndex": 0,
-        "symbol": "emptyCircle",
-        "symbolSize": 7,
-        "lineStyle": {
-          "color": "#237c68",
+          "width": 2,
           "type": "dashed",
-          "width": 1.5
+          "color": "#267a93"
         },
         "itemStyle": {
-          "color": "#237c68"
+          "color": "#267a93"
         },
         "emphasis": {
           "focus": "series"
-        },
-        "data": [3462667, 779425, 121238, 18689, 2941]
+        }
       },
       {
-        "id": "LZ4 default / qps-aes-128-gcm",
-        "name": "LZ4 default + AES-128-GCM",
+        "name": "无压缩 + ChaCha20-Poly1305",
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
+        "data": [
+          913885,
+          650664,
+          174880,
+          27028,
+          5978
+        ],
+        "symbol": "rect",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dotted",
+          "color": "#267a93"
+        },
+        "itemStyle": {
+          "color": "#267a93"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "LZ4",
+        "type": "line",
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "data": [
+          3629902,
+          802647,
+          128738,
+          19757,
+          3060
+        ],
         "symbol": "circle",
         "symbolSize": 7,
         "lineStyle": {
-          "color": "#237c68",
+          "width": 2,
           "type": "solid",
-          "width": 2
+          "color": "#399886"
         },
         "itemStyle": {
-          "color": "#237c68"
+          "color": "#399886"
         },
         "emphasis": {
           "focus": "series"
-        },
-        "data": [1534808, 559370, 113867, 18150, 2906]
+        }
       },
       {
-        "id": "LZ4 default / qps-aes-256-gcm",
-        "name": "LZ4 default + AES-256-GCM",
+        "name": "LZ4 + AES-128-GCM",
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
+        "data": [
+          1640106,
+          602312,
+          120266,
+          19496,
+          2924
+        ],
         "symbol": "triangle",
         "symbolSize": 7,
         "lineStyle": {
-          "color": "#237c68",
-          "type": "dotted",
-          "width": 2
-        },
-        "itemStyle": {
-          "color": "#237c68"
-        },
-        "emphasis": {
-          "focus": "series"
-        },
-        "data": [1510813, 561782, 113996, 18013, 2882]
-      },
-      {
-        "id": "LZ4 default / qps-chacha20-poly1305-ietf",
-        "name": "LZ4 default + ChaCha20-Poly1305",
-        "type": "line",
-        "xAxisIndex": 0,
-        "yAxisIndex": 0,
-        "symbol": "emptyDiamond",
-        "symbolSize": 7,
-        "lineStyle": {
-          "color": "#237c68",
-          "type": "solid",
-          "width": 2
-        },
-        "itemStyle": {
-          "color": "#237c68"
-        },
-        "emphasis": {
-          "focus": "series"
-        },
-        "data": [857083, 440549, 103002, 16725, 2746]
-      },
-      {
-        "id": "zstd default / qps-none",
-        "name": "zstd default + 无加密",
-        "type": "line",
-        "xAxisIndex": 0,
-        "yAxisIndex": 0,
-        "symbol": "emptyCircle",
-        "symbolSize": 7,
-        "lineStyle": {
-          "color": "#7a60aa",
+          "width": 2,
           "type": "dashed",
-          "width": 1.5
+          "color": "#399886"
         },
         "itemStyle": {
-          "color": "#7a60aa"
+          "color": "#399886"
         },
         "emphasis": {
           "focus": "series"
-        },
-        "data": [3457069, 174983, 46095, 8033, 1555]
+        }
       },
       {
-        "id": "zstd default / qps-aes-128-gcm",
-        "name": "zstd default + AES-128-GCM",
+        "name": "LZ4 + ChaCha20-Poly1305",
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
+        "data": [
+          916152,
+          472354,
+          109544,
+          17824,
+          2918
+        ],
+        "symbol": "rect",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dotted",
+          "color": "#399886"
+        },
+        "itemStyle": {
+          "color": "#399886"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "zstd",
+        "type": "line",
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "data": [
+          3578026,
+          182950,
+          48976,
+          8432,
+          1527
+        ],
         "symbol": "circle",
         "symbolSize": 7,
         "lineStyle": {
-          "color": "#7a60aa",
+          "width": 2,
           "type": "solid",
-          "width": 2
+          "color": "#cd9344"
         },
         "itemStyle": {
-          "color": "#7a60aa"
+          "color": "#cd9344"
         },
         "emphasis": {
           "focus": "series"
-        },
-        "data": [1544504, 164858, 45125, 7973, 1547]
+        }
       },
       {
-        "id": "zstd default / qps-aes-256-gcm",
-        "name": "zstd default + AES-256-GCM",
+        "name": "zstd + AES-128-GCM",
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
+        "data": [
+          1616734,
+          174577,
+          48001,
+          8400,
+          1532
+        ],
         "symbol": "triangle",
         "symbolSize": 7,
         "lineStyle": {
-          "color": "#7a60aa",
-          "type": "dotted",
-          "width": 2
+          "width": 2,
+          "type": "dashed",
+          "color": "#cd9344"
         },
         "itemStyle": {
-          "color": "#7a60aa"
+          "color": "#cd9344"
         },
         "emphasis": {
           "focus": "series"
-        },
-        "data": [1454868, 166604, 45104, 8021, 1547]
+        }
       },
       {
-        "id": "zstd default / qps-chacha20-poly1305-ietf",
-        "name": "zstd default + ChaCha20-Poly1305",
+        "name": "zstd + ChaCha20-Poly1305",
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
-        "symbol": "emptyDiamond",
+        "data": [
+          919992,
+          158460,
+          45870,
+          8291,
+          1508
+        ],
+        "symbol": "rect",
         "symbolSize": 7,
         "lineStyle": {
-          "color": "#7a60aa",
-          "type": "solid",
-          "width": 2
+          "width": 2,
+          "type": "dotted",
+          "color": "#cd9344"
         },
         "itemStyle": {
-          "color": "#7a60aa"
+          "color": "#cd9344"
         },
         "emphasis": {
           "focus": "series"
-        },
-        "data": [860296, 148311, 43426, 7737, 1504]
+        }
       },
       {
-        "id": "zstd high-ratio / qps-none",
-        "name": "zstd high-ratio + 无加密",
+        "name": "无压缩",
         "type": "line",
-        "xAxisIndex": 0,
-        "yAxisIndex": 0,
-        "symbol": "emptyCircle",
-        "symbolSize": 7,
-        "lineStyle": {
-          "color": "#a45b25",
-          "type": "dashed",
-          "width": 1.5
-        },
-        "itemStyle": {
-          "color": "#a45b25"
-        },
-        "emphasis": {
-          "focus": "series"
-        },
-        "data": [3459775, 174231, 46122, 8043, 1448]
-      },
-      {
-        "id": "zstd high-ratio / qps-aes-128-gcm",
-        "name": "zstd high-ratio + AES-128-GCM",
-        "type": "line",
-        "xAxisIndex": 0,
-        "yAxisIndex": 0,
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "data": [
+          697.5,
+          1612.9,
+          2359.1,
+          2667.5,
+          2825.8
+        ],
         "symbol": "circle",
         "symbolSize": 7,
         "lineStyle": {
-          "color": "#a45b25",
+          "width": 2,
           "type": "solid",
-          "width": 2
+          "color": "#267a93"
         },
         "itemStyle": {
-          "color": "#a45b25"
+          "color": "#267a93"
         },
         "emphasis": {
           "focus": "series"
-        },
-        "data": [1540694, 166125, 45128, 7963, 1549]
+        }
       },
       {
-        "id": "zstd high-ratio / qps-aes-256-gcm",
-        "name": "zstd high-ratio + AES-256-GCM",
+        "name": "无压缩 + AES-128-GCM",
         "type": "line",
-        "xAxisIndex": 0,
-        "yAxisIndex": 0,
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "data": [
+          309.4,
+          949.0,
+          1515.5,
+          2348.5,
+          2527.3
+        ],
         "symbol": "triangle",
         "symbolSize": 7,
         "lineStyle": {
-          "color": "#a45b25",
-          "type": "dotted",
-          "width": 2
-        },
-        "itemStyle": {
-          "color": "#a45b25"
-        },
-        "emphasis": {
-          "focus": "series"
-        },
-        "data": [1520768, 166354, 44945, 7832, 1539]
-      },
-      {
-        "id": "zstd high-ratio / qps-chacha20-poly1305-ietf",
-        "name": "zstd high-ratio + ChaCha20-Poly1305",
-        "type": "line",
-        "xAxisIndex": 0,
-        "yAxisIndex": 0,
-        "symbol": "emptyDiamond",
-        "symbolSize": 7,
-        "lineStyle": {
-          "color": "#a45b25",
-          "type": "solid",
-          "width": 2
-        },
-        "itemStyle": {
-          "color": "#a45b25"
-        },
-        "emphasis": {
-          "focus": "series"
-        },
-        "data": [861841, 150870, 43459, 7641, 1403]
-      },
-      {
-        "id": "LZ4 fast / throughput-none",
-        "name": "LZ4 fast + 无加密",
-        "type": "line",
-        "xAxisIndex": 1,
-        "yAxisIndex": 1,
-        "symbol": "emptyCircle",
-        "symbolSize": 7,
-        "lineStyle": {
-          "color": "#276d91",
+          "width": 2,
           "type": "dashed",
-          "width": 1.5
+          "color": "#267a93"
         },
         "itemStyle": {
-          "color": "#276d91"
+          "color": "#267a93"
         },
         "emphasis": {
           "focus": "series"
-        },
-        "data": [654.5, 763.6, 947.9, 1148.3, 864.2]
+        }
       },
       {
-        "id": "LZ4 fast / throughput-aes-128-gcm",
-        "name": "LZ4 fast + AES-128-GCM",
+        "name": "无压缩 + ChaCha20-Poly1305",
         "type": "line",
         "xAxisIndex": 1,
         "yAxisIndex": 1,
+        "data": [
+          174.3,
+          635.4,
+          1366.2,
+          1689.2,
+          1751.4
+        ],
+        "symbol": "rect",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dotted",
+          "color": "#267a93"
+        },
+        "itemStyle": {
+          "color": "#267a93"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "LZ4",
+        "type": "line",
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "data": [
+          692.3,
+          783.8,
+          1005.8,
+          1234.8,
+          896.5
+        ],
         "symbol": "circle",
         "symbolSize": 7,
         "lineStyle": {
-          "color": "#276d91",
+          "width": 2,
           "type": "solid",
-          "width": 2
+          "color": "#399886"
         },
         "itemStyle": {
-          "color": "#276d91"
+          "color": "#399886"
         },
         "emphasis": {
           "focus": "series"
-        },
-        "data": [291.7, 554.0, 886.2, 1140.5, 819.8]
+        }
       },
       {
-        "id": "LZ4 fast / throughput-aes-256-gcm",
-        "name": "LZ4 fast + AES-256-GCM",
+        "name": "LZ4 + AES-128-GCM",
         "type": "line",
         "xAxisIndex": 1,
         "yAxisIndex": 1,
+        "data": [
+          312.8,
+          588.2,
+          939.6,
+          1218.5,
+          856.6
+        ],
         "symbol": "triangle",
         "symbolSize": 7,
         "lineStyle": {
-          "color": "#276d91",
-          "type": "dotted",
-          "width": 2
-        },
-        "itemStyle": {
-          "color": "#276d91"
-        },
-        "emphasis": {
-          "focus": "series"
-        },
-        "data": [287.7, 558.3, 892.9, 1137.5, 846.1]
-      },
-      {
-        "id": "LZ4 fast / throughput-chacha20-poly1305-ietf",
-        "name": "LZ4 fast + ChaCha20-Poly1305",
-        "type": "line",
-        "xAxisIndex": 1,
-        "yAxisIndex": 1,
-        "symbol": "emptyDiamond",
-        "symbolSize": 7,
-        "lineStyle": {
-          "color": "#276d91",
-          "type": "solid",
-          "width": 2
-        },
-        "itemStyle": {
-          "color": "#276d91"
-        },
-        "emphasis": {
-          "focus": "series"
-        },
-        "data": [162.2, 434.5, 802.5, 1048.7, 801.3]
-      },
-      {
-        "id": "LZ4 default / throughput-none",
-        "name": "LZ4 default + 无加密",
-        "type": "line",
-        "xAxisIndex": 1,
-        "yAxisIndex": 1,
-        "symbol": "emptyCircle",
-        "symbolSize": 7,
-        "lineStyle": {
-          "color": "#237c68",
+          "width": 2,
           "type": "dashed",
-          "width": 1.5
+          "color": "#399886"
         },
         "itemStyle": {
-          "color": "#237c68"
+          "color": "#399886"
         },
         "emphasis": {
           "focus": "series"
-        },
-        "data": [660.5, 761.2, 947.2, 1168.0, 861.7]
+        }
       },
       {
-        "id": "LZ4 default / throughput-aes-128-gcm",
-        "name": "LZ4 default + AES-128-GCM",
+        "name": "LZ4 + ChaCha20-Poly1305",
         "type": "line",
         "xAxisIndex": 1,
         "yAxisIndex": 1,
+        "data": [
+          174.7,
+          461.3,
+          855.8,
+          1114.0,
+          854.9
+        ],
+        "symbol": "rect",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dotted",
+          "color": "#399886"
+        },
+        "itemStyle": {
+          "color": "#399886"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "zstd",
+        "type": "line",
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "data": [
+          682.5,
+          178.7,
+          382.6,
+          527.0,
+          447.4
+        ],
         "symbol": "circle",
         "symbolSize": 7,
         "lineStyle": {
-          "color": "#237c68",
+          "width": 2,
           "type": "solid",
-          "width": 2
+          "color": "#cd9344"
         },
         "itemStyle": {
-          "color": "#237c68"
+          "color": "#cd9344"
         },
         "emphasis": {
           "focus": "series"
-        },
-        "data": [292.7, 546.3, 889.6, 1134.4, 851.2]
+        }
       },
       {
-        "id": "LZ4 default / throughput-aes-256-gcm",
-        "name": "LZ4 default + AES-256-GCM",
+        "name": "zstd + AES-128-GCM",
         "type": "line",
         "xAxisIndex": 1,
         "yAxisIndex": 1,
+        "data": [
+          308.4,
+          170.5,
+          375.0,
+          525.0,
+          448.7
+        ],
         "symbol": "triangle",
         "symbolSize": 7,
         "lineStyle": {
-          "color": "#237c68",
-          "type": "dotted",
-          "width": 2
-        },
-        "itemStyle": {
-          "color": "#237c68"
-        },
-        "emphasis": {
-          "focus": "series"
-        },
-        "data": [288.2, 548.6, 890.6, 1125.8, 844.2]
-      },
-      {
-        "id": "LZ4 default / throughput-chacha20-poly1305-ietf",
-        "name": "LZ4 default + ChaCha20-Poly1305",
-        "type": "line",
-        "xAxisIndex": 1,
-        "yAxisIndex": 1,
-        "symbol": "emptyDiamond",
-        "symbolSize": 7,
-        "lineStyle": {
-          "color": "#237c68",
-          "type": "solid",
-          "width": 2
-        },
-        "itemStyle": {
-          "color": "#237c68"
-        },
-        "emphasis": {
-          "focus": "series"
-        },
-        "data": [163.5, 430.2, 804.7, 1045.3, 804.4]
-      },
-      {
-        "id": "zstd default / throughput-none",
-        "name": "zstd default + 无加密",
-        "type": "line",
-        "xAxisIndex": 1,
-        "yAxisIndex": 1,
-        "symbol": "emptyCircle",
-        "symbolSize": 7,
-        "lineStyle": {
-          "color": "#7a60aa",
+          "width": 2,
           "type": "dashed",
-          "width": 1.5
+          "color": "#cd9344"
         },
         "itemStyle": {
-          "color": "#7a60aa"
+          "color": "#cd9344"
         },
         "emphasis": {
           "focus": "series"
-        },
-        "data": [659.4, 170.9, 360.1, 502.1, 455.5]
+        }
       },
       {
-        "id": "zstd default / throughput-aes-128-gcm",
-        "name": "zstd default + AES-128-GCM",
+        "name": "zstd + ChaCha20-Poly1305",
         "type": "line",
         "xAxisIndex": 1,
         "yAxisIndex": 1,
-        "symbol": "circle",
+        "data": [
+          175.5,
+          154.7,
+          358.4,
+          518.2,
+          441.8
+        ],
+        "symbol": "rect",
         "symbolSize": 7,
         "lineStyle": {
-          "color": "#7a60aa",
-          "type": "solid",
-          "width": 2
-        },
-        "itemStyle": {
-          "color": "#7a60aa"
-        },
-        "emphasis": {
-          "focus": "series"
-        },
-        "data": [294.6, 161.0, 352.5, 498.3, 453.2]
-      },
-      {
-        "id": "zstd default / throughput-aes-256-gcm",
-        "name": "zstd default + AES-256-GCM",
-        "type": "line",
-        "xAxisIndex": 1,
-        "yAxisIndex": 1,
-        "symbol": "triangle",
-        "symbolSize": 7,
-        "lineStyle": {
-          "color": "#7a60aa",
+          "width": 2,
           "type": "dotted",
-          "width": 2
+          "color": "#cd9344"
         },
         "itemStyle": {
-          "color": "#7a60aa"
+          "color": "#cd9344"
         },
         "emphasis": {
           "focus": "series"
-        },
-        "data": [277.5, 162.7, 352.4, 501.3, 453.2]
-      },
-      {
-        "id": "zstd default / throughput-chacha20-poly1305-ietf",
-        "name": "zstd default + ChaCha20-Poly1305",
-        "type": "line",
-        "xAxisIndex": 1,
-        "yAxisIndex": 1,
-        "symbol": "emptyDiamond",
-        "symbolSize": 7,
-        "lineStyle": {
-          "color": "#7a60aa",
-          "type": "solid",
-          "width": 2
-        },
-        "itemStyle": {
-          "color": "#7a60aa"
-        },
-        "emphasis": {
-          "focus": "series"
-        },
-        "data": [164.1, 144.8, 339.3, 483.5, 440.7]
-      },
-      {
-        "id": "zstd high-ratio / throughput-none",
-        "name": "zstd high-ratio + 无加密",
-        "type": "line",
-        "xAxisIndex": 1,
-        "yAxisIndex": 1,
-        "symbol": "emptyCircle",
-        "symbolSize": 7,
-        "lineStyle": {
-          "color": "#a45b25",
-          "type": "dashed",
-          "width": 1.5
-        },
-        "itemStyle": {
-          "color": "#a45b25"
-        },
-        "emphasis": {
-          "focus": "series"
-        },
-        "data": [659.9, 170.1, 360.3, 502.7, 424.2]
-      },
-      {
-        "id": "zstd high-ratio / throughput-aes-128-gcm",
-        "name": "zstd high-ratio + AES-128-GCM",
-        "type": "line",
-        "xAxisIndex": 1,
-        "yAxisIndex": 1,
-        "symbol": "circle",
-        "symbolSize": 7,
-        "lineStyle": {
-          "color": "#a45b25",
-          "type": "solid",
-          "width": 2
-        },
-        "itemStyle": {
-          "color": "#a45b25"
-        },
-        "emphasis": {
-          "focus": "series"
-        },
-        "data": [293.9, 162.2, 352.6, 497.7, 453.8]
-      },
-      {
-        "id": "zstd high-ratio / throughput-aes-256-gcm",
-        "name": "zstd high-ratio + AES-256-GCM",
-        "type": "line",
-        "xAxisIndex": 1,
-        "yAxisIndex": 1,
-        "symbol": "triangle",
-        "symbolSize": 7,
-        "lineStyle": {
-          "color": "#a45b25",
-          "type": "dotted",
-          "width": 2
-        },
-        "itemStyle": {
-          "color": "#a45b25"
-        },
-        "emphasis": {
-          "focus": "series"
-        },
-        "data": [290.1, 162.5, 351.1, 489.5, 450.8]
-      },
-      {
-        "id": "zstd high-ratio / throughput-chacha20-poly1305-ietf",
-        "name": "zstd high-ratio + ChaCha20-Poly1305",
-        "type": "line",
-        "xAxisIndex": 1,
-        "yAxisIndex": 1,
-        "symbol": "emptyDiamond",
-        "symbolSize": 7,
-        "lineStyle": {
-          "color": "#a45b25",
-          "type": "solid",
-          "width": 2
-        },
-        "itemStyle": {
-          "color": "#a45b25"
-        },
-        "emphasis": {
-          "focus": "series"
-        },
-        "data": [164.4, 147.3, 339.5, 477.5, 411.1]
-      },
-      {
-        "id": "LZ4 fast / compression-ratio",
-        "name": "LZ4 fast",
-        "type": "line",
-        "xAxisIndex": 2,
-        "yAxisIndex": 2,
-        "symbol": "circle",
-        "symbolSize": 7,
-        "lineStyle": {
-          "color": "#276d91",
-          "width": 2
-        },
-        "itemStyle": {
-          "color": "#276d91"
-        },
-        "data": [76.56, 55.51, 45.86, 43.65, 38.32]
-      },
-      {
-        "id": "LZ4 default / compression-ratio",
-        "name": "LZ4 default",
-        "type": "line",
-        "xAxisIndex": 2,
-        "yAxisIndex": 2,
-        "symbol": "circle",
-        "symbolSize": 7,
-        "lineStyle": {
-          "color": "#237c68",
-          "width": 2
-        },
-        "itemStyle": {
-          "color": "#237c68"
-        },
-        "data": [76.56, 55.51, 45.86, 43.65, 38.32]
-      },
-      {
-        "id": "zstd default / compression-ratio",
-        "name": "zstd default",
-        "type": "line",
-        "xAxisIndex": 2,
-        "yAxisIndex": 2,
-        "symbol": "circle",
-        "symbolSize": 7,
-        "lineStyle": {
-          "color": "#7a60aa",
-          "width": 2
-        },
-        "itemStyle": {
-          "color": "#7a60aa"
-        },
-        "data": [66.15, 35.24, 24.18, 23.83, 23.45]
-      },
-      {
-        "id": "zstd high-ratio / compression-ratio",
-        "name": "zstd high-ratio",
-        "type": "line",
-        "xAxisIndex": 2,
-        "yAxisIndex": 2,
-        "symbol": "circle",
-        "symbolSize": 7,
-        "lineStyle": {
-          "color": "#a45b25",
-          "width": 2
-        },
-        "itemStyle": {
-          "color": "#a45b25"
-        },
-        "data": [65.62, 33.27, 21.91, 20.99, 20.59]
+        }
       }
     ]
   },
   "media": [
     {
       "query": {
-        "maxWidth": 400
+        "maxWidth": 460
       },
       "option": {
+        "grid": [
+          {
+            "left": 60,
+            "right": 18,
+            "top": 30,
+            "bottom": "59%"
+          },
+          {
+            "left": 60,
+            "right": 18,
+            "top": "52%",
+            "bottom": 68
+          }
+        ],
         "xAxis": [
           {
             "axisLabel": {
-              "rotate": 28,
+              "rotate": 25,
               "fontSize": 10
             }
           },
           {
             "axisLabel": {
-              "rotate": 28,
+              "rotate": 25,
               "fontSize": 10
             }
+          }
+        ]
+      }
+    },
+    {
+      "option": {
+        "grid": [
+          {
+            "left": 74,
+            "right": 28,
+            "top": 30,
+            "bottom": "58%"
           },
           {
-            "axisLabel": {
-              "rotate": 28,
-              "fontSize": 10
-            }
+            "left": 74,
+            "right": 28,
+            "top": "52%",
+            "bottom": 56
           }
         ],
-        "grid": [
-          {},
-          {},
-          {
-            "bottom": 64
-          }
-        ],
-        "tooltip": {
-          "textStyle": {
-            "fontSize": 11
-          }
-        }
-      }
-    },
-    {
-      "query": {
-        "maxWidth": 330
-      },
-      "option": {
-        "grid": [
-          {},
-          {},
-          {
-            "bottom": 82
-          }
-        ],
-        "tooltip": {
-          "textStyle": {
-            "fontSize": 10
-          }
-        }
-      }
-    },
-    {
-      "option": {
         "xAxis": [
           {
             "axisLabel": {
@@ -938,26 +627,8 @@
               "rotate": 0,
               "fontSize": 12
             }
-          },
-          {
-            "axisLabel": {
-              "rotate": 0,
-              "fontSize": 12
-            }
           }
-        ],
-        "grid": [
-          {},
-          {},
-          {
-            "bottom": 50
-          }
-        ],
-        "tooltip": {
-          "textStyle": {
-            "fontSize": 11
-          }
-        }
+        ]
       }
     }
   ]

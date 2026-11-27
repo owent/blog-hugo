@@ -1,0 +1,392 @@
+{
+  "baseOption": {
+    "aria": {
+      "enabled": true,
+      "label": {
+        "description": "Linux TCP 无加密无压缩下，2、10、100 和 1000 节点汇聚到单接收节点的聚合 QPS 与聚合吞吐量。"
+      }
+    },
+    "animation": false,
+    "legend": {
+      "bottom": 6,
+      "itemWidth": 18,
+      "itemGap": 12,
+      "textStyle": {
+        "fontSize": 11
+      }
+    },
+    "tooltip": {
+      "trigger": "axis",
+      "confine": true
+    },
+    "axisPointer": {
+      "link": [
+        {
+          "xAxisIndex": "all"
+        }
+      ]
+    },
+    "grid": [
+      {
+        "left": 74,
+        "right": 28,
+        "top": 30,
+        "bottom": "58%"
+      },
+      {
+        "left": 74,
+        "right": 28,
+        "top": "52%",
+        "bottom": 56
+      }
+    ],
+    "xAxis": [
+      {
+        "gridIndex": 0,
+        "type": "category",
+        "boundaryGap": false,
+        "data": [
+          "200 B",
+          "256 B",
+          "1 KB",
+          "8 KB",
+          "32 KB",
+          "300 KB"
+        ],
+        "axisLabel": {
+          "interval": 0,
+          "show": false
+        }
+      },
+      {
+        "gridIndex": 1,
+        "type": "category",
+        "boundaryGap": false,
+        "data": [
+          "200 B",
+          "256 B",
+          "1 KB",
+          "8 KB",
+          "32 KB",
+          "300 KB"
+        ],
+        "axisLabel": {
+          "interval": 0,
+          "show": true
+        }
+      }
+    ],
+    "yAxis": [
+      {
+        "gridIndex": 0,
+        "name": "聚合 QPS（条/s，对数）",
+        "type": "log",
+        "min": 1000,
+        "max": 10000000
+      },
+      {
+        "gridIndex": 1,
+        "name": "聚合吞吐量（MB/s）",
+        "type": "value",
+        "min": 0
+      }
+    ],
+    "series": [
+      {
+        "name": "2 节点（1 发 1 收）",
+        "type": "line",
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "data": [
+          3725924,
+          3466950,
+          1673616,
+          227626,
+          81964,
+          9947
+        ],
+        "symbol": "emptyCircle",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dotted",
+          "color": "#75889d"
+        },
+        "itemStyle": {
+          "color": "#75889d"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "10 节点（9 发 1 收）",
+        "type": "line",
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "data": [
+          3779280,
+          3445622,
+          1515181,
+          263901,
+          84426,
+          9759
+        ],
+        "symbol": "rect",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dashed",
+          "color": "#399886"
+        },
+        "itemStyle": {
+          "color": "#399886"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "100 节点（99 发 1 收）",
+        "type": "line",
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "data": [
+          3685302,
+          3357976,
+          1471497,
+          259297,
+          78429,
+          8939
+        ],
+        "symbol": "triangle",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": [
+            6,
+            3,
+            2,
+            3
+          ],
+          "color": "#6c79b8"
+        },
+        "itemStyle": {
+          "color": "#6c79b8"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "1000 节点（999 发 1 收）",
+        "type": "line",
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "data": [
+          3704533,
+          3362521,
+          1394630,
+          243587,
+          73212,
+          9425
+        ],
+        "symbol": "circle",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2.5,
+          "type": "solid",
+          "color": "#267a93"
+        },
+        "itemStyle": {
+          "color": "#267a93"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "2 节点（1 发 1 收）",
+        "type": "line",
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "data": [
+          710.7,
+          846.4,
+          1634.4,
+          1778.3,
+          2561.4,
+          2914.2
+        ],
+        "symbol": "emptyCircle",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dotted",
+          "color": "#75889d"
+        },
+        "itemStyle": {
+          "color": "#75889d"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "10 节点（9 发 1 收）",
+        "type": "line",
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "data": [
+          720.8,
+          841.2,
+          1479.7,
+          2061.7,
+          2638.3,
+          2859.1
+        ],
+        "symbol": "rect",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": "dashed",
+          "color": "#399886"
+        },
+        "itemStyle": {
+          "color": "#399886"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "100 节点（99 发 1 收）",
+        "type": "line",
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "data": [
+          702.9,
+          819.8,
+          1437.0,
+          2025.8,
+          2450.9,
+          2618.9
+        ],
+        "symbol": "triangle",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2,
+          "type": [
+            6,
+            3,
+            2,
+            3
+          ],
+          "color": "#6c79b8"
+        },
+        "itemStyle": {
+          "color": "#6c79b8"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      },
+      {
+        "name": "1000 节点（999 发 1 收）",
+        "type": "line",
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "data": [
+          706.6,
+          820.9,
+          1361.9,
+          1903.0,
+          2287.9,
+          2761.2
+        ],
+        "symbol": "circle",
+        "symbolSize": 7,
+        "lineStyle": {
+          "width": 2.5,
+          "type": "solid",
+          "color": "#267a93"
+        },
+        "itemStyle": {
+          "color": "#267a93"
+        },
+        "emphasis": {
+          "focus": "series"
+        }
+      }
+    ]
+  },
+  "media": [
+    {
+      "query": {
+        "maxWidth": 460
+      },
+      "option": {
+        "grid": [
+          {
+            "left": 60,
+            "right": 18,
+            "top": 30,
+            "bottom": "59%"
+          },
+          {
+            "left": 60,
+            "right": 18,
+            "top": "52%",
+            "bottom": 74
+          }
+        ],
+        "xAxis": [
+          {
+            "axisLabel": {
+              "rotate": 25,
+              "fontSize": 10
+            }
+          },
+          {
+            "axisLabel": {
+              "rotate": 25,
+              "fontSize": 10
+            }
+          }
+        ]
+      }
+    },
+    {
+      "option": {
+        "grid": [
+          {
+            "left": 74,
+            "right": 28,
+            "top": 30,
+            "bottom": "58%"
+          },
+          {
+            "left": 74,
+            "right": 28,
+            "top": "52%",
+            "bottom": 56
+          }
+        ],
+        "xAxis": [
+          {
+            "axisLabel": {
+              "rotate": 0,
+              "fontSize": 12
+            }
+          },
+          {
+            "axisLabel": {
+              "rotate": 0,
+              "fontSize": 12
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

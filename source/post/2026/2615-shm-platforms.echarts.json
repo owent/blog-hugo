@@ -3,14 +3,17 @@
     "aria": {
       "enabled": true,
       "label": {
-        "description": "主矩阵中 Linux、WSL2 和 Windows 原生在 TCP 与共享内存批次上的 QPS 和 payload 吞吐量。覆盖 200 B、1 KiB、8 KiB、64 KiB 和 300 KiB，无加密、无压缩。Linux 共享内存主矩阵批次经核查实际运行在 TCP 上，真实 Linux 共享内存表现见交错 A/B 图表。"
+        "description": "Linux、WSL2 和 Windows 原生在 TCP 与共享内存通道下的无加密无压缩 QPS 与吞吐量对比。"
       }
     },
     "animation": false,
     "legend": {
-      "bottom": 4,
-      "itemWidth": 13,
-      "itemGap": 10
+      "bottom": 6,
+      "itemWidth": 18,
+      "itemGap": 12,
+      "textStyle": {
+        "fontSize": 11
+      }
     },
     "tooltip": {
       "trigger": "axis",
@@ -25,16 +28,16 @@
     },
     "grid": [
       {
-        "left": 68,
-        "right": 18,
-        "top": 28,
-        "bottom": "57%"
+        "left": 74,
+        "right": 28,
+        "top": 30,
+        "bottom": "58%"
       },
       {
-        "left": 68,
-        "right": 18,
-        "top": "54%",
-        "bottom": 54
+        "left": 74,
+        "right": 28,
+        "top": "52%",
+        "bottom": 56
       }
     ],
     "xAxis": [
@@ -42,7 +45,13 @@
         "gridIndex": 0,
         "type": "category",
         "boundaryGap": false,
-        "data": ["200 B", "1 KiB", "8 KiB", "64 KiB", "300 KiB"],
+        "data": [
+          "200 B",
+          "1 KB",
+          "8 KB",
+          "64 KB",
+          "300 KB"
+        ],
         "axisLabel": {
           "interval": 0,
           "show": false
@@ -52,7 +61,13 @@
         "gridIndex": 1,
         "type": "category",
         "boundaryGap": false,
-        "data": ["200 B", "1 KiB", "8 KiB", "64 KiB", "300 KiB"],
+        "data": [
+          "200 B",
+          "1 KB",
+          "8 KB",
+          "64 KB",
+          "300 KB"
+        ],
         "axisLabel": {
           "interval": 0,
           "show": true
@@ -69,7 +84,7 @@
       },
       {
         "gridIndex": 1,
-        "name": "吞吐量（MiB/s）",
+        "name": "吞吐量（MB/s）",
         "type": "value",
         "min": 0
       }
@@ -80,7 +95,13 @@
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
-        "data": [3474350, 1461897, 274954, 39839, 9049],
+        "data": [
+          3656722,
+          1651608,
+          301960,
+          42680,
+          9645
+        ],
         "symbol": "circle",
         "symbolSize": 7,
         "lineStyle": {
@@ -96,11 +117,17 @@
         }
       },
       {
-        "name": "Linux shm*（实为 TCP）",
+        "name": "Linux shm://",
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
-        "data": [3440682, 1537952, 212543, 39759, 9042],
+        "data": [
+          2677248,
+          1500544,
+          381793,
+          50559,
+          10359
+        ],
         "symbol": "emptyCircle",
         "symbolSize": 7,
         "lineStyle": {
@@ -120,36 +147,48 @@
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
-        "data": [3223375, 1297151, 128911, 21503, 3786],
+        "data": [
+          3509059,
+          1396329,
+          138681,
+          19122,
+          3802
+        ],
         "symbol": "rect",
         "symbolSize": 7,
         "lineStyle": {
           "width": 2,
           "type": "solid",
-          "color": "#30806a"
+          "color": "#399886"
         },
         "itemStyle": {
-          "color": "#30806a"
+          "color": "#399886"
         },
         "emphasis": {
           "focus": "series"
         }
       },
       {
-        "name": "WSL2 共享内存",
+        "name": "WSL2 shm://",
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
-        "data": [2100918, 1436962, 360791, 30675, 3903],
+        "data": [
+          2221568,
+          1523712,
+          383744,
+          32991,
+          4173
+        ],
         "symbol": "emptyRect",
         "symbolSize": 7,
         "lineStyle": {
           "width": 2,
           "type": "dashed",
-          "color": "#30806a"
+          "color": "#399886"
         },
         "itemStyle": {
-          "color": "#30806a"
+          "color": "#399886"
         },
         "emphasis": {
           "focus": "series"
@@ -160,36 +199,48 @@
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
-        "data": [774502, 258036, 63315, 5876, 1883],
+        "data": [
+          917767,
+          294780,
+          52943,
+          6127,
+          1536
+        ],
         "symbol": "triangle",
         "symbolSize": 7,
         "lineStyle": {
           "width": 2,
           "type": "solid",
-          "color": "#92601d"
+          "color": "#cd9344"
         },
         "itemStyle": {
-          "color": "#92601d"
+          "color": "#cd9344"
         },
         "emphasis": {
           "focus": "series"
         }
       },
       {
-        "name": "Windows 共享内存",
+        "name": "Windows shm://",
         "type": "line",
         "xAxisIndex": 0,
         "yAxisIndex": 0,
-        "data": [1088211, 866320, 282623, 34189, 7893],
+        "data": [
+          1263104,
+          890368,
+          298240,
+          33754,
+          8350
+        ],
         "symbol": "emptyTriangle",
         "symbolSize": 7,
         "lineStyle": {
           "width": 2,
           "type": "dashed",
-          "color": "#92601d"
+          "color": "#cd9344"
         },
         "itemStyle": {
-          "color": "#92601d"
+          "color": "#cd9344"
         },
         "emphasis": {
           "focus": "series"
@@ -200,7 +251,13 @@
         "type": "line",
         "xAxisIndex": 1,
         "yAxisIndex": 1,
-        "data": [662.7, 1427.6, 2148.1, 2489.9, 2650.9],
+        "data": [
+          697.5,
+          1612.9,
+          2359.1,
+          2667.5,
+          2825.8
+        ],
         "symbol": "circle",
         "symbolSize": 7,
         "lineStyle": {
@@ -216,11 +273,17 @@
         }
       },
       {
-        "name": "Linux shm*（实为 TCP）",
+        "name": "Linux shm://",
         "type": "line",
         "xAxisIndex": 1,
         "yAxisIndex": 1,
-        "data": [656.3, 1501.9, 1660.5, 2484.9, 2649.0],
+        "data": [
+          510.6,
+          1465.4,
+          2982.8,
+          3159.9,
+          3034.7
+        ],
         "symbol": "emptyCircle",
         "symbolSize": 7,
         "lineStyle": {
@@ -240,36 +303,48 @@
         "type": "line",
         "xAxisIndex": 1,
         "yAxisIndex": 1,
-        "data": [614.8, 1266.7, 1007.1, 1343.9, 1109.2],
+        "data": [
+          669.3,
+          1363.6,
+          1083.4,
+          1195.1,
+          1113.7
+        ],
         "symbol": "rect",
         "symbolSize": 7,
         "lineStyle": {
           "width": 2,
           "type": "solid",
-          "color": "#30806a"
+          "color": "#399886"
         },
         "itemStyle": {
-          "color": "#30806a"
+          "color": "#399886"
         },
         "emphasis": {
           "focus": "series"
         }
       },
       {
-        "name": "WSL2 共享内存",
+        "name": "WSL2 shm://",
         "type": "line",
         "xAxisIndex": 1,
         "yAxisIndex": 1,
-        "data": [400.7, 1403.3, 2818.7, 1917.2, 1143.4],
+        "data": [
+          423.7,
+          1488.0,
+          2998.0,
+          2061.9,
+          1222.6
+        ],
         "symbol": "emptyRect",
         "symbolSize": 7,
         "lineStyle": {
           "width": 2,
           "type": "dashed",
-          "color": "#30806a"
+          "color": "#399886"
         },
         "itemStyle": {
-          "color": "#30806a"
+          "color": "#399886"
         },
         "emphasis": {
           "focus": "series"
@@ -280,36 +355,48 @@
         "type": "line",
         "xAxisIndex": 1,
         "yAxisIndex": 1,
-        "data": [147.7, 252.0, 494.6, 367.2, 551.8],
+        "data": [
+          175.1,
+          287.9,
+          413.6,
+          382.9,
+          450.0
+        ],
         "symbol": "triangle",
         "symbolSize": 7,
         "lineStyle": {
           "width": 2,
           "type": "solid",
-          "color": "#92601d"
+          "color": "#cd9344"
         },
         "itemStyle": {
-          "color": "#92601d"
+          "color": "#cd9344"
         },
         "emphasis": {
           "focus": "series"
         }
       },
       {
-        "name": "Windows 共享内存",
+        "name": "Windows shm://",
         "type": "line",
         "xAxisIndex": 1,
         "yAxisIndex": 1,
-        "data": [207.6, 846.0, 2208.0, 2136.8, 2312.4],
+        "data": [
+          240.9,
+          869.5,
+          2330.0,
+          2109.6,
+          2446.4
+        ],
         "symbol": "emptyTriangle",
         "symbolSize": 7,
         "lineStyle": {
           "width": 2,
           "type": "dashed",
-          "color": "#92601d"
+          "color": "#cd9344"
         },
         "itemStyle": {
-          "color": "#92601d"
+          "color": "#cd9344"
         },
         "emphasis": {
           "focus": "series"
@@ -320,73 +407,55 @@
   "media": [
     {
       "query": {
-        "maxWidth": 640
+        "maxWidth": 460
       },
       "option": {
         "grid": [
-          {},
           {
-            "bottom": 76
+            "left": 60,
+            "right": 18,
+            "top": 30,
+            "bottom": "59%"
+          },
+          {
+            "left": 60,
+            "right": 18,
+            "top": "52%",
+            "bottom": 72
           }
         ],
         "xAxis": [
           {
             "axisLabel": {
-              "rotate": 0,
-              "fontSize": 12
-            }
-          },
-          {
-            "axisLabel": {
-              "rotate": 0,
-              "fontSize": 12
-            }
-          }
-        ]
-      }
-    },
-    {
-      "query": {
-        "maxWidth": 400
-      },
-      "option": {
-        "xAxis": [
-          {
-            "axisLabel": {
-              "rotate": 28,
+              "rotate": 25,
               "fontSize": 10
             }
           },
           {
             "axisLabel": {
-              "rotate": 28,
+              "rotate": 25,
               "fontSize": 10
             }
           }
+        ]
+      }
+    },
+    {
+      "option": {
+        "grid": [
+          {
+            "left": 74,
+            "right": 28,
+            "top": 30,
+            "bottom": "58%"
+          },
+          {
+            "left": 74,
+            "right": 28,
+            "top": "52%",
+            "bottom": 56
+          }
         ],
-        "grid": [
-          {},
-          {
-            "bottom": 86
-          }
-        ]
-      }
-    },
-    {
-      "query": {
-        "maxWidth": 355
-      },
-      "option": {
-        "grid": [
-          {},
-          {
-            "bottom": 111
-          }
-        ]
-      }
-    },
-    {
-      "option": {
         "xAxis": [
           {
             "axisLabel": {
@@ -399,12 +468,6 @@
               "rotate": 0,
               "fontSize": 12
             }
-          }
-        ],
-        "grid": [
-          {},
-          {
-            "bottom": 54
           }
         ]
       }
