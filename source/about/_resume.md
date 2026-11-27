@@ -13,7 +13,7 @@ noad: true
 
 # 工作学习经历
 
-* 2026.07-至今: \*\*\*
+* 2026.07-至今: MyrionStudio - 服务端技术负责人
 * 2025.09-2026.06: 游幻科技（上海）有限公司（追觅科技旗下） - 服务端技术负责人
 * 2017.09-2025.08: 腾讯科技\(上海\)有限公司 - 北极光工作室后台组
 * 2016.10-2017.07: 上海格奕网络科技有限公司 - 后端技术负责人
@@ -26,6 +26,47 @@ noad: true
 
 * Github-主站: <https://github.com/owent>
 * Github-【CNCF云原生计算基金会-可观测性领域-opentelemetry-cpp核心贡献者】: <https://github.com/open-telemetry/opentelemetry-cpp>
+* 高性能、全异步、跨平台、去中心化游戏服务器框架\([atframework](https://atframe.work/)\): 
+  * 开源组织: <https://github.com/atframework>
+  * 文档: <https://atframe.work/>
+  * 深度集成可观测性，以及基于可观测性的HPA。可以和K8S HPAv2打通并提供通用且高度可定制化的有状态服务的HPA解决方案。
+    * 自动处理和管理可观测性生态的转换、性能优化。
+    * 提供易于使用的接口以便业务层基于可观测性生态去实现一些业务策略。
+  * 基于协程和模板引擎的RPC框架和，支持自定义接入层扩展。
+    * 支持传统有栈协程和C++20无栈协程，提供了同一抽象可以一键切换底层协程模型，业务层无感知。
+  * 提供基于WAL的分布式系统一致性算法库。自带订阅管理、快照压缩和增量同步。支持任意类型和按业务需求定制化。
+  * 提供多种去中性化的分布式系统解决方案包含:
+    * 对象路由系统（业务层关注对象和action，消息路由、重试、路由表刷新和生命周期交给框架层处理）
+    * 用户对象的多写单读的异步执行队列
+    * 分布式事务解决方案
+      * 支持TCC和best-effort模型）
+      * 支持按业务特性配置性能和一致性取舍（默认Wound-wait，fallback wait-die冲突处理模型，支持Read Your Writes可见性等）
+    * 支持海量通道的分布式消息队列系统
+      * 支持共享订阅，大量订阅者时自动削峰。
+      * 支持乐观锁和私有数据区，以便某些业务当数据库用以及托管有状态数据的管理。
+    * 通用缓存服务。支持主动推送数据的快缓存和仅通知失效的慢缓存。
+    * 多种涉及社交关系的服务，包括 好友服务、工会服务、组队服务等等。
+  * 提供一些常见服务的基础版本，比如合规服务、排行榜等。具体业务可以持续扩展。
+
+> * [Utility库](https://github.com/atframework/atframe_utils)
+> * [libatbus - 高性能进程间通信和管理](https://github.com/atframework/libatbus)
+>   * 跨平台，高性能。支持Windows、macOS、Linux。
+>   * 动态拓扑，适用于策略路由，动态拓扑和上云时动态切换代理节点。
+>   * 支持 tcp、pipe、共享内存通道。
+>   * 支持golang版本并且和C++版本互通。
+>   * Linux 下无加密无压缩时单核CPU承载300万+QPS或20Gbps吞吐，带加密时150万+QPS或接近16+Gbps吞吐。同时开加密和压缩时150万+QPS或接近8Gbps吞吐。
+>   * 详细压测报告 <https://github.com/owent/libatbus/blob/main/docs/Benchmark.md>
+> * [libatapp - 服务器应用框架](https://github.com/atframework/libatapp)
+>   * 跨平台，高性能。支持Windows、macOS、Linux。
+>   * 集成服务发现。支持多种连接层，支持自定义连接层扩展能力。
+>   * 基于任意标签的策略路由和动态网络拓扑支持。
+> * [atsf4g-co - 完整游戏服务器解决方案](https://github.com/atframework/atsf4g-co)
+> * [cmake-toolset - 跨平台构建系统](https://github.com/atframework/cmake-toolset)
+> * [AtgwInnerCli-CSharp - atgateway的C\#适配](https://github.com/atframework/AtgwInnerCli-CSharp)（纯C客户端API的包装，可用于Unity 3D）
+> * [AICodeReviewer - AI自动化Code Review](http://github.com/atframework/AICodeReviewer/), 文档 <https://aicr.atframe.work/>
+
+* 高性能、跨平台C++协程框架: [libcopp][1] 。支持传统有栈协程和C++20无栈协程。提供同一设计模式抽象。
+* Redis高可用解决方案:  [hiredis-happ](https://github.com/owent/hiredis-happ)\(支持redis cluster集群，支持自动重试、断线重连、按需连接\)
 * Excel转表工具集（Excel -&gt; Protobuf、Lua、Msgpack、Json、Xml\Javascript、UnrealEngine DataTable）: <https://github.com/xresloader>
 
 > 1. 文档: <https://xresloader.atframe.work>
@@ -36,20 +77,6 @@ noad: true
 > 7. 读表代码生成器: [xres-code-generator](https://github.com/xresloader/xres-code-generator)
 > 8. 二进制Dump工具: [xresloader-dump-bin](https://github.com/xresloader/xresloader-dump-bin)
 
-* 高性能、全异步、跨平台、去中心化游戏服务器框架\([atframework](https://atframe.work/)\): 
-  * 开源组织: <https://github.com/atframework>
-  * 文档: <https://atframe.work/>
-
-> * [Utility库](https://github.com/atframework/atframe_utils)
-> * [libatbus - 高性能进程间通信和管理](https://github.com/atframework/libatbus)
-> * [libatapp - 服务器应用框架](https://github.com/atframework/libatapp)
-> * [atsf4g-co - 完整游戏服务器解决方案](https://github.com/atframework/atsf4g-co)
-> * [cmake-toolset - 跨平台构建系统](https://github.com/atframework/cmake-toolset)
-> * [AtgwInnerCli-CSharp - atgateway的C\#适配](https://github.com/atframework/AtgwInnerCli-CSharp)（纯C客户端API的包装，可用于Unity 3D）
-> * [AICodeReviewer - AI自动化Code Review](http://github.com/atframework/AICodeReviewer/), 文档 <https://aicr.atframe.work/>
-
-* Redis高可用解决方案:  [hiredis-happ](https://github.com/owent/hiredis-happ)\(首先支持redis cluster集群，支持自动重试、断线重连、按需连接\)
-* 高性能、跨平台C++协程框架: [libcopp][1]
 * Github release集成工具: [Upload To Github Release][3] , 商店地址: <https://github.com/marketplace/actions/upload-to-github-release>
 * DDNS工具(Rust lang): [ddns-cli](https://github.com/owent/ddns-cli)
 * 企业微信机器人服务(Rust lang): [wxwork_robotd](https://github.com/owent/wxwork_robotd)
