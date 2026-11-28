@@ -4,9 +4,9 @@
     python -m pip install "transformers[torch]==5.24.0" "datasets==5.2.0"
 
 将本脚本放入训练工作目录，在 dataset 中准备 MiniMind tokenizer 和 JSONL 语料后运行
-    python 2613-llm-train-hf.py pretrain dataset/pretrain_t2t_mini.jsonl
-    python 2613-llm-train-hf.py sft dataset/sft_t2t_mini.jsonl
-    python 2613-llm-train-hf.py generate "用一句话解释梯度累积。"
+    python 2616-llm-train-hf.py pretrain dataset/pretrain_t2t_mini.jsonl
+    python 2616-llm-train-hf.py sft dataset/sft_t2t_mini.jsonl
+    python 2616-llm-train-hf.py generate "用一句话解释梯度累积。"
 
 pretrain 读取 {"text": "..."}，sft 读取 {"conversations": [{"role": ..., "content": ...}, ...]}。
 长期使用的参数统一在 LLM_TRAIN_SETTINGS 中修改。命令行参数可覆盖本次运行的默认值。
@@ -16,11 +16,12 @@ SFT 按模板处理原始消息，省去教学版随机添加系统提示和移�
 用 generate --raw --model out/pretrain "开头文字" 可检查预训练模型的续写。
 
 手写混合注意力的试验命令（small-*.jsonl 为自行截取的小份语料）：
-    python 2613-llm-train-hf.py pretrain small-text.jsonl --hidden-size 64 --max-length 64 --output out/hybrid
-    python 2613-llm-train-hf.py sft small-chat.jsonl --model out/hybrid --output out/hybrid-sft --max-length 64
-    python 2613-llm-train-hf.py generate --model out/hybrid-sft "你好"
-KDA 逐 token 展开递推以便对照公式，训练时 autograd 会保留中间状态。请从短序列开始试验。
-递推公式、3∶1 层排列及 NoPE MLA 见 Kimi Linear 技术报告第 3、4 节：https://arxiv.org/html/2510.26692v1
+    python 2616-llm-train-hf.py pretrain small-text.jsonl --hidden-size 64 --max-length 64 --output out/hybrid
+    python 2616-llm-train-hf.py sft small-chat.jsonl --model out/hybrid --output out/hybrid-sft --max-length 64
+    python 2616-llm-train-hf.py generate --model out/hybrid-sft "你好"
+KDA 用 PyTorch 实现块内矩阵计算和块间递推。块内衰减张量的大小随块长的平方增长，试验可从短序列开始。
+KDA 递推与分块计算见 Kimi Linear 技术报告第 3 节及附录 B。3∶1 层排列及 NoPE MLA 见第 4 节。
+https://arxiv.org/html/2510.26692v2
 """
 
 import argparse
@@ -124,7 +125,7 @@ LLM_TRAIN_SETTINGS = LLMTrainConfigureAll(
         intermediate_size=None, ffn_multiplier=math.pi, ffn_multiple_of=64,
         rms_norm_eps=1e-6, max_position_embeddings=32768, tie_word_embeddings=True,
         use_moe=True, moe_num_experts=8, moe_num_experts_per_tok=2, router_aux_loss_coef=5e-4,
-        # Decoder Block 按此顺序重复。默认每四层包含三层 KDA 和一层全局 MLA。
+        # KDA论文中的Decoder Block 按此顺序重复。默认每四层包含三层 KDA 和一层全局 MLA。
         layer_pattern=("kda", "kda", "kda", "mla"),
         kda_conv_kernel_size=4, kda_qk_eps=1e-6,
         kda_rate_range=(1.0, 16.0), kda_dt_range=(1e-3, 1e-1),  # 衰减率 A 均匀取样，dt 在对数尺度取样
@@ -193,6 +194,7 @@ class HybridConfig(PreTrainedConfig):
             pattern = [names[kind] for kind in layers]
             if self.num_hidden_layers % len(pattern):
                 raise ValueError("层数必须是混合注意力周期的整数倍")
+            # layer_pattern 里配置的是比例，实际仍然按 num_hidden_layers 配置的层数
             self.layer_types = pattern * (self.num_hidden_layers // len(pattern))
         if self.num_attention_heads <= 0 or self.hidden_size <= 0 or self.hidden_size % self.num_attention_heads:
             raise ValueError("hidden_size 必须能均分给正数个注意力头")
@@ -210,7 +212,10 @@ class HybridConfig(PreTrainedConfig):
 
 
 class KimiLinearDeltaAttention(nn.Module):
-    """逐 token 的 KDA，S 的最后两维分别是 Key 维度和 Value 维度。"""
+    """分块 KDA，S 的最后两维分别是 Key 维度和 Value 维度。"""
+
+    # 块内按位置对和 Key 通道构造衰减张量，用较短的块限制 FP32 中间张量大小。
+    _chunk_size = 16
 
     def __init__(self, config, layer_idx):
         super().__init__()
@@ -229,13 +234,74 @@ class KimiLinearDeltaAttention(nn.Module):
         self.norm = nn.RMSNorm(self.dim, eps=config.rms_norm_eps)
         self.out = nn.Linear(width, width, bias=False)
 
+    def _short_convolution(self, qkv, valid, history):
+        # 将本次有效投影依次放到缓存后面，PAD 放到有效投影之后。每个位置都有唯一的目标下标。
+        consumed = valid.long().cumsum(dim=-1)
+        positions = torch.arange(qkv.shape[1], device=qkv.device)
+        packed_index = torch.where(valid, consumed - 1, consumed[:, -1:] + positions - consumed)
+        packed = torch.empty_like(qkv).scatter(1, packed_index.unsqueeze(-1).expand_as(qkv), qkv)
+        sequence = torch.cat((history.transpose(1, 2), packed), dim=1)
+
+        batch_index = torch.arange(qkv.shape[0], device=qkv.device)[:, None]
+        kernel = self.conv.weight[:, 0].to(qkv.dtype)
+        kernel_size, history_size = kernel.shape[-1], history.shape[-1]
+        # 第 i 个有效 token 的窗口以该 token 结尾。PAD 的卷积结果直接丢弃。
+        start = (history_size + consumed - kernel_size).clamp_min(0)
+        windows = sequence.unfold(1, kernel_size, 1)[batch_index, start]
+        # 对每个通道 c，filtered[i,c] = Σ_r windows[i,c,r] · kernel[c,r]。
+        filtered = (windows * kernel).sum(-1).masked_fill(~valid.unsqueeze(-1), 0)
+        tail = consumed[:, -1:] + torch.arange(history_size, device=qkv.device)
+        return filtered, sequence[batch_index, tail].transpose(1, 2)
+
+    def _chunk(self, q, k, v, log_decay, beta, state):
+        # q、k、v 布局为 [B, H, C, d]。单 token 解码可直接更新状态，省去三角求解。
+        if q.shape[-2] == 1:
+            # D_t = diag(α_t) S_{t-1}，exp(log α_t) 沿 Value 维广播。
+            decayed = log_decay.squeeze(-2).exp().unsqueeze(-1) * state
+            # 代码用行向量存放 q_tᵀ、k_tᵀ、v_tᵀ。e_tᵀ = β_t (v_tᵀ - k_tᵀ D_t)，S_t = D_t + k_t e_tᵀ。
+            updated = decayed + k.transpose(-1, -2) @ (beta * (v - k @ decayed))
+            # o_tᵀ = q_tᵀ S_t。
+            return q @ updated, updated
+
+        positions = torch.arange(q.shape[-2], device=q.device)
+        earlier = positions[:, None] > positions[None, :]
+        # 以下公式省略批次和头维，块内位置 i、j 从 1 编号。from_start 的第 i 项是 p_{0→i}。
+        from_start = log_decay.cumsum(dim=-2).exp()
+        # between[i,j] = p_{j→i} = exp(Σ_{j<u≤i} log α_u)，对角线为 1，未来位置 j > i 置零。
+        # 沿 i 直接累加区间里的 log(α)，避免两个很小的累计保留率相除。
+        log_between = log_decay.unsqueeze(-2).masked_fill(~earlier.unsqueeze(-1), 0)
+        between = log_between.cumsum(dim=-3).masked_fill(earlier.T.unsqueeze(-1), -torch.inf).exp()
+        # decayed_keys[i,j] = p_{j→i} ⊙ k_j，形状为 [B, H, C, C, d]。
+        decayed_keys = between * k.unsqueeze(-3)
+        # key_key[i,j] = k_iᵀ (p_{j→i} ⊙ k_j)，query_key[i,j] = q_iᵀ (p_{j→i} ⊙ k_j)。
+        key_key, query_key = (decayed_keys @ torch.stack((k, q), dim=-1)).unbind(-1)
+
+        # rhs[i] = β_i [v_iᵀ - (p_{0→i} ⊙ k_i)ᵀ S_in]。
+        rhs = beta * (v - (from_start * k) @ state)
+        # 解 L E = rhs。L[i,j] = β_i · key_key[i,j]（j < i），L[i,i] = 1，E 的每行是 e_iᵀ。
+        error = torch.linalg.solve_triangular(beta * key_key.tril(-1), rhs, upper=False, unitriangular=True)
+        # o_iᵀ = (p_{0→i} ⊙ q_i)ᵀ S_in + Σ_{j≤i} query_key[i,j] e_jᵀ。输出包含 j = i 的写入。
+        output = (from_start * q) @ state + query_key @ error
+        # S_out = diag(p_{0→C}) S_in + Σ_j (p_{j→C} ⊙ k_j) e_jᵀ，末行的 Key 衰减用于传递块末状态。
+        end_keys = decayed_keys[..., -1, :, :]
+        next_state = from_start[..., -1, :, None] * state + end_keys.transpose(-1, -2) @ error
+        return output, next_state
+
+    # 逐 token 公式（Kimi Linear 式 1）。S 的形状为 [d_key, d_value]。
+    # D_t = diag(α_t) S_{t-1}，e_t = β_t (v_t - D_tᵀ k_t)。
+    # S_t = D_t + k_t e_tᵀ，o_t = S_tᵀ q_t。
+    # 对一个长度为 C 的块，记 p_{j→i} = ∏_{u=j+1}^{i} α_u，其中 p_{i→i}=1。
+    # S_i = diag(p_{0→i}) S_in + Σ_{j≤i} (p_{j→i} ⊙ k_j) e_jᵀ，取 i=C 得到 S_out。
+    # o_i = S_inᵀ (p_{0→i} ⊙ q_i) + Σ_{j≤i} [q_iᵀ (p_{j→i} ⊙ k_j)] e_j。
+    # 将 D_i 的展开式代入 e_i，块内一起求解以下单位下三角方程。
+    # e_i + β_i Σ_{j<i} [k_iᵀ (p_{j→i} ⊙ k_j)] e_j = β_i [v_i - S_inᵀ (p_{0→i} ⊙ k_i)]。
     def forward(self, x, attention_mask, cache):
         batch, length, width = x.shape
         qkv = self.qkv(x)
         # 每个头一个写入强度 β，每个 Key 分量一个保留率 α。沿 Value 维广播 α 即可逐行衰减 S。
+        # log α_t = -exp(log_rate) · softplus(forget(x_t))，β_t = sigmoid(write(x_t))。
         shape = (batch, length, self.heads, self.dim)
-        decay = F.softplus(self.forget(x).reshape(shape).float()) * self.log_rate.float().exp()
-        alpha = (-decay).exp()
+        log_decay = -F.softplus(self.forget(x).reshape(shape).float()) * self.log_rate.float().exp()
         beta = self.write(x).float().sigmoid().unsqueeze(-1)
         valid = attention_mask[:, -length:]
         history = cache.get_conv_state(self.layer_idx) if cache is not None else None
@@ -246,33 +312,33 @@ class KimiLinearDeltaAttention(nn.Module):
         if state is None:
             state = x.new_zeros(batch, self.heads, self.dim, self.dim, dtype=torch.float32)
 
-        outputs = []
-        kernel = self.conv.weight[:, 0].to(qkv.dtype)
-        for t in range(length):
-            # 丢弃最老的位置并放入当前输入。K=1 时窗口只含当前输入，PAD 保留原窗口和递归状态。
-            active = valid[:, t, None, None]
-            window = torch.cat((history, qkv[:, t, :, None]), dim=-1)[..., -kernel.shape[-1]:]
-            filtered = (window * kernel).sum(-1)
-            history = torch.where(active, window[..., -history.shape[-1]:], history)
-            q, k, v = F.silu(filtered.float()).reshape(batch, 3, self.heads, self.dim).unbind(1)
-            # 每个头用 z / √(Σ z² + ε) 归一化 Q、K，再给 Query 乘 1/√d。
-            q = q * torch.rsqrt(q.square().sum(-1, keepdim=True) + self.qk_eps) * self.dim**-0.5
-            k = k * torch.rsqrt(k.square().sum(-1, keepdim=True) + self.qk_eps)
+        filtered, history = self._short_convolution(qkv, valid, history)
+        qkv_by_head = F.silu(filtered.float()).reshape(batch, length, 3, self.heads, self.dim)
+        q, k, v = qkv_by_head.permute(2, 0, 3, 1, 4).unbind(0)
+        # 每个头用 z / √(Σ z² + ε) 归一化 Q、K，再给 Query 乘 1/√d。
+        q = q * torch.rsqrt(q.square().sum(-1, keepdim=True) + self.qk_eps) * self.dim**-0.5
+        k = k * torch.rsqrt(k.square().sum(-1, keepdim=True) + self.qk_eps)
+        # PAD 取 log α_t = 0、β_t = 0，因此 D_t = S_{t-1}、e_t = 0。
+        pad = ~valid[:, None, :, None]
+        log_decay = log_decay.transpose(1, 2).masked_fill(pad, 0)
+        beta = beta.transpose(1, 2).masked_fill(pad, 0)
 
-            # 状态 S 为 [B,H,Dk,Dv]，用 FP32 做递推。用已经衰减的 S 预测 v，写回预测误差：
-            # D = Diag(α) S，e = β(v − Dᵀk)，S_new = D + k eᵀ，o = S_newᵀq。
-            decayed = alpha[:, t, :, :, None] * state
-            predicted = (k.unsqueeze(-1) * decayed).sum(-2)
-            error = beta[:, t] * (v - predicted)
-            updated = decayed + k.unsqueeze(-1) * error.unsqueeze(-2)
-            state = torch.where(active.unsqueeze(-1), updated, state)
-            outputs.append((q.unsqueeze(-1) * state).sum(-2))
+        outputs = []
+        # 即使线性投影在 AMP 下，块内衰减、三角求解和状态更新也按 FP32 计算。
+        with torch.autocast(device_type=x.device.type, enabled=False):
+            for start in range(0, length, self._chunk_size):
+                block = slice(start, start + self._chunk_size)
+                output, state = self._chunk(
+                    q[..., block, :], k[..., block, :], v[..., block, :],
+                    log_decay[..., block, :], beta[..., block, :], state,
+                )
+                outputs.append(output)
 
         if cache is not None:
             cache.update_conv_state(history, self.layer_idx, conv_kernel_size=history.shape[-1])
             cache.update_recurrent_state(state, self.layer_idx)
-        # 每个头按 Value 维做 RMSNorm，sigmoid 输出门决定哪些分量传给下一层。
-        heads = self.norm(torch.stack(outputs, dim=1))
+        # 逐头按 Value 维做 RMSNorm 并拼接。y_t = W_out [Concat_h RMSNorm(o_t^h) ⊙ sigmoid(gate(x_t))]。
+        heads = self.norm(torch.cat(outputs, dim=2).transpose(1, 2))
         gated = heads.flatten(2) * self.gate(x).float().sigmoid()
         return self.out(gated.to(qkv.dtype)) * valid.unsqueeze(-1)
 
@@ -296,31 +362,49 @@ class MultiHeadLatentAttention(nn.Module):
 
     def forward(self, x, attention_mask, cache):
         batch, length, width = x.shape
+        # 同样，先 (B, T, heads, dim + shared_dim) → (B, heads, T, dim + shared_dim) ，方便后面每头单独计算
         q = self.q(x).reshape(batch, length, self.heads, -1).transpose(1, 2)
         # W_down·x 切成潜向量和共享 Key。c=RMSNorm(潜向量)，s 是所有头共用且不做位置旋转的 Key。
         latent, shared = self.down(x).split((self.rank, self.shared_dim), dim=-1)
         # RMS 的平方和用 FP32 计算，缓存按投影的 dtype 存放。添加的单头维度供所有头共享。
         latent = self.norm(latent.float()).to(latent.dtype).unsqueeze(1)
         shared = shared.unsqueeze(1)
+        # 此时 latent 形状 (B, 1, T, rank), shared 形状 (B, 1, T, shared_dim)
+        # rank默认值 2*dim, shared_dim默认值 dim/2
         if cache is not None:
             # 在展开多头 Key 和 Value 之前追加缓存。两份张量的形状都是 [B,1,历史长度,压缩维度]。
+            # MLA主要优化在这里：
+            # - 普通注意力头要缓存 token数*2*dim*heads
+            # - MLA 只需要 token数*(rank+shared_dim)，这里的默认配置是 token数*(2.5*dim)
             latent, shared = cache.update(latent, shared, self.layer_idx)
         total = latent.shape[2]
-        # 各头分别从同一个 c 恢复 (k_h, v_h)。完整 Key 为 [k_h; s]，Value 为 v_h。
+        # 各头分别从同一个 c 恢复 (k_h, v_h)。完整 Key 为 [k_h; s]，Value 为 v_h。然后 (B, T, heads, 2*dim) → (B, heads, T, 2*dim)
+        # 这里取2*dim是为了后面拆成K和V矩阵
         kv = self.up(latent.squeeze(1)).reshape(batch, total, self.heads, 2 * self.dim).transpose(1, 2)
         key, value = kv.chunk(2, dim=-1)
+        # 每个Key都拼一个共享分量 (B, heads, Tk, dim) -> (B, heads, Tk, dim + shared_dim)
         key = torch.cat((key, shared.expand(-1, self.heads, -1, -1)), dim=-1)
-
         # 查询 t 可以读到包含自身的位置 past+t。这样整段训练、单 token 解码和多 token 续写共用一个掩码。
+        # total是所有的token数，positions -> [0, 1, 2, ..., total - 1]
+        # positions[None, :] 是把 positions 排成一行 [[0, 1, 2, ..., total - 1]]
+        # positions[-length:, None] 是把 positions 的最后 length 个排成一列 [[total - length], [total - length + 1], ..., [total - 1]]
         positions = torch.arange(total, device=x.device)
+        # 行向量与列向量广播比较得到 (B, Tq, Tk) 的因果掩码，再与 PAD 掩码相与。True 表示该查询可以读到该 Key。
+        # 有点像是构建下三角矩阵, (positions[None, :] <= positions[-length:, None]) 结果的形状是 (length, total)
+        # attention_mask[:, None, :] 等价于 attention_mask.unsqueeze(1) 。(B, total) -> (B, 1, total)
+        # 最后的操作右对齐广播后 allowed 的形状为 (B, length, total)
         allowed = (positions[None, :] <= positions[-length:, None]) & attention_mask[:, None, :]
         # 分数为 q_t·[k_j; s_j]/√(d+shared_dim)，每个头按可见位置做 softmax 后对 v_j 加权求和。
+        # q @ key.transpose(-2, -1) 计算后的形状为 (B, heads, Tq, Tk) , 注意上面key拼接了cache，所以Tk包含之前的token
+        # q.shape[-1]**-0.5 相当于 1 / √(d+shared_dim)
         scores = (q @ key.transpose(-2, -1)).float() * q.shape[-1]**-0.5
         allowed = allowed[:, None, :, :]
         scores = scores.masked_fill(~allowed, torch.finfo(scores.dtype).min)
         # 左侧全为 PAD 的查询没有可见 Key，把这一行的权重置零，避免全负无穷的 softmax 产生 NaN。
         weights = scores.softmax(-1).masked_fill(~allowed, 0).to(value.dtype)
+        # 还原成输入的形状
         heads = (weights @ value).transpose(1, 2).reshape(batch, length, width)
+        # 最终输出还是要乘上掩码把 PAD 位置的输出置零，避免污染后续层的统计量。
         return self.out(heads) * attention_mask[:, -length:, None]
 
 
@@ -346,6 +430,9 @@ class HybridBlock(nn.Module):
         # 沿用基线的 Top-k 路由与专家。保留所有专家的 logits 供训练端计算相同的辅助损失。
         flat = h.flatten(0, 1)
         logits, weights, indices = self.router(flat)
+
+        # 仍然是 [B*T, hidden] 的形状，经专家后恢复为 [B, T, hidden] ，然后加残差连接后输出。
+        # 同时输出专家路由的 logits
         return x + self.experts(flat, indices, weights).reshape_as(x), logits
 
 
@@ -359,18 +446,24 @@ class HybridForCausalLM(PreTrainedModel, GenerationMixin):
             # 词表投影与输入嵌入共享同一参数。保存一份即可，Trainer 续训时会重新绑定。
             self._keys_to_ignore_on_save = ["lm_head.weight"]
         self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, config.pad_token_id)
+        # 使用自定义的HybridBlock初始化层
         self.layers = nn.ModuleList(HybridBlock(config, i) for i in range(config.num_hidden_layers))
         self.norm = nn.RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
         self.post_init()
 
+    # post_init() → _init_weights(module) : 所有的子模块都会被传入执行一次
     def _init_weights(self, module):
         super()._init_weights(module)
         # 这两种 Mixtral 模块把多个权重放在裸 Parameter 中，使用与基线相同的初始化。
         if isinstance(module, MixtralExperts):
+            # 这里和之前的流程略有不同，这里只配置一个矩阵gate_up_proj。因为gate和up的参数都是x，实际计算时 gate 和 up 可以通过以下方式得出
+            # gate, up = nn.functional.linear(x, gate_up_proj[expert_idx]).chunk(2, dim=-1)
+            # y = nn.functional.linear(act_fn(gate) * up, down_proj[expert_idx])
             nn.init.normal_(module.gate_up_proj, std=self.config.initializer_range)
             nn.init.normal_(module.down_proj, std=self.config.initializer_range)
         elif isinstance(module, MixtralTopKRouter):
+            # 路由只有一组权重
             nn.init.normal_(module.weight, std=self.config.initializer_range)
         elif isinstance(module, KimiLinearDeltaAttention):
             # 在零输入下让各通道从不同的衰减速度开始。A 均匀取样，dt 在对数尺度取样。
@@ -406,7 +499,9 @@ class HybridForCausalLM(PreTrainedModel, GenerationMixin):
         if router_logits:
             # M 是所有层的非 PAD 位置数。f_e=专家 e 入选 Top-k 的次数/M，p̄_e 是其平均路由概率。
             # 辅助损失 A_i=E·Σ_e(f_e·p̄_e)。路由均衡时 A_i=k，默认 E=8、k=2，乘系数 0.0005 后为 0.001。
+            # load_balancing_loss_func是transformers库的内置实现
             aux = load_balancing_loss_func(tuple(router_logits), self.config.num_local_experts,
+                                           # 同样著需要关注本次新增的length个token即可。
                                            self.config.num_experts_per_tok, mask[:, -length:])
         if labels is not None:
             # 位置 t 的 logits 预测标签 t+1。loss_function 完成移位并忽略 -100，得到交叉熵 C_i/N。

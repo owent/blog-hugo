@@ -59,6 +59,8 @@ noad: true
     * 包含多种策略的个性化推荐（热销、近期热度高、帮玩家凑套装、帮玩家凑同品质全套装备等）。
     * 订单管理服务、搜索服务、商品索引服务、订单撮合服务、动态价格计算都有主从角色、聚合计算、自动容灾以及用于平行扩容的Sharding设计。
     * 搜索服务和商品索引服务包含只读副本以及相应的同步机制以降低写节点压力。（之前游戏中所有的掉落物都会查询交易行以获得市场化估值）
+  * 维护管理团队共享的AI agent提示词工程（包含一些探索性实验性质优化）
+    * 包括基础Agent规则、skills优化。以及一些优化工具的集成（比如tgrep、codegraph这类通过搜索引擎技术或RAG技术减少token消耗的方案尝试）
 
 > * [Utility库](https://github.com/atframework/atframe_utils)
 > * [libatbus - 高性能进程间通信和管理](https://github.com/atframework/libatbus)
@@ -116,6 +118,7 @@ noad: true
 * 负责公司运维框架体系，各类IT系统管理，各类云原生环境搭建管理
 * 负责公司研发环境、网络规划实施以及各类devops系统管理
 * 继续维护多个项目跨平台技术构建和各类研发工具研发集成
+* 维护多个项目的AI agent提示词工程、skills、MCP能力集成等等
 
 ## 2025年09月 — 2026年06月：游幻科技（上海）有限公司（追觅科技旗下）
 
@@ -143,8 +146,8 @@ noad: true
 
 ## 2017年09月 — 2025年08月：腾讯科技（上海）有限公司
 
-* 灰境行者(Maple项目组) - UE - PC,搜撤 - 服务端研发,专家工程师
-* Dungeonborne(TGF项目组) - UE - PC,搜撤 - 服务端主程,专家工程师
+* 灰境行者(Maple项目组) - UE - PC,搜打撤 - 服务端研发,专家工程师
+* Dungeonborne(TGF项目组) - UE - PC,搜打撤 - 服务端主程
 * 云观（可观测性标准和工具）OTeam - PMC成员(Project Management Committees,开源项目管理委员会)
 * 分布式事务TDXA OTeam - PMC成员(Project Management Committees,开源项目管理委员会)
 * Pix - UE - PC+手机,大乱斗 - 服务端主程
