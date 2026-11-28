@@ -22,33 +22,43 @@ noad: true
 * 2011.06-2012.06: 腾讯科技\(上海\)有限公司 - 北极光工作室后台组 - 实习
 * 2008.09-2012.06: 华东理工大学 - 计算机科学与技术 - 本科
 
-# 主要开源活动
+# 主要成果
 
 * Github-主站: <https://github.com/owent>
 * Github-【CNCF云原生计算基金会-可观测性领域-opentelemetry-cpp核心贡献者】: <https://github.com/open-telemetry/opentelemetry-cpp>
+  * C++/C++ Contrib 子板块 Approver 角色和主要贡献者之一。
 * 高性能、全异步、跨平台、去中心化游戏服务器框架\([atframework](https://atframe.work/)\): 
-  * 开源组织: <https://github.com/atframework>
-  * 文档: <https://atframe.work/>
+  * 开源地址: <https://github.com/atframework>, 文档: <https://atframe.work/>
+  * 现代化C++框架，支持覆盖C++14到C++26。跨编译器Clang、GCC、MSVC支持，跨平台Linux、macOS、Windows支持。
   * 深度集成可观测性，以及基于可观测性的HPA。可以和K8S HPAv2打通并提供通用且高度可定制化的有状态服务的HPA解决方案。
-    * 自动处理和管理可观测性生态的转换、性能优化。
+    * 自动处理和管理可观测性生态的语义转换、性能优化。
     * 提供易于使用的接口以便业务层基于可观测性生态去实现一些业务策略。
   * 基于协程和模板引擎的RPC框架和，支持自定义接入层扩展。
-    * 支持传统有栈协程和C++20无栈协程，提供了同一抽象可以一键切换底层协程模型，业务层无感知。
-  * 提供基于WAL的分布式系统一致性算法库。自带订阅管理、快照压缩和增量同步。支持任意类型和按业务需求定制化。
+    * 支持传统有栈协程和C++20无栈协程，设计并实现了一键切换底层协程模型的方案，业务层无感知。
+  * 设计并实现提供基于WAL的分布式系统一致性管理算法库。自带订阅管理、快照压缩和增量同步。支持任意类型和按业务需求定制化。
   * 提供面向Client的网关服务和用于服务流量治理的atproxy服务。
     * 支持包含全球同服时的多级代理方案，利用便宜的公网链路降低成本的方案等。
-  * 提供多种去中性化的分布式系统解决方案包含:
+  * 设计并实现多种去中性化的分布式系统解决方案，包含:
     * 对象路由系统（业务层关注对象和action，消息路由、重试、路由表刷新和生命周期交给框架层处理）
     * 用户对象的多写单读的异步执行队列
-    * 分布式事务解决方案
-      * 支持TCC和best-effort模型）
+    * 分布式事务系统以及相关协调者服务
+      * 抽象事物管理和底层机制，设计定制化机制以适用于任意业务数据类型和支持业务层定制化。
+      * 支持TCC和best-effort模型
       * 支持按业务特性配置性能和一致性取舍（默认Wound-wait，fallback wait-die冲突处理模型，支持Read Your Writes可见性等）
     * 支持海量通道的分布式消息队列系统
       * 支持共享订阅，大量订阅者时自动削峰。
-      * 支持乐观锁和私有数据区，以便某些业务当数据库用以及托管有状态数据的管理。
+      * 支持乐观锁和私有数据区（类似于KV数据库），以支持某些业务托管有状态数据的管理。
     * 通用缓存服务。支持主动推送数据的快缓存和仅通知失效的慢缓存。
     * 多种涉及社交关系的服务，包括 好友服务、工会服务、组队服务等等。
   * 提供一些常见服务的基础版本，比如合规服务、排行榜等。具体业务可以持续扩展。
+  * 设计并实现P2P交易行系统
+    * 去中心化，全区全服，支持特殊区域隔离。全服订单数据和搜索达到秒级实时性。
+    * 包含拍卖/一口价这种点对点交易行和同质化交易行（类似证券交易，根据全服市场交易情况动态调整基准价格）两种。
+    * 基于可观测性的动态撮合策略、视图缓存策略和搜索缓存策略。
+    * 支持任意标签组合（包含装备的随机词条）的搜索功能。
+    * 包含多种策略的个性化推荐（热销、近期热度高、帮玩家凑套装、帮玩家凑同品质全套装备等）。
+    * 订单管理服务、搜索服务、商品索引服务、订单撮合服务、动态价格计算都有主从角色、聚合计算、自动容灾以及用于平行扩容的Sharding设计。
+    * 搜索服务和商品索引服务包含只读副本以及相应的同步机制以降低写节点压力。（之前游戏中所有的掉落物都会查询交易行以获得市场化估值）
 
 > * [Utility库](https://github.com/atframework/atframe_utils)
 > * [libatbus - 高性能进程间通信和管理](https://github.com/atframework/libatbus)
@@ -60,13 +70,15 @@ noad: true
 >   * 详细压测报告 <https://github.com/owent/libatbus/blob/main/docs/Benchmark.md>
 > * [libatapp - 服务器应用框架](https://github.com/atframework/libatapp)
 >   * 跨平台，高性能。支持Windows、macOS、Linux。
->   * 集成服务发现。支持多种连接层，支持自定义连接层扩展能力。
->   * 基于任意标签的策略路由和动态网络拓扑支持。
+>   * 集成服务发现。支持多种连接层，支持自定义连接层扩展能力。（腾讯内部版本接入tbuspp作为其中一种扩展通信层，并且可以很容易升级或更换这类组件）
+>   * 基于任意标签组合的策略路由和动态网络拓扑支持。
 > * [atsf4g-co - 完整游戏服务器解决方案](https://github.com/atframework/atsf4g-co)
 > * [cmake-toolset - 跨平台构建系统](https://github.com/atframework/cmake-toolset)
+>   * 也用于跨客户端（包括UE、Unity等）、服务器的依赖构建。用于管理客户端、服务器共享模块。
 > * [AtgwInnerCli-CSharp - atgateway的C\#适配](https://github.com/atframework/AtgwInnerCli-CSharp)（纯C客户端API的包装，可用于Unity 3D）
-> * [AICodeReviewer - AI自动化Code Review](http://github.com/atframework/AICodeReviewer/), 文档 <https://aicr.atframe.work/>
 
+* [AICodeReviewer - AI自动化Code Review](https://github.com/atframework/AICodeReviewer/), 文档 <https://aicr.atframe.work/>
+* [LLMUsage - 统计本机的所有AI agent用量](https://github.com/owent/llm-usage/), 文档 <https://llm-usage.atframe.work/>
 * 高性能、跨平台C++协程框架: [libcopp][1] 。支持传统有栈协程和C++20无栈协程。提供同一设计模式抽象。
 * Redis高可用解决方案:  [hiredis-happ](https://github.com/owent/hiredis-happ)\(支持redis cluster集群，支持自动重试、断线重连、按需连接\)
 * Excel转表工具集（Excel -&gt; Protobuf、Lua、Msgpack、Json、Xml\Javascript、UnrealEngine DataTable）: <https://github.com/xresloader>
@@ -100,7 +112,7 @@ noad: true
 ## 2026年07月 - 至今：MyrionStudio
 
 * 公司服务端技术负责人
-* 负责UE项目，游戏服务器解决方案研发落地
+* 负责UE项目，游戏服务器解决方案研发落地以及跨平台开发支持（客户端、服务器共享模块）
 * 负责公司运维框架体系，各类IT系统管理，各类云原生环境搭建管理
 * 负责公司研发环境、网络规划实施以及各类devops系统管理
 * 继续维护多个项目跨平台技术构建和各类研发工具研发集成
